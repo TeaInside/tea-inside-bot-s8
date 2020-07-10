@@ -23,8 +23,9 @@ if (isset($argv[1]) && ($argv[1] === "release")) {
 } else {
 
   /* Compile swoole */
-  shw($swooleDir, "phpize");
-  shw($swooleDir, "./configure --enable-openssl --enable-sockets --enable-http2 --enable-mysqlnd");
-  shw($swooleDir, "make");
+  // shw($swooleDir, "phpize");
+  // shw($swooleDir, "./configure --enable-openssl --enable-sockets --enable-http2 --enable-mysqlnd");
+  // shw($swooleDir, "make");
+  // shw($swooleDir, "sudo make install");
 
 }
