@@ -1,12 +1,12 @@
 <?php
 
 /**
- * @param string  $cmd
  * @param ?string $cwd
+ * @param string  $cmd
  * @param ?array  $env
  * @return int
  */
-function sh(string $cmd, ?string $cwd = null, ?array $env = null): int
+function sh(?string $cwd = null, string $cmd, ?array $env = null): int
 {
   echo "Executing {$cmd}...\n";
   $proc = proc_open(

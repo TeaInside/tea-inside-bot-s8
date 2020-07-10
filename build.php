@@ -2,14 +2,29 @@
 
 require __DIR__."/src/build/helpers.php";
 
-if (isset($argv[1]) && ($argv[1] === "release")) {
-  if (!sh("phpize", __DIR__."/src/ext")) {
-    echo "phpize failed!";
+$swooleDir = __DIR__."/src/ext/swoole";
+
+function shw(...$argv)
+{
+  $n = sh(...$argv);
+  if (!in_array($n, [0, -1])) {
+    echo "Error, exit code {$n}\n";
+    exit($n);
   }
+}
+
+if (isset($argv[1]) && ($argv[1] === "release")) {
+
+  /* Compile swoole */
+  shw($swooleDir, "phpize");
+  shw($swooleDir, "./configure --enable-openssl --enable-sockets --enable-http2 --enable-mysqlnd");
+  shw($swooleDir, "make");;
+
 } else {
-  // if (!sh("phpize", __DIR__."/src/ext")) {
-  //   echo "phpize failed!";
-  // }
-  // sh("./configure", __DIR__."/src/ext");
-  sh("make", __DIR__."/src/ext");
+
+  /* Compile swoole */
+  shw($swooleDir, "phpize");
+  shw($swooleDir, "./configure --enable-openssl --enable-sockets --enable-http2 --enable-mysqlnd");
+  shw($swooleDir, "make");
+
 }
