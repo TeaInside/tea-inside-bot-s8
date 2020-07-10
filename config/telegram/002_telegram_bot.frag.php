@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__."/../bootstrap/frag_autoload.php";
+require __DIR__."/../../bootstrap/frag_autoload.php";
 
 $const["TELEGRAM_STORAGE_PATH"] = TELEGRAM_STORAGE_PATH;
 

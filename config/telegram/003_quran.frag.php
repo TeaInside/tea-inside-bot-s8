@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__."/../bootstrap/frag_autoload.php";
+require __DIR__."/../../bootstrap/frag_autoload.php";
 
 $const["QURAN_STORAGE_PATH"] = STORAGE_PATH."/quran";
 

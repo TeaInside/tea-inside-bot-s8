@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__."/../bootstrap/frag_autoload.php";
+require __DIR__."/../../bootstrap/frag_autoload.php";
 
 $const["SRABATSROBOT_API_KEY"] = SRABATSROBOT_API_KEY;
 
