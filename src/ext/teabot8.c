@@ -27,7 +27,7 @@ static PHP_MSHUTDOWN_FUNCTION(phpnasm)
 static PHP_GINIT_FUNCTION(teabot8)
 {
 #if defined(COMPILE_DL_ASTKIT) && defined(ZTS)
-    ZEND_TSRMLS_CACHE_UPDATE();
+  ZEND_TSRMLS_CACHE_UPDATE();
 #endif
 }
 
