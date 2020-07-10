@@ -7,3 +7,4 @@
 *.log
 *.lock
 /.phpintel/
+/config.php
