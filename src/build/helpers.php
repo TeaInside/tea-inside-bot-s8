@@ -26,3 +26,22 @@ function sh(?string $cwd = null, string $cmd, ?array $env = null): int
   proc_close($proc);
   return (int)$status["exitcode"];
 }
+
+/**
+ * @param string    $directory
+ * @param ?callable $callback
+ * @return void
+ */
+function recursiveCallbackScanDir(string $directory, callable $callback = null): void
+{
+  $scan = scandir($directory);
+  unset($scan[0], $scan[1]);
+  foreach ($scan as $file) {
+    $absFile = $directory."/".$file;
+    if (is_dir($absFile)) {
+      recursiveCallbackScanDir($absFile, $callback);
+    } else {
+      $callback($directory, $file);
+    }
+  }
+}

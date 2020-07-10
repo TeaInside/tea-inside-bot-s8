@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__."/../bootstrap/frag_autoload.php";
+require __DIR__."/../../bootstrap/frag_autoload.php";
 
 $const["BASEPATH"] = BASEPATH;
 $const["STORAGE_PATH"] = STORAGE_PATH;
@@ -11,8 +11,8 @@ if (!file_exists(STORAGE_PATH."/.gitignore")) {
 }
 
 $config = [
-    "const" => &$const,
-    "target_file" => __DIR__."/global.php"
+  "const" => &$const,
+  "target_file" => __DIR__."/global.php"
 ];
 
 (new \ConfigBuilder\ConfigBuilder($config))->build();
