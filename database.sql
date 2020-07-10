@@ -90,6 +90,7 @@ CREATE TABLE `tg_group_messages` (
   `has_edited_msg` enum('0','1') NOT NULL DEFAULT '0',
   `tg_date` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `tg_msg_id` (`tg_msg_id`),
   KEY `reply_to_tg_msg_id` (`reply_to_tg_msg_id`),
@@ -99,6 +100,7 @@ CREATE TABLE `tg_group_messages` (
   KEY `created_at` (`created_at`),
   KEY `group_id` (`group_id`),
   KEY `user_id` (`user_id`),
+  KEY `updated_at` (`updated_at`),
   CONSTRAINT `tg_group_messages_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `tg_groups` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `tg_group_messages_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `tg_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -178,7 +180,7 @@ CREATE TABLE `tg_users` (
   `private_msg_count` bigint(20) unsigned NOT NULL,
   `is_bot` enum('0','1') CHARACTER SET utf8 NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL,
-  `updated_at` datetime NOT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tg_user_id` (`tg_user_id`),
   KEY `username` (`username`),
@@ -214,4 +216,4 @@ CREATE TABLE `tg_user_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
--- 2020-07-10 07:13:11
+-- 2020-07-10 07:15:36
