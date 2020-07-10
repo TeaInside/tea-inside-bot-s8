@@ -3,10 +3,14 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(teabot8);
 
-extern zend_class_entry teabot8_daemon_ce;
+#ifdef COMPILE_DL_TEABOT8
+ZEND_GET_MODULE(teabot8)
+#endif
+
+extern zend_class_entry *teabot8_daemon_ce;
 extern zend_function_entry teabot8_methods[];
 
-static PHP_MINIT_FUNCTION(phpnasm)
+static PHP_MINIT_FUNCTION(teabot8)
 {
   zend_class_entry ce;
 
@@ -17,7 +21,7 @@ static PHP_MINIT_FUNCTION(phpnasm)
   return SUCCESS;
 }
 
-static PHP_MSHUTDOWN_FUNCTION(phpnasm)
+static PHP_MSHUTDOWN_FUNCTION(teabot8)
 {
   UNREGISTER_INI_ENTRIES();
   return SUCCESS;

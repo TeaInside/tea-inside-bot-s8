@@ -20,10 +20,6 @@ ZEND_EXTERN_MODULE_GLOBALS(teabot8)
 
 #define TEABOT8G(v) ZEND_MODULE_GLOBALS_ACCCESSOR(teabot8, v)
 
-#ifdef COMPILE_DL_TEABOT8
-ZEND_GET_MODULE(teabot8)
-#endif
-
 #define phpext_teabot8_ptr (&teabot8_module_entry)
 
 #endif
