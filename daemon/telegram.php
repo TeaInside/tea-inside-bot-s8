@@ -49,7 +49,7 @@ go(function () {
       fclose($conn);
 
       go(function () use ($r) {
-        $st = new TeaBot\Telegram\TeaBot($r);
+        (new TeaBot\Telegram\TeaBot($r))->run();
       });
     }
   }

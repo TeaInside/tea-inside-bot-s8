@@ -24,4 +24,20 @@ final class TeaBot
   {
     $this->data = new Data($data);
   }
+
+  /**
+   * @return void
+   */
+  public function run(): void
+  {
+    echo "sending...\n";
+    Exe::sendMessage(
+      [
+        "chat_id" => $this->data->in["message"]["chat"]["id"],
+        "text" => "test"
+      ]
+    );
+    // $res = new Response($this->data);
+    // $res->execute();
+  }
 }
