@@ -19,4 +19,5 @@ if (!defined("__MY_AUTOLOAD")):
 
   spl_autoload_register("myInternalAutoload");
 
+  require BASEPATH."/vendor/autoload.php";
 endif;
