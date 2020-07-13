@@ -30,16 +30,7 @@ final class TeaBot
    */
   public function run(): void
   {
-    echo "sending...\n";
-    $o = Exe::sendMessage(
-      [
-        "chat_id" => $this->data->in["message"]["chat"]["id"],
-        "text" => "test"
-      ]
-    );
-    $v = $o->getBody();
-    var_dump($v->__toString());
-    // $res = new Response($this->data);
-    // $res->execute();
+    $res = new Response($this->data);
+    $res->execRoutes();
   }
 }

@@ -21,7 +21,7 @@ $json = '{
             "username": null
         },
         "date": 1594647860,
-        "text": "/debug",
+        "text": "/start",
         "entities": [
             {
                 "offset": 0,

@@ -2,6 +2,8 @@
 
 namespace TeaBot\Telegram;
 
+use Exception;
+
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
  * @license MIT
@@ -28,10 +30,20 @@ final class Response
   }
 
   /**
+   * @throws \Exception
+   * @param string $className
+   * @param string $methodName
+   * @param array  $parameters
    * @return bool
    */
-  public function execute(): bool
+  private function rtExec(
+    string $className, string $methodName, array $parameters = []): bool
   {
-    
+    $obj = new $className($this->data);
+    if ($obj instanceof ResponseFoundation) {
+      return $obj->{$methodName}(...$parameters);
+    } else {
+      throw new Exception("Invalid ResponseFoundation instance: ".$className);
+    }
   }
 }
