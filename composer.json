@@ -1,0 +1,5 @@
+{
+    "require": {
+        "swlib/saber": "^1.0"
+    }
+}
