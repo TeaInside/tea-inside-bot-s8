@@ -6,7 +6,7 @@ namespace TeaBot\Telegram;
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
  * @license MIT
  * @package \TeaBot\Telegram
- * @version 6.2.0
+ * @version 8.0.0
  */
 final class Exe
 {

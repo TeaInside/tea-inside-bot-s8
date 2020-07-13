@@ -34,7 +34,23 @@ go(function () {
 
     while ($conn = stream_socket_accept($socket, -1)) {
       stream_set_timeout($conn, 5);
+      $r = fread($conn, 4096);
+      $bodyLen = unpack("S", substr($r, 0, 2))[1];
+      $readLen = strlen($r) - 2;
+      $r = substr($r, 2);
+      while ($readLen < $bodyLen) {
+        $r .= fread($conn, 4096);
+      }
+
+      $r = json_decode($r, true);
+      if (is_array($r)) {
+        fwrite($conn, "ok");
+      }
       fclose($conn);
+
+      go(function () use ($r) {
+        $st = new TeaBot\Telegram\TeaBot($r);
+      });
     }
   }
 
