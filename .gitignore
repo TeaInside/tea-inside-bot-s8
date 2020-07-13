@@ -6,5 +6,6 @@
 *.tmp
 *.log
 *.lock
+/vendor/
 /.phpintel/
 /config.php
