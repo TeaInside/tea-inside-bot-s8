@@ -1,15 +1,18 @@
 <?php
 
-require __DIR__."/../config/telegram/main.php";
+require __DIR__."/../bootstrap/telegram/autoload.php";
+
+loadConfig("telegram/api");
+loadConfig("telegram/quran");
+loadConfig("telegram/calculus");
+loadConfig("telegram/telegram_bot");
 
 Swoole\Runtime::enableCoroutine();
-$s = microtime(true);
-
 
 Co\run(function() {
 go(function () {
 
-  $tcpAddr = "tcp://0.0.0.0:9502";
+  $tcpAddr = "tcp://127.0.0.1:7777";
   $ctx = stream_context_create(
     [
       "socket" => [
