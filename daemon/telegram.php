@@ -40,6 +40,7 @@ go(function () {
       $r = substr($r, 2);
       while ($readLen < $bodyLen) {
         $r .= fread($conn, 4096);
+        $readLen = strlen($r);
       }
 
       $r = json_decode($r, true);
