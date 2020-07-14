@@ -11,7 +11,7 @@ jobs:
     steps:
       - checkout
       - run: sudo apt-get update -y
-      - run: sudo docker-php-ext-install mysql
+      - run: sudo docker-php-ext-install pdo pdo_mysql
 
       # Download and cache dependencies
       - restore_cache:
