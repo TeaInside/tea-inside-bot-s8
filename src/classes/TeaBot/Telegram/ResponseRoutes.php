@@ -18,7 +18,6 @@ trait ResponseRoutes
     /**
      * Start command.
      */
-    dexasd();
     if (preg_match("/^(\/|\!|\~|\.)start$/USsi", $this->data["text"])) {
       if ($this->rtExec(Responses\Start::class, "start")) {
         return true;
