@@ -11,13 +11,14 @@ jobs:
     steps:
       - checkout
       - run: sudo apt-get update -y
+      - run: sudo apt-get install libssl-dev -y
       - run: sudo docker-php-ext-install pdo pdo_mysql sockets
 
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "composer.json" }}
-            - v1-dependencies-
+            - v1-composer-deps-{{ checksum "composer.json" }}
+            - v1-composer-deps-
       - run: composer install -n --prefer-dist -vvv
       - save_cache:
           key: v1-dependencies-{{ checksum "composer.json" }}
@@ -27,10 +28,10 @@ jobs:
       # Build the project.
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "composer.json" }}
-            - v1-dependencies-
+            - v1-ext-{{ checksum "build.php" }}
+            - v1-ext-
       - run: php ./build.php
       - save_cache:
-          key: v1-dependencies-{{ checksum "build.php" }}
+          key: v1-ext-{{ checksum "build.php" }}
           paths:
             - ./src/ext
