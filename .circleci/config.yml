@@ -2,6 +2,7 @@
 #
 # Check https://circleci.com/docs/2.0/language-php/ for more details
 #
+
 version: 2
 jobs:
   build:
@@ -28,10 +29,11 @@ jobs:
       # Build the project.
       - restore_cache:
           keys:
-            - v1-ext-{{ checksum "build.php" }}
+            - v1-ext-{{ checksum "src/ext/extchk.txt" }}
             - v1-ext-
+      - run: cp ./config.example.php ./config.php
       - run: php ./build.php
       - save_cache:
-          key: v1-ext-{{ checksum "build.php" }}
+          key: v1-ext-{{ checksum "src/ext/extchk.txt" }}
           paths:
             - ./src/ext

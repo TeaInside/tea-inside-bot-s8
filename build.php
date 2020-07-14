@@ -41,7 +41,7 @@ if (isset($argv[1]) && ($argv[1] === "release")) {
   if (!file_exists($swooleLockFile)) {
     shw($swooleDir, "phpize");
     shw($swooleDir, "./configure --enable-openssl --enable-sockets --enable-http2 --enable-mysqlnd");
-    shw($swooleDir, "make");
+    shw($swooleDir, "make -j \$(nproc)");
     shw($swooleDir, "sudo make install");
     touch($swooleLockFile);
   }
