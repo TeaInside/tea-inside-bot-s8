@@ -1,0 +1,36 @@
+# PHP CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-php/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/php:7.4.8-zts-buster-node-browsers-legacy
+
+    steps:
+      - checkout
+      - run: sudo apt-get update -y
+      - run: sudo docker-php-ext-install mysql
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "composer.json" }}
+            - v1-dependencies-
+      - run: composer install -n --prefer-dist -vvv
+      - save_cache:
+          key: v1-dependencies-{{ checksum "composer.json" }}
+          paths:
+            - ./vendor
+
+      # Build the project.
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "composer.json" }}
+            - v1-dependencies-
+      - run: php ./build.php
+      - save_cache:
+          key: v1-dependencies-{{ checksum "build.php" }}
+          paths:
+            - ./src/ext
