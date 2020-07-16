@@ -6,60 +6,30 @@
  * @package {No Package}
  * @version 8.0
  */
+
+$dbCollections = [];
+
 final class DB
 {
-  /**
-   * @var \PDO
-   */
-  private $pdo;
-
-  /**
-   * @var self
-   */
-  private static $self;
-
-  /**
-   * Constructor.
-   */
-  private function __construct()
-  {
-    $this->pdo = new \PDO(...PDO_PARAM);
-  }
-
-  /**
-   * @return void
-   */
-  public static function close()
-  {
-    self::getInstance()->pdo = null;
-    self::$self = null;
-  }
-
-  /**
-   * Destructor.
-   */
-  public function __destruct()
-  {
-    $this->pdo = null;
-    unset($this->pdo);
-  }
-
   /**
    * @return \PDO
    */
   public static function pdo(): \PDO
   {
-    return self::getInstance()->pdo;
+    global $dbCollections;
+    $cid = Swoole\Coroutine::getCid();
+    var_dump("init ".$cid);
+    return ($dbCollections[$cid] = new \PDO(...PDO_PARAM));
   }
 
   /**
-   * @return self
+   * @return void
    */
-  public static function getInstance(): DB
+  public static function close(): void
   {
-    if (!self::$self) {
-      self::$self = new self;
-    }
-    return self::$self;
+    global $dbCollections;
+    $cid = Swoole\Coroutine::getCid();
+    var_dump("close ".$cid);
+    unset($dbCollections[$cid]);
   }
 }

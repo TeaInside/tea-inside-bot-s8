@@ -25,6 +25,30 @@ final class TeaBot
   public function __construct(array &$data)
   {
     $this->data = new Data($data);
+    $pdo = \DB::pdo();
+    $x = $pdo->prepare("SELECT 1,sleep(2);");
+    $x->execute();
+    var_dump($x->fetchAll(\PDO::FETCH_ASSOC));
+    $pdo = \DB::pdo();
+    $x = $pdo->prepare("SELECT 1,sleep(2);");
+    $x->execute();
+    var_dump($x->fetchAll(\PDO::FETCH_ASSOC));
+    $pdo = \DB::pdo();
+    $x = $pdo->prepare("SELECT 1,sleep(2);");
+    $x->execute();
+    var_dump($x->fetchAll(\PDO::FETCH_ASSOC));
+    $pdo = \DB::pdo();
+    $x = $pdo->prepare("SELECT 1,sleep(2);");
+    $x->execute();
+    var_dump($x->fetchAll(\PDO::FETCH_ASSOC));
+  }
+
+  /**
+   * Destructor.
+   */
+  public function __destruct()
+  {
+    \DB::close();
   }
 
   /**
