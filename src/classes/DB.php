@@ -18,8 +18,12 @@ final class DB
   {
     global $dbCollections;
     $cid = Swoole\Coroutine::getCid();
-    var_dump("init ".$cid);
-    return ($dbCollections[$cid] = new \PDO(...PDO_PARAM));
+
+    if (!isset($dbCollections[$cid])) {
+      $dbCollections[$cid] = new \PDO(...PDO_PARAM);
+    }
+
+    return $dbCollections[$cid];
   }
 
   /**
@@ -28,8 +32,6 @@ final class DB
   public static function close(): void
   {
     global $dbCollections;
-    $cid = Swoole\Coroutine::getCid();
-    var_dump("close ".$cid);
-    unset($dbCollections[$cid]);
+    unset($dbCollections[Swoole\Coroutine::getCid()]);
   }
 }
