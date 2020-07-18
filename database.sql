@@ -19,7 +19,7 @@ CREATE TABLE `tg_files` (
   `hit_count` bigint(20) unsigned NOT NULL DEFAULT '1',
   `description` text COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `tg_file_id` (`tg_file_id`),
   KEY `md5_sum` (`md5_sum`),
@@ -44,7 +44,7 @@ CREATE TABLE `tg_groups` (
   `photo` bigint(20) unsigned DEFAULT NULL,
   `msg_count` bigint(20) unsigned NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tg_group_id` (`tg_group_id`),
   KEY `name` (`name`),
@@ -56,6 +56,26 @@ CREATE TABLE `tg_groups` (
   KEY `photo` (`photo`),
   CONSTRAINT `tg_groups_ibfk_2` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+
+DROP TABLE IF EXISTS `tg_group_admins`;
+CREATE TABLE `tg_group_admins` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `group_id` bigint(20) unsigned NOT NULL,
+  `role` enum('creator','admin') NOT NULL DEFAULT 'admin',
+  `permissions` text NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `role` (`role`),
+  KEY `created_at` (`created_at`),
+  KEY `updated_at` (`updated_at`),
+  KEY `user_id` (`user_id`),
+  KEY `group_id` (`group_id`),
+  CONSTRAINT `tg_group_admins_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `tg_users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tg_group_admins_ibfk_4` FOREIGN KEY (`group_id`) REFERENCES `tg_groups` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 DROP TABLE IF EXISTS `tg_group_history`;
@@ -90,7 +110,7 @@ CREATE TABLE `tg_group_messages` (
   `has_edited_msg` enum('0','1') NOT NULL DEFAULT '0',
   `tg_date` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `tg_msg_id` (`tg_msg_id`),
   KEY `reply_to_tg_msg_id` (`reply_to_tg_msg_id`),
@@ -135,7 +155,7 @@ CREATE TABLE `tg_private_messages` (
   `msg_type` varchar(255) NOT NULL,
   `has_edited_msg` enum('0','1') NOT NULL DEFAULT '0',
   `tg_date` datetime DEFAULT NULL,
-  `created_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `tg_msg_id` (`tg_msg_id`),
@@ -176,11 +196,11 @@ CREATE TABLE `tg_users` (
   `first_name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `last_name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `photo` bigint(20) unsigned DEFAULT NULL,
-  `group_msg_count` bigint(20) unsigned NOT NULL,
-  `private_msg_count` bigint(20) unsigned NOT NULL,
+  `group_msg_count` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `private_msg_count` bigint(20) unsigned NOT NULL DEFAULT '0',
   `is_bot` enum('0','1') CHARACTER SET utf8 NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tg_user_id` (`tg_user_id`),
   KEY `username` (`username`),
@@ -216,4 +236,4 @@ CREATE TABLE `tg_user_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
--- 2020-07-10 07:15:36
+-- 2020-07-18 08:54:55
