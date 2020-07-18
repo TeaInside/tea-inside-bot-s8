@@ -10,4 +10,8 @@ namespace TeaBot\Telegram\Contracts;
  */
 interface LoggerInterface
 {
+  /**
+   * @return void
+   */
+  public function logText(): void;
 }

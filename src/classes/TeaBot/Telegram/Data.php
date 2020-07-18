@@ -89,9 +89,15 @@ final class Data implements ArrayAccess
     $this->ct["from"] = $msg["from"];
     $this->ct["chat"] = $msg["chat"];
     $this->ct["chat_id"] = $msg["chat"]["id"];
+    $this->ct["user_id"] = $msg["from"]["id"];
+    $this->ct["is_bot"] = $msg["from"]["is_bot"] ?? false;
+    $this->ct["first_name"] = $msg["from"]["first_name"];
+    $this->ct["last_name"] = $msg["from"]["last_name"] ?? null;
     $this->ct["msg_id"]  = $msg["chat_id"];
     $this->ct["update_id"] = $in["update_id"];
     $this->ct["date"] = $in["date"] ?? null;
+    $this->ct["chat_type"] = $msg["chat"]["type"];
+    $this->ct["username"] = $msg["from"]["username"] ?? null;
     $this->ct["is_forwarded_msg"] = isset($msg["forward_date"], $msg["forward_from"]);
   }
 

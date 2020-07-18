@@ -2,6 +2,9 @@
 
 namespace TeaBot\Telegram;
 
+use TeaBot\Telegram\Loggers\GroupLogger;
+use TeaBot\Telegram\Loggers\PrivateLogger;
+
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
  * @license MIT
@@ -30,6 +33,19 @@ final class Logger
    */
   public function run()
   {
-    var_dump($this->data);
+    if (isset($this->data["msg_type"])) {
+
+      if ($this->data["chat_type"] == "private") {
+        $logger = new PrivateLogger($this->data);
+      } else {
+        $logger = new GroupLogger($this->data);
+      }
+
+      switch ($this->data["msg_type"]) {
+        case "text":
+          $logger->logText();
+          break;
+      }
+    }
   }
 }

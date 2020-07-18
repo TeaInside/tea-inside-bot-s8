@@ -11,6 +11,6 @@ use TeaBot\Telegram\Contracts\LoggerInterface;
  * @package \TeaBot\Telegram\Loggers
  * @version 8.0.0
  */
-class GroupLoggers extends LoggerFoundation implements LoggerInteraface
+class GroupLogger extends LoggerFoundation implements LoggerInterface
 {
 }
