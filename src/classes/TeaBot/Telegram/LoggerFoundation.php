@@ -12,7 +12,7 @@ use TeaBot\Exe;
  * @package \TeaBot\Telegram
  * @version 8.0.0
  */
-abstract class LoggerInterface
+abstract class LoggerFoundation
 {
   /**
    * @var \Data

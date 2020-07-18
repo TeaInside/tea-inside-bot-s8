@@ -2,6 +2,7 @@
 
 namespace TeaBot\Telegram;
 
+use DB;
 use Error;
 
 /**
@@ -25,22 +26,6 @@ final class TeaBot
   public function __construct(array &$data)
   {
     $this->data = new Data($data);
-    $pdo = \DB::pdo();
-    $x = $pdo->prepare("SELECT 1,sleep(2);");
-    $x->execute();
-    var_dump($x->fetchAll(\PDO::FETCH_ASSOC));
-    $pdo = \DB::pdo();
-    $x = $pdo->prepare("SELECT 1,sleep(2);");
-    $x->execute();
-    var_dump($x->fetchAll(\PDO::FETCH_ASSOC));
-    $pdo = \DB::pdo();
-    $x = $pdo->prepare("SELECT 1,sleep(2);");
-    $x->execute();
-    var_dump($x->fetchAll(\PDO::FETCH_ASSOC));
-    $pdo = \DB::pdo();
-    $x = $pdo->prepare("SELECT 1,sleep(2);");
-    $x->execute();
-    var_dump($x->fetchAll(\PDO::FETCH_ASSOC));
   }
 
   /**
@@ -48,7 +33,7 @@ final class TeaBot
    */
   public function __destruct()
   {
-    \DB::close();
+    DB::close();
   }
 
   /**
@@ -56,8 +41,8 @@ final class TeaBot
    */
   public function run(): void
   {
-    $res = new Response($this->data);
-    $res->execRoutes();
+    // $res = new Response($this->data);
+    // $res->execRoutes();
   }
 
   /**
@@ -86,7 +71,7 @@ final class TeaBot
     );
 
     try {
-      $this->errorReportReal($strErr, $inputData);
+      $this->errorSendReport($strErr, $inputData);
     } catch (Error $e2) {
       // In case the reporter also error.
       $now = date("c");
@@ -103,7 +88,7 @@ final class TeaBot
    * @param string $inputData
    * @return void
    */
-  private function errorReportReal(string $strErr, string $inputData): void
+  private function errorSendReport(string $strErr, string $inputData): void
   {
     if (is_array(TELEGRAM_ERROR_REPORT_CHAT_ID)) {
       foreach (TELEGRAM_ERROR_REPORT_CHAT_ID as $chatId) {

@@ -54,7 +54,8 @@ go(function () {
           $bot = new \TeaBot\Telegram\TeaBot($r);
           $bot->run();
         } catch (\Error $e) {
-          $bot->errorReport($e);
+          // $bot->errorReport($e);
+          throw $e;
         }
         unset($bot);
       });

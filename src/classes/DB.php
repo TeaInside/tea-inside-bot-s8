@@ -21,6 +21,7 @@ final class DB
 
     if (!isset($dbCollections[$cid])) {
       $dbCollections[$cid] = new \PDO(...PDO_PARAM);
+      $dbCollections[$cid]->exec("SET @@global.time_zone = '+00:00';");
     }
 
     return $dbCollections[$cid];
