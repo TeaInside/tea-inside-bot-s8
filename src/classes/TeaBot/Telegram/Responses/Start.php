@@ -49,6 +49,8 @@ final class Start extends ResponseFoundation
             "message_id" => $v["result"]["message_id"]
           ]
         );
+      } else {
+        echo "Cannot find message to delete!\n";
       }
     }
 

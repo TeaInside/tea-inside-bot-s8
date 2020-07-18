@@ -30,6 +30,6 @@ final class Logger
    */
   public function run()
   {
-    
+    var_dump($this->data);
   }
 }

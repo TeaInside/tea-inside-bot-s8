@@ -2,6 +2,7 @@
 
 namespace TeaBot\Telegram;
 
+use Exception;
 use ArrayAccess;
 
 /**
@@ -20,90 +21,78 @@ final class Data implements ArrayAccess
   /**
    * @var array
    */
-  public $in;
+  private $in;
 
   /**
    * @var array
    */
-  public $ct;
+  private $ct;
 
   /**
-   * @param array &$data
+   * @param array &$in
    *
    * Constructor.
    */
-  public function __construct(array &$data)
+  public function __construct(array &$in)
   {
-    $this->in = $data;
+    $this->in = $in;
     $this->ct["in"] = &$this->in;
 
-    if (isset($this->in["message"]["photo"])) {
-      $this->ct["photo"] = &$this->in["message"]["photo"];
-      $this->ct["text"] = &$this->in["message"]["caption"];
-      $this->ct["msg_type"] = "photo";
-      $this->buildGeneralMessage();
-    } else if (isset($this->in["message"]["text"])) {
-      $this->ct["text"] = &$this->in["message"]["text"];
-      $this->ct["msg_type"] = "text";
-      $this->buildGeneralMessage();
-    } else if (isset($this->in["message"]["new_chat_members"])) {
-      $this->ct["chat_id"] = &$this->in["message"]["chat"]["id"];
-      $this->ct["msg_id"] = &$this->in["message"]["message_id"];
-      $this->ct["msg_type"] = "new_chat_member";
-      $this->ct["new_chat_members"] = $this->in["message"]["new_chat_members"];
+    if (isset($in["update_id"], $in["message"])) {
+
+      $msg = $in["message"];
+
+      if (isset($msg["text"])) {
+        $this->ct["msg_type"] = "text";
+        $this->ct["text"] = $msg["text"];
+        $this->ct["text_entities"] = $msg["entities"] ?? null;
+      } else
+      if (isset($msg["photo"])) {
+        $this->ct["msg_type"] = "photo";
+        $this->ct["text"] = $msg["caption"] ?? null;
+        $this->ct["text_entities"] = $msg["caption_entities"] ?? null;
+      } else
+      if (isset($msg["sticker"])) {
+        $this->ct["msg_type"] = "sticker";
+        $this->ct["text"] = $msg["sticker"]["emoji"] ?? null;
+      } else
+      if (isset($msg["animation"])) {
+        $this->ct["msg_type"] = "animation";
+        $this->ct["text"] = $msg["caption"] ?? null;
+        $this->ct["text_entities"] = $msg["caption_entities"] ?? null;
+      } else
+      if (isset($msg["voice"])) {
+        $this->ct["msg_type"] = "voice";
+        $this->ct["text"] = $msg["caption"] ?? null;
+        $this->ct["text_entities"] = $msg["caption_entities"] ?? null;
+      } else
+      if (isset($msg["video"])) {
+        $this->ct["msg_type"] = "video";
+        $this->ct["text"] = $msg["caption"] ?? null;
+        $this->ct["text_entities"] = $msg["caption_entities"] ?? null;
+      } else {
+        $this->ct["msg_type"] = "unknown";
+      }
+
+      $this->buildGeneralMsg($msg, $in);
     }
   }
 
   /**
-  * @return void
-  */
-  private function buildGeneralMessage()
+   * @param  array $msg
+   * @param  array $in
+   * @return void
+   */
+  private function buildGeneralMsg($msg, $in): void
   {
-    $this->ct["event_type"] = self::MSG_TYPE_GENERAL;
-
-    if (isset($this->in["message"]["from"]["username"])) {
-      $this->ct["username"] = &$this->in["message"]["from"]["username"];
-    } else {
-      $this->ct["username"] = null;
-    }
-
-    // if (isset($this->in["message"]["from"]["language_code"])) {
-    //   $this->ct["lang"] = &$this->in["message"]["from"]["language_code"];
-    //   Lang::init($this->ct["lang"]);
-    // } else {
-    //   $this->ct["lang"] = null;
-    //   Lang::init("en");
-    // }
-
-    $this->ct["update_id"] = &$this->in["update_id"];
-    $this->ct["msg_id"] = &$this->in["message"]["message_id"];
-    $this->ct["chat_id"] = &$this->in["message"]["chat"]["id"];
-    $this->ct["chat_title"] = &$this->in["message"]["chat"]["title"];
-    $this->ct["user_id"] = &$this->in["message"]["from"]["id"];
-    $this->ct["is_bot"] = &$this->in["message"]["from"]["is_bot"];
-    $this->ct["first_name"] = &$this->in["message"]["from"]["first_name"];
-    $this->ct["date"] = &$this->in["message"]["date"];
-    $this->ct["reply"] = &$this->in["message"]["reply_to_message"];
-
-    if (isset($this->in["message"]["from"]["last_name"])) {
-      $this->ct["last_name"] = &$this->in["message"]["from"]["last_name"];
-    } else {
-      $this->ct["last_name"] = null;
-    }
-
-    if (isset($this->in["message"]["entities"])) {
-      $this->ct["entities"] = &$this->in["message"]["entities"];
-    } else {
-      $this->ct["entities"] = null;
-    }
-
-    if ($this->in["message"]["chat"]["type"] === "private") {
-      $this->ct["chat_type"] = "private";
-    } else {
-      $this->ct["chat_type"] = "group";
-      $this->ct["group_name"] = &$this->in["message"]["chat"]["title"];
-      $this->ct["group_username"] = &$this->in["message"]["chat"]["username"];
-    }
+    $this->ct["msg"] = $msg;
+    $this->ct["from"] = $msg["from"];
+    $this->ct["chat"] = $msg["chat"];
+    $this->ct["chat_id"] = $msg["chat"]["id"];
+    $this->ct["msg_id"]  = $msg["chat_id"];
+    $this->ct["update_id"] = $in["update_id"];
+    $this->ct["date"] = $in["date"] ?? null;
+    $this->ct["is_forwarded_msg"] = isset($msg["forward_date"], $msg["forward_from"]);
   }
 
   /**
@@ -125,7 +114,7 @@ final class Data implements ArrayAccess
    */
   public function offsetSet($key, $data)
   {
-    $this->ct[$key] = $data;
+    throw new Exception("Cannot do offsetSet!");
   }
 
   /**
