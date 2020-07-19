@@ -18,5 +18,12 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
    */
   public function logText(): void
   {
+    $groupId = self::groupInsert(
+      [
+        "tg_group_id" => $this->data["chat_id"],
+        "name" => $this->data["chat_title"],
+        "username" => $this->data["chat_username"]
+      ]
+    );
   }
 }
