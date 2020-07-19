@@ -3,9 +3,9 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345849662,
+    "update_id": 345849982,
     "message": {
-        "message_id": 82012,
+        "message_id": 2793,
         "from": {
             "id": 243692601,
             "is_bot": false,
@@ -15,23 +15,28 @@ $json = '{
             "language_code": "en"
         },
         "chat": {
-            "id": 243692601,
-            "first_name": "Ammar",
-            "last_name": "Faizi",
-            "username": "ammarfaizi2",
-            "type": "private",
-            "title": null
+            "id": -1001149709623,
+            "title": "Test Driven Development",
+            "type": "supergroup",
+            "username": null
         },
-        "date": 1595074777,
-        "forward_from": {
-            "id": 243692601,
-            "is_bot": false,
-            "first_name": "Ammar",
-            "last_name": "Faizi",
-            "username": "ammarfaizi2",
-            "language_code": "en"
+        "date": 1595141419,
+        "reply_to_message": {
+            "message_id": 2668,
+            "from": {
+                "id": 466965678,
+                "is_bot": true,
+                "first_name": "Tea Inside",
+                "username": "TeaInsideBot"
+            },
+            "chat": {
+                "id": -1001149709623,
+                "title": "Test Driven Development",
+                "type": "supergroup"
+            },
+            "date": 1595121822,
+            "text": "This command can only be used in private message!"
         },
-        "forward_date": 1586456036,
         "text": "/debug",
         "entities": [
             {
@@ -39,23 +44,23 @@ $json = '{
                 "length": 6,
                 "type": "bot_command"
             }
-        ],
-        "reply_to_message": null
+        ]
     }
 }';
 
 
 loadConfig("telegram/telegram_bot");
 
-
-$ch = curl_init(
-  "http://127.0.0.1:8000/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY);
-curl_setopt_array($ch,
-  [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => TRUE,
-    CURLOPT_POSTFIELDS => $json
-  ]
-);
-echo curl_exec($ch)."\n";
-curl_close($ch);
+go(function () use ($json) {
+  $saber = \Swlib\Saber::create(
+   [
+    "base_uri" => "http://127.0.0.1:8000",
+    "headers" => ["Content-Type" => \Swlib\Http\ContentType::JSON]
+   ]
+  );
+  $ret = $saber->post(
+    "/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY,
+    json_decode($json, true)
+  );
+  echo $ret->getBody()->__toString()."\n";
+});

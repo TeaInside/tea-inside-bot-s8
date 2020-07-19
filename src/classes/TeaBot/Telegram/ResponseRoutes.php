@@ -15,11 +15,16 @@ trait ResponseRoutes
    */
   public function execRoutes(): bool
   {
-    /**
-     * Start command.
-     */
+    /* Start command. */
     if (preg_match("/^(\/|\!|\~|\.)start$/USsi", $this->data["text"])) {
       if ($this->rtExec(Responses\Start::class, "start")) {
+        return true;
+      }
+    }
+
+    /* Debug command. */
+    if (preg_match("/^(\/|\!|\~|\.)debug$/USsi", $this->data["text"])) {
+      if ($this->rtExec(Responses\Debug::class, "debug")) {
         return true;
       }
     }

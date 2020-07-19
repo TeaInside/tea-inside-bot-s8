@@ -41,14 +41,15 @@ final class TeaBot
    */
   public function run(): void
   {
-    // Run the logger.
     go(function () {
+      // Run the logger.
       $logger = new Logger($this->data);
       $logger->run();
+      DB::close();
     });
 
-    $res = new Response($this->data);
-    $res->execRoutes();
+    // $res = new Response($this->data);
+    // $res->execRoutes();
   }
 
   /**
@@ -60,32 +61,25 @@ final class TeaBot
     $strInput = json_encode($this->data->in, JSON_UNESCAPED_SLASHES);
     $inputHash = sha1($strInput);
 
-    $strErr =
-      "{$now}\n[error:{$inputHash}]\n".
+    $strErr = "{$now}\n[error:{$inputHash}]\n".
       $e->__toString();
 
-    $inputData =
-      "[input_data:{$inputHash}]\n".
+    $inputData = "[input_data:{$inputHash}]\n".
       base64_encode(gzencode($strInput, 9));
 
 
-    // Write to server error log.
-    file_put_contents(
-      STORAGE_PATH."/daemon_error.log",
-      "{$strErr}\n{$inputData}\n\n",
-      FILE_APPEND | LOCK_EX
-    );
+    /* Write to server error log. */
+    file_put_contents(STORAGE_PATH."/daemon_error.log",
+      "{$strErr}\n{$inputData}\n\n", FILE_APPEND | LOCK_EX);
 
     try {
       $this->errorSendReport($strErr, $inputData);
     } catch (Error $e2) {
-      // In case the reporter also error.
+
+      /* In case the reporter also error. */
       $now = date("c");
-      file_put_contents(
-        STORAGE_PATH."/daemon_error.log",
-        "{$now}\n[Reporter Error]\n{$e2}\n\n",
-        FILE_APPEND | LOCK_EX
-      );
+      file_put_contents(STORAGE_PATH."/daemon_error.log",
+        "{$now}\n[Reporter Error]\n{$e2}\n\n", FILE_APPEND | LOCK_EX);
     }
   }
 
@@ -107,6 +101,7 @@ final class TeaBot
           )->getBody()->__toString(),
           true
         );
+
         Exe::sendMessage(
           [
             "chat_id" => $chatId,
@@ -125,6 +120,7 @@ final class TeaBot
         )->getBody()->__toString(),
         true
       );
+
       Exe::sendMessage(
         [
           "chat_id" => $chatId,

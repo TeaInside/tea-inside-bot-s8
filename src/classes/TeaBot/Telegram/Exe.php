@@ -6,6 +6,7 @@ use Swlib\Saber;
 use Swlib\Http\Uri;
 use Swlib\Http\ContentType;
 use Swlib\Http\BufferStream;
+use Swlib\Http\Exception\ConnectException;
 use Swlib\Http\Exception\TransferException;
 
 /**
@@ -41,6 +42,8 @@ final class Exe
     } catch (TransferException $e) {
       $ret = $e->getResponse();
       if (is_null($ret) && ($tryCounter <= 5)) goto try_ll;
+    } catch (ConnectException $e) {
+      if ($tryCounter <= 5) goto try_ll;
     }
     return $ret;
   }

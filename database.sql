@@ -1,6 +1,6 @@
 -- Adminer 4.7.6 MySQL dump
 
-SET NAMES utf8;
+SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 SET foreign_key_checks = 0;
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
@@ -17,7 +17,7 @@ CREATE TABLE `tg_files` (
   `ext` varchar(32) CHARACTER SET utf8 DEFAULT NULL,
   `size` bigint(20) unsigned DEFAULT NULL,
   `hit_count` bigint(20) unsigned NOT NULL DEFAULT '1',
-  `description` text COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_520_ci,
   `created_at` datetime NOT NULL,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -63,8 +63,8 @@ CREATE TABLE `tg_group_admins` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) unsigned NOT NULL,
   `group_id` bigint(20) unsigned NOT NULL,
-  `role` enum('creator','admin') NOT NULL DEFAULT 'admin',
-  `permissions` text NOT NULL,
+  `role` enum('creator','administrator','member','restricted','left','kicked') NOT NULL DEFAULT 'administrator',
+  `permissions` json DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -81,21 +81,21 @@ CREATE TABLE `tg_group_admins` (
 DROP TABLE IF EXISTS `tg_group_history`;
 CREATE TABLE `tg_group_history` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `group_id` bigint(20) unsigned DEFAULT NULL,
+  `group_id` bigint(20) unsigned NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `username` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `link` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `photo` bigint(20) unsigned DEFAULT NULL,
   `created_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `group_id` (`group_id`),
-  KEY `photo` (`photo`),
   KEY `name` (`name`),
   KEY `username` (`username`),
   KEY `link` (`link`),
   KEY `created_at` (`created_at`),
-  CONSTRAINT `tg_group_history_ibfk_3` FOREIGN KEY (`group_id`) REFERENCES `tg_groups` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `tg_group_history_ibfk_4` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `group_id` (`group_id`),
+  KEY `photo` (`photo`),
+  CONSTRAINT `tg_group_history_ibfk_6` FOREIGN KEY (`group_id`) REFERENCES `tg_groups` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tg_group_history_ibfk_7` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
@@ -108,6 +108,7 @@ CREATE TABLE `tg_group_messages` (
   `reply_to_tg_msg_id` bigint(20) unsigned DEFAULT NULL,
   `msg_type` varchar(255) DEFAULT NULL,
   `has_edited_msg` enum('0','1') NOT NULL DEFAULT '0',
+  `is_forwarded_msg` enum('0','1') NOT NULL DEFAULT '0',
   `tg_date` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -131,19 +132,36 @@ CREATE TABLE `tg_group_message_data` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `msg_id` bigint(20) unsigned NOT NULL,
   `text` text COLLATE utf8mb4_unicode_520_ci,
-  `text_entities` text CHARACTER SET utf8,
+  `text_entities` json DEFAULT NULL,
   `file` bigint(20) unsigned DEFAULT NULL,
   `is_edited` enum('0','1') CHARACTER SET utf8 NOT NULL DEFAULT '0',
+  `tg_date` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `msg_id` (`msg_id`),
   KEY `file` (`file`),
   KEY `is_edited` (`is_edited`),
   KEY `created_at` (`created_at`),
+  KEY `tg_date` (`tg_date`),
   FULLTEXT KEY `text` (`text`),
   CONSTRAINT `tg_group_message_data_ibfk_3` FOREIGN KEY (`msg_id`) REFERENCES `tg_group_messages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `tg_group_message_data_ibfk_4` FOREIGN KEY (`file`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+
+DROP TABLE IF EXISTS `tg_group_message_fwd`;
+CREATE TABLE `tg_group_message_fwd` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `msg_id` bigint(20) unsigned NOT NULL,
+  `tg_forwarded_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `tg_forwarded_date` (`tg_forwarded_date`),
+  KEY `user_id` (`user_id`),
+  KEY `msg_id` (`msg_id`),
+  CONSTRAINT `tg_group_message_fwd_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `tg_users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tg_group_message_fwd_ibfk_4` FOREIGN KEY (`msg_id`) REFERENCES `tg_group_messages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 DROP TABLE IF EXISTS `tg_private_messages`;
@@ -154,6 +172,7 @@ CREATE TABLE `tg_private_messages` (
   `reply_to_tg_msg_id` bigint(20) unsigned DEFAULT NULL,
   `msg_type` varchar(255) NOT NULL,
   `has_edited_msg` enum('0','1') NOT NULL DEFAULT '0',
+  `is_forwarded_msg` enum('0','1') NOT NULL DEFAULT '0',
   `tg_date` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -173,28 +192,45 @@ CREATE TABLE `tg_private_message_data` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `msg_id` bigint(20) unsigned NOT NULL,
   `text` text COLLATE utf8mb4_unicode_520_ci,
-  `text_entities` text CHARACTER SET utf8,
+  `text_entities` json DEFAULT NULL,
   `file` bigint(20) unsigned DEFAULT NULL,
   `is_edited` enum('0','1') COLLATE utf8mb4_unicode_520_ci NOT NULL DEFAULT '0',
+  `tg_date` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `msg_id` (`msg_id`),
   KEY `file` (`file`),
   KEY `is_edited` (`is_edited`),
   KEY `created_at` (`created_at`),
+  KEY `tg_date` (`tg_date`),
   FULLTEXT KEY `text` (`text`),
   CONSTRAINT `tg_private_message_data_ibfk_3` FOREIGN KEY (`msg_id`) REFERENCES `tg_private_messages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `tg_private_message_data_ibfk_4` FOREIGN KEY (`file`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
+DROP TABLE IF EXISTS `tg_private_message_fwd`;
+CREATE TABLE `tg_private_message_fwd` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `msg_id` bigint(20) unsigned NOT NULL,
+  `tg_forwarded_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `msg_id` (`msg_id`),
+  KEY `tg_forwarded_date` (`tg_forwarded_date`),
+  CONSTRAINT `tg_private_message_fwd_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `tg_users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tg_private_message_fwd_ibfk_4` FOREIGN KEY (`msg_id`) REFERENCES `tg_private_messages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 DROP TABLE IF EXISTS `tg_users`;
 CREATE TABLE `tg_users` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `tg_user_id` bigint(20) unsigned NOT NULL,
-  `username` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `username` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `first_name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `last_name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `last_name` varchar(255) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `photo` bigint(20) unsigned DEFAULT NULL,
   `group_msg_count` bigint(20) unsigned NOT NULL DEFAULT '0',
   `private_msg_count` bigint(20) unsigned NOT NULL DEFAULT '0',
@@ -236,4 +272,4 @@ CREATE TABLE `tg_user_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
--- 2020-07-18 08:54:55
+-- 2020-07-19 08:07:11
