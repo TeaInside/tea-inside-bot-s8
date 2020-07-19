@@ -36,7 +36,7 @@ abstract class LoggerFoundation
    * @param bool   $addHitCount
    * @return ?int
    */
-  public static function fileResolve(string $tgFileId, bool $addHitCount = false): ?int
+  public static function fileResolve(string $tgFileId, bool $addHitCount = true): ?int
   {
     /**
      * Check the $tgFileId in database.
@@ -53,7 +53,7 @@ abstract class LoggerFoundation
     if ($r = $st->fetch(PDO::FETCH_NUM)) {
 
       if ($addHitCount) {
-        $pdo->prepare("UPDATE `files` SET `hit_count`=`hit_count`+1 WHERE `id`=?")
+        $pdo->prepare("UPDATE `tg_files` SET `hit_count`=`hit_count`+1 WHERE `id`=?")
           ->execute([$r[0]]);
       }
 
@@ -133,7 +133,7 @@ abstract class LoggerFoundation
         ]
       );
 
-    return $fileId;
+    return $pdo->lastInserId();
   }
 
   /**

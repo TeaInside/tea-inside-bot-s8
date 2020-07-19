@@ -49,7 +49,24 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
     $st->execute([$groupId, $this->data["msg_id"]]);
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
-      
+
+      /**
+       * In case forwarded message gets edited.
+       * It may be impossible in Telegram.
+       */
+      if ($this->data["is_forwarded_msg"]) {
+        $ff = $this->data["msg"]["forward_from"];
+        self::userInsert(
+          [
+            "tg_user_id" => $ff["id"],
+            "username" => $ff["username"] ?? null,
+            "first_name" => $ff["first_name"],
+            "last_name" => $ff["last_name"] ?? null,
+            "is_bot" => $ff["is_bot"] ? 1 : 0
+          ]
+        );
+      }
+
     } else {
 
       /* Insert new message. */
