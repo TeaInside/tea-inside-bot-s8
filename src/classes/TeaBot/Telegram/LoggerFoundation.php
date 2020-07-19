@@ -479,9 +479,16 @@ abstract class LoggerFoundation
 
       $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
 
-      $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW())")->execute($data);
-      $createGroupHistory = true;
+      $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)")->execute($data);
+      $createGroupHistory = ($pdo->rowCount() == 1);
       $data["group_id"] = $pdo->lastInsertId();
+
+      if ($createGroupHistory) {
+        echo "conflict!\n";
+        var_dump("ret group: ".$data["group_id"]." ".$data["tg_group_id"]);
+      } else {
+        echo "no conflict!\n";
+      }
 
       self::groupAdminResolve($data["tg_group_id"], $data["group_id"]);
     }
@@ -495,7 +502,7 @@ abstract class LoggerFoundation
       }, ARRAY_FILTER_USE_KEY);
 
       /* Record group history. */
-      $pdo->prepare("INSERT INTO `tg_group_history` (`group_id`, `name`, `username`, `link`, `photo`, `created_at`) VALUES (:group_id, :name, :username, :link, :photo, NOW());")->execute($data);
+      $pdo->prepare("INSERT INTO `tg_group_history` (`group_id`, `name`, `username`, `link`, `photo`, `created_at`) VALUES (:group_id, :name, :username, :link, :photo, NOW())")->execute($data);
     }
 
 
@@ -614,12 +621,13 @@ abstract class LoggerFoundation
       $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
       /* Insert new user to database. */
-      $st = $pdo->prepare("INSERT IGNORE INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
+      $st = $pdo->prepare("INSERT INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
 
       $createUserHistory = ($st->rowCount() == 1);
       $data["user_id"] = $pdo->lastInsertId();
-      if ($createUserHistory == 2) {
+
+      if (!$createUserHistory) {
         echo "conflict!\n";
         var_dump("ret: ".$data["user_id"]." ".$data["tg_user_id"]);
       } else {
@@ -636,7 +644,7 @@ abstract class LoggerFoundation
       }, ARRAY_FILTER_USE_KEY);
 
       /* Record user history. */
-      $pdo->prepare("INSERT INTO `tg_user_history` (`user_id`, `username`, `first_name`, `last_name`, `photo`, `created_at`) VALUES (:user_id, :username, :first_name, :last_name, :photo, NOW());")
+      $pdo->prepare("INSERT INTO `tg_user_history` (`user_id`, `username`, `first_name`, `last_name`, `photo`, `created_at`) VALUES (:user_id, :username, :first_name, :last_name, :photo, NOW())")
         ->execute($data);
 
     }
