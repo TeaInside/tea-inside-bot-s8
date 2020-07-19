@@ -38,7 +38,7 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
         [
           $userId,
           $this->data["msg_id"],
-          null, // reply to
+          $this->data["reply_to"]["message_id"] ?? null,
           $this->data["is_forwarded_msg"] ? 1 : 0,
           date("Y-m-d H:i:s", $this->data["date"])
         ]
