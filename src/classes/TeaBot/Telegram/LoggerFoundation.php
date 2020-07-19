@@ -149,7 +149,7 @@ abstract class LoggerFoundation
     }
 
     if (is_string($data["username"])) {
-      $data["link"] = "https://t.me/".$username;
+      $data["link"] = "https://t.me/".$data["username"];
     } else {
       $data["link"] = null;
     }
@@ -159,7 +159,7 @@ abstract class LoggerFoundation
      * stored in database or not.
      */
     $pdo = DB::pdo();
-    $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ?");
+    $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`link`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ?");
     $st->execute([$data["tg_group_id"]]);
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
@@ -190,10 +190,26 @@ abstract class LoggerFoundation
         $exeUpdate = $createGroupHistory = true;
       }
 
+      if ($data["link"] != $u["link"]) {
+        $query .= ($exeUpdate ? "," : "")."`link`=:link";
+        $updateData["link"] = $data["link"];
+        $exeUpdate = $createGroupHistory = true; 
+      }
+
       if ($exeUpdate) {
         $query .= " WHERE `id` = :id";
         $updateData["id"] = $u["id"];
         $pdo->prepare($query)->execute($updateData);
+
+        /**
+         * In case createGroupHistory is true,
+         * we should assume the photo is the
+         * same as before if and only if the
+         * logger does not fetch the photo.
+         */
+        if ($createGroupHistory && is_null($data["photo"])) {
+          $data["photo"] = $u["photo"];
+        }
       }
 
       $data["group_id"] = $u["id"];
@@ -310,20 +326,20 @@ abstract class LoggerFoundation
         $exeUpdate = $createUserHistory = true;
       }
 
-      /**
-       * In case createUserHistory is true,
-       * we should assume the photo is the
-       * same as before if and only if the
-       * logger does not fetch the photo.
-       */
-      if (is_null($data["photo"])) {
-        $data["photo"] = $u["photo"];
-      }
-
       if ($exeUpdate) {
         $query .= " WHERE `id` = :id";
         $updateData["id"] = $u["id"];
         $pdo->prepare($query)->execute($updateData);
+
+        /**
+         * In case createUserHistory is true,
+         * we should assume the photo is the
+         * same as before if and only if the
+         * logger does not fetch the photo.
+         */
+        if ($createUserHistory && is_null($data["photo"])) {
+          $data["photo"] = $u["photo"];
+        }
       }
 
       $data["user_id"] = $u["id"];
