@@ -36,4 +36,13 @@ final class DB
     global $dbCollections;
     unset($dbCollections[Swoole\Coroutine::getCid()]);
   }
+
+  /**
+   * @return void
+   */
+  public static function dumpConnections()
+  {
+    global $dbCollections;
+    var_dump($dbCollections);
+  }
 }

@@ -45,6 +45,7 @@ final class TeaBot
       // Run the logger.
       $logger = new Logger($this->data);
       $logger->run();
+      DB::close();
     });
 
     $res = new Response($this->data);

@@ -6,6 +6,7 @@ use DB;
 use PDO;
 use Swlib\SaberGM;
 use TeaBot\Telegram\Exe;
+use Swoole\Coroutine\Channel;
 use TeaBot\Telegram\Exceptions\LoggerException;
 
 /**
@@ -280,6 +281,78 @@ abstract class LoggerFoundation
     return null;
   }
 
+
+  /**
+   * @param int  $tgGroupId
+   * @param ?int $groupId
+   * @return void
+   */
+  public static function groupAdminResolve(int $tgGroupId, ?int $groupId = null): void
+  {
+    $data = json_decode(
+      Exe::getChatAdministrators(
+        ["chat_id" => $tgGroupId]
+      )->getBody()->__toString(),
+      true
+    );
+
+    if (isset($data["result"])) {
+
+      $pdo = DB::pdo();
+
+      if (is_null($groupId)) {
+        $st = $pdo->prepare("SELECT `id` FROM `tg_groups` WHERE `tg_group_id` = ?");
+        $st->execute([$tgGroupId]);
+        if (!($r = $st->fetch(PDO::FETCH_NUM))) {
+          return;
+        }
+        $groupId = $r[0];
+      }
+
+      $channel = new Channel;
+      foreach ($data["result"] as $k => $v) {
+        go(function () use ($k, $v, $channel, $groupId) {
+          $userId = self::userInsert(
+            [
+              "tg_user_id" => $v["user"]["id"],
+              "first_name" => $v["user"]["first_name"],
+              "last_name" => $v["user"]["last_name"] ?? null,
+              "username" => $v["user"]["username"],
+              "is_bot" => $v["user"]["is_bot"] ? 1 : 0
+            ]
+          );
+          $role = $v["status"];
+          unset($v["status"], $v["user"]);
+          $channel->push(
+            [
+              [$userId, $groupId, $role, count($v) ? json_encode($v) : null],
+              "(?,?,?,?,NOW())"
+            ]
+          );
+          DB::close();
+        });
+      }
+
+      $c = count($data["result"]);
+      $query = "INSERT INTO `tg_group_admins` (`user_id`,`group_id`,`role`,`permissions`,`created_at`) VALUES ";
+
+      $data = [];
+      for ($i = 0; $i < $c; $i++) { 
+        $v = $channel->pop();
+        $data = array_merge($data, $v[0]);
+        $query .= ($i ? "," : "").$v[1];
+      }
+
+      $pdo->prepare("DELETE FROM `tg_group_admins` WHERE `group_id` = ?")
+        ->execute([$groupId]);
+      $pdo->exec("ALTER TABLE `tg_group_admins` AUTO_INCREMENT = 1");
+      if (count($data)) {
+        $pdo->prepare($query)->execute($data);
+      }
+    }
+  }
+
+
   /**
    * @const array
    */
@@ -405,6 +478,8 @@ abstract class LoggerFoundation
       $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW())")->execute($data);
       $createGroupHistory = true;
       $data["group_id"] = $pdo->lastInsertId();
+
+      self::groupAdminResolve($data["tg_group_id"]/*, $data["group_id"]*/);
     }
 
 

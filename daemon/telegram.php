@@ -58,6 +58,8 @@ go(function () {
             $bot->errorReport($e);
           }
 
+          DB::dumpConnections();
+
         } else {
           fwrite($conn, "fail");
           fclose($conn);
