@@ -2,6 +2,8 @@
 
 namespace TeaBot\Telegram;
 
+use DB;
+use PDO;
 use TeaBot\Telegram\Loggers\GroupLogger;
 use TeaBot\Telegram\Loggers\PrivateLogger;
 

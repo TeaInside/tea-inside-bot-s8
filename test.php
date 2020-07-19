@@ -3,13 +3,13 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345849528,
+    "update_id": 345849662,
     "message": {
-        "message_id": 82000,
+        "message_id": 82012,
         "from": {
             "id": 243692601,
             "is_bot": false,
-            "first_name": "zxczxc",
+            "first_name": "Ammar",
             "last_name": "Faizi",
             "username": "ammarfaizi2",
             "language_code": "en"
@@ -22,35 +22,25 @@ $json = '{
             "type": "private",
             "title": null
         },
-        "date": 1595064167,
-        "reply_to_message": {
-            "message_id": 81999,
-            "from": {
-                "id": 243692601,
-                "is_bot": false,
-                "first_name": "Ammar",
-                "last_name": "Faizi",
-                "username": "ammarfaizi2",
-                "language_code": "en"
-            },
-            "chat": {
-                "id": 243692601,
-                "first_name": "Ammar",
-                "last_name": "Faizi",
-                "username": "ammarfaizi2",
-                "type": "private"
-            },
-            "date": 1595064163,
-            "text": "\ud83d\ude0c\ud83d\ude0c"
+        "date": 1595074777,
+        "forward_from": {
+            "id": 243692601,
+            "is_bot": false,
+            "first_name": "Ammar",
+            "last_name": "Faizi",
+            "username": "ammarfaizi2",
+            "language_code": "en"
         },
-        "text": "/start",
+        "forward_date": 1586456036,
+        "text": "/debug",
         "entities": [
             {
                 "offset": 0,
                 "length": 6,
                 "type": "bot_command"
             }
-        ]
+        ],
+        "reply_to_message": null
     }
 }';
 
