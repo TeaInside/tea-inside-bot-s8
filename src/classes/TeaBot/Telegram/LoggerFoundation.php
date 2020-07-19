@@ -136,8 +136,36 @@ abstract class LoggerFoundation
     return $pdo->lastInserId();
   }
 
+  /** 
+   * @param string $tgGroupId
+   * @return ?int
+   */
+  public static function getLatestGroupPhoto(string $tgGroupId): ?int
+  {
+    $o = json_decode(
+        Exe::getChat(
+          [
+            "chat_id" => $tgGroupId
+          ]
+        )->getBody()->__toString(),
+        true
+    );
+    $currentFileId = $o["result"]["photo"]["big_file_id"] ?? null;
+
+    if (!is_null($photoId)) {
+      $st = $this->pdo->prepare("SELECT `telegram_file_id` FROM `files` WHERE `id` = :id LIMIT 1;");
+      $st->execute([":id" => $photoId]);
+      if (($r = $st->fetch(PDO::FETCH_ASSOC)) && ($r["telegram_file_id"] === $currentFileId)) {
+        return $photoId;
+      }
+    }
+
+    return static::fileResolve($currentFileId);
+  }
+
+
   /**
-   * @param $tgUserId
+   * @param string $tgUserId
    * @return ?int
    */
   public static function getLatestUserPhoto(string $tgUserId): ?int
