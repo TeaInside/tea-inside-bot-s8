@@ -33,9 +33,10 @@ abstract class LoggerFoundation
 
   /**
    * @param string $tgFileId
+   * @param bool   $addHitCount
    * @return ?int
    */
-  public static function fileResolve(string $tgFileId): ?int
+  public static function fileResolve(string $tgFileId, bool $addHitCount = false): ?int
   {
     /**
      * Check the $tgFileId in database.
@@ -50,6 +51,12 @@ abstract class LoggerFoundation
     $st->execute([$tgFileId]);
 
     if ($r = $st->fetch(PDO::FETCH_NUM)) {
+
+      if ($addHitCount) {
+        $pdo->prepare("UPDATE `files` SET `hit_count`=`hit_count`+1 WHERE `id`=?")
+          ->execute([$r[0]]);
+      }
+
       return (int)$r[0];
     }
 
@@ -113,7 +120,7 @@ abstract class LoggerFoundation
 
     rename($tmpFile, $targetFile);
 
-    $pdo->prepare("INSERT INTO `tg_files` (`tg_file_id`, `md5_sum`, `sha1_sum`, `file_type`, `ext`, `size`, `hit_count`, `description`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, 1, NULL, NOW())")
+    $pdo->prepare("INSERT INTO `tg_files` (`tg_file_id`, `md5_sum`, `sha1_sum`, `file_type`, `ext`, `size`, `hit_count`, `description`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NOW())")
       ->execute(
         [
           $tgFileId,
@@ -121,7 +128,8 @@ abstract class LoggerFoundation
           $sha1Hash,
           mime_content_type($targetFile),
           $fileExt,
-          filesize($targetFile)
+          filesize($targetFile),
+          $addHitCount ? 1 : 0
         ]
       );
 
