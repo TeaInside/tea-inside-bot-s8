@@ -327,7 +327,7 @@ abstract class LoggerFoundation
               "tg_user_id" => $v["user"]["id"],
               "first_name" => $v["user"]["first_name"],
               "last_name" => $v["user"]["last_name"] ?? null,
-              "username" => $v["user"]["username"],
+              "username" => $v["user"]["username"] ?? null,
               "is_bot" => $v["user"]["is_bot"] ? 1 : 0
             ]
           );
