@@ -36,7 +36,7 @@ abstract class LoggerFoundation
    * @param bool   $addHitCount
    * @return ?int
    */
-  public static function fileResolve(string $tgFileId, bool $addHitCount = true): ?int
+  public static function fileResolve(string $tgFileId, bool $addHitCount = false): ?int
   {
     /**
      * Check the $tgFileId in database.
