@@ -29,11 +29,11 @@ final class Data implements ArrayAccess
   private $ct;
 
   /**
-   * @param array &$in
+   * @param array $in
    *
    * Constructor.
    */
-  public function __construct(array &$in)
+  public function __construct(array $in)
   {
     $this->in = $in;
     $this->ct["in"] = &$this->in;
@@ -109,6 +109,22 @@ final class Data implements ArrayAccess
     $this->ct["chat_username"] = $msg["chat"]["username"] ?? null;
     $this->ct["is_forwarded_msg"] = isset($msg["forward_date"], $msg["forward_from"]);
     $this->ct["is_edited_msg"] = false;
+  }
+
+  /**
+   * @param mixed $idt
+   * @param int   $updateId
+   * @return \TeaBot\Telegram\Data
+   */
+  public static function buildMsg($idt, $updateId = -1): Data
+  {
+    return new self(
+      [
+        "update_id" => $updateId,
+        "message" => $idt,
+        "not_edit_event" => true
+      ]
+    );
   }
 
   /**

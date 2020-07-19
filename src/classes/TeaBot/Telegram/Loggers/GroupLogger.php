@@ -4,6 +4,8 @@ namespace TeaBot\Telegram\Loggers;
 
 use DB;
 use PDO;
+use TeaBot\Telegram\Data;
+use TeaBot\Telegram\Logger;
 use TeaBot\Telegram\LoggerFoundation;
 use TeaBot\Telegram\Contracts\LoggerInterface;
 
@@ -20,33 +22,47 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
    */
   public function logText(): void
   {
+    self::touchTextMessage($this->data);
+  }
+
+  /**
+   * @param \TeaBot\Telegram\Data $data
+   * @return void
+   */
+  public static function touchTextMessage(Data $data): void
+  {
     $groupId = self::groupInsert(
       [
-        "tg_group_id" => $this->data["chat_id"],
-        "name" => $this->data["chat_title"],
-        "username" => $this->data["chat_username"],
+        "tg_group_id" => $data["chat_id"],
+        "name" => $data["chat_title"],
+        "username" => $data["chat_username"],
         "msg_count" => 1
       ]
     );
 
     $userId = self::userInsert(
       [
-        "tg_user_id" => $this->data["user_id"],
-        "first_name" => $this->data["first_name"],
-        "last_name" => $this->data["last_name"],
-        "username" => $this->data["username"],
-        "is_bot" => $this->data["is_bot"] ? 1 : 0,
+        "tg_user_id" => $data["user_id"],
+        "first_name" => $data["first_name"],
+        "last_name" => $data["last_name"],
+        "username" => $data["username"],
+        "is_bot" => $data["is_bot"] ? 1 : 0,
         "group_msg_count" => 1
       ]
     );
 
-    /**
-     * First check whether the tg_msg_id has
-     * already been stored in database or not.
-     */
     $pdo = DB::pdo();
+
+    if (isset($data["reply_to"]["message_id"])) {
+      (new Logger(Data::buildMsg($data["reply_to"])))->run();
+    }
+
+    /**
+     * Check whether the tg_msg_id has already
+     * been stored in database or not.
+     */
     $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ?");
-    $st->execute([$groupId, $this->data["msg_id"]]);
+    $st->execute([$groupId, $data["msg_id"]]);
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
 
@@ -54,8 +70,8 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
        * In case forwarded message gets edited.
        * It may be impossible in Telegram.
        */
-      if ($this->data["is_forwarded_msg"]) {
-        $ff = $this->data["msg"]["forward_from"];
+      if ($data["is_forwarded_msg"]) {
+        $ff = $data["msg"]["forward_from"];
         self::userInsert(
           [
             "tg_user_id" => $ff["id"],
@@ -67,6 +83,10 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
         );
       }
 
+      if (!isset($data["in"]["not_edit_event"])) {
+        /* TODO: Save edited message here... */
+      }
+
     } else {
 
       /* Insert new message. */
@@ -75,19 +95,19 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
           [
             $groupId,
             $userId,
-            $this->data["msg_id"],
-            $this->data["reply_to"]["message_id"] ?? null,
-            $this->data["is_edited_msg"] ? 1 : 0,
-            $this->data["is_forwarded_msg"] ? 1 : 0,
-            date("Y-m-d H:i:s", $this->data["date"])
+            $data["msg_id"],
+            $data["reply_to"]["message_id"] ?? null,
+            $data["is_edited_msg"] ? 1 : 0,
+            $data["is_forwarded_msg"] ? 1 : 0,
+            date("Y-m-d H:i:s", $data["date"])
           ]
         );
 
       $msgId = $pdo->lastInsertId();
 
       /* Store forward message info. */
-      if ($this->data["is_forwarded_msg"]) {
-        $ff = $this->data["msg"]["forward_from"];
+      if ($data["is_forwarded_msg"]) {
+        $ff = $data["msg"]["forward_from"];
         $forwarderUserId = self::userInsert(
           [
             "tg_user_id" => $ff["id"],
@@ -103,7 +123,7 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
             [
               $forwarderUserId,
               $msgId,
-              date("Y-m-d H:i:s", $this->data["msg"]["forward_date"])
+              date("Y-m-d H:i:s", $data["msg"]["forward_date"])
             ]
           );
       }
@@ -112,10 +132,10 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
         ->execute(
           [
             $msgId,
-            $this->data["text"],
-            json_encode($this->data["text_entities"], JSON_UNESCAPED_SLASHES),
+            $data["text"],
+            json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
             null, /* file */
-            $this->data["is_edited_msg"] ? 1 : 0,
+            $data["is_edited_msg "] ? 1 : 0,
           ]
         );
     }
