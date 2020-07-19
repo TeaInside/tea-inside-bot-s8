@@ -33,7 +33,7 @@ go(function () {
     echo "Listening on ".$tcpAddr."...\n";
 
     while ($conn = stream_socket_accept($socket, -1)) {
-      go(function () use ($r, $conn) {
+      go(function () use ($conn) {
         stream_set_timeout($conn, 5);
 
         $data = fread($conn, 4096);
