@@ -66,7 +66,29 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
 
       $msgId = $pdo->lastInsertId();
 
-      $pdo->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW());")
+      /* Store forward message info. */
+      if ($this->data["is_forwarded_msg"]) {
+        $ff = $this->data["msg"]["forward_from"];
+        $forwarderUserId = self::userInsert(
+          [
+            "tg_user_id" => $ff["id"],
+            "username" => $ff["username"] ?? null,
+            "first_name" => $ff["first_name"],
+            "last_name" => $ff["last_name"] ?? null,
+            "is_bot" => $ff["is_bot"] ? 1 : 0
+          ]
+        );
+
+        $pdo->prepare("INSERT INTO `tg_group_message_fwd` (`user_id`, `msg_id`, `tg_forwarded_date`) VALUES (?, ?, ?)")
+          ->execute(
+            [
+              $forwarderUserId, $msgId,
+              date("Y-m-d H:i:s", $this->data["msg"]["forward_date"])
+            ]
+          );
+      }
+
+      $pdo->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())")
         ->execute(
           [
             $msgId,
