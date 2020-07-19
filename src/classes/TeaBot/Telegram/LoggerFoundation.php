@@ -132,7 +132,10 @@ abstract class LoggerFoundation
     is_dir(STORAGE_PATH."/telegram/files") or mkdir(STORAGE_PATH."/telegram/files");
     is_dir($tmpDownloadDir) or mkdir($tmpDownloadDir);
 
+    $tryCount = 0;
+    retry_download:
 
+    $tryCount++;
     /* Download the file. */
     $response = SaberGM::download(
       "https://api.telegram.org/file/bot".BOT_TOKEN."/".$v["result"]["file_path"],
@@ -142,6 +145,7 @@ abstract class LoggerFoundation
 
     /* Download failed. */
     if (!file_exists($tmpFile)) {
+      if ($tryCount <= 5) goto retry_download;
       return null;
     }
 
@@ -157,6 +161,12 @@ abstract class LoggerFoundation
     self::mkdirRecursive(STORAGE_PATH."/telegram/files/".$indexPath);
 
     rename($tmpFile, $targetFile);
+
+    $fileSize = filesize($targetFile);
+    if (!$fileSize) {
+      if ($tryCount <= 5) goto retry_download;
+      return null;
+    }
 
     /* Move file failed. */
     if (!file_exists($targetFile)) {
@@ -194,7 +204,7 @@ abstract class LoggerFoundation
             $sha1Hash,
             mime_content_type($targetFile),
             $fileExt,
-            filesize($targetFile),
+            $fileSize,
             $addHitCount ? 1 : 0
           ]
         );
@@ -622,6 +632,7 @@ abstract class LoggerFoundation
       $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
       /* Insert new user to database. */
+      $pdo->exec("ALTER TABLE `tg_group_admins` AUTO_INCREMENT = 1");
       $st = $pdo->prepare("INSERT INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
 
