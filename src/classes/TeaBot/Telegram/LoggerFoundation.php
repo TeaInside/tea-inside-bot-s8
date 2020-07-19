@@ -479,7 +479,7 @@ abstract class LoggerFoundation
       $createGroupHistory = true;
       $data["group_id"] = $pdo->lastInsertId();
 
-      self::groupAdminResolve($data["tg_group_id"]/*, $data["group_id"]*/);
+      self::groupAdminResolve($data["tg_group_id"], $data["group_id"]);
     }
 
 
