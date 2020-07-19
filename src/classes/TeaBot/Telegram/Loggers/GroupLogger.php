@@ -125,21 +125,26 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
             $msgId,
             (
               isset($data["msg"]["forward_date"]) ?
-              date("Y-m-d H:i:s", $data["msg"]["forward_date"])
-              : null
+              date("Y-m-d H:i:s", $data["msg"]["forward_date"]) :
+              null
             )
           ]
         );
       }
 
       /* Store message data. */
-      $pdo->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `created_at`) VALUES (?, ?, ?, NULL, ?, NOW())")
+      $pdo->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, NULL, ?, ?, NOW())")
       ->execute(
         [
           $msgId,
           $data["text"],
           json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
           $data["is_edited_msg "] ? 1 : 0,
+          (
+            isset($data["date"]) ?
+            date("Y-m-d H:i:s", $data["date"]) :
+            null
+          )
         ]
       );
     }

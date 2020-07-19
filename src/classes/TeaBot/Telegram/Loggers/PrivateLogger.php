@@ -71,6 +71,8 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
       }
 
     } else {
+
+      /* Insert new message. */
       $pdo->prepare("INSERT INTO `tg_private_messages` (`user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, 'text', '0', ?, ?, NOW())")
       ->execute(
         [
@@ -104,20 +106,26 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
             $msgId,
             (
               isset($data["msg"]["forward_date"]) ?
-              date("Y-m-d H:i:s", $data["msg"]["forward_date"])
-              : null
+              date("Y-m-d H:i:s", $data["msg"]["forward_date"]) :
+              null
             )
           ]
         );
       }
 
-      $pdo->prepare("INSERT INTO `tg_private_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `created_at`) VALUES (?, ?, ?, NULL, ?, NOW())")
+      /* Store message data. */
+      $pdo->prepare("INSERT INTO `tg_private_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, NULL, ?, ?, NOW())")
       ->execute(
         [
           $msgId,
           $data["text"],
           json_encode($data["text_entities"]),
           $data["is_edited_msg"] ? 1 : 0,
+          (
+            isset($data["date"]) ?
+            date("Y-m-d H:i:s", $data["date"]) :
+            null
+          )
         ]
       );
     }
