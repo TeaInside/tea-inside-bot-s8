@@ -4,7 +4,8 @@ namespace TeaBot\Telegram;
 
 use DB;
 use PDO;
-use TeaBot\Exe;
+use Swlib\SaberGM;
+use TeaBot\Telegram\Exe;
 use TeaBot\Telegram\Exceptions\LoggerException;
 
 /**
@@ -31,13 +32,13 @@ abstract class LoggerFoundation
   }
 
   /**
-   * @param string $telegramFileId
+   * @param string $tgFileId
    * @return ?int
    */
-  public static function fileResolve(string $telegramFileId): ?int
+  public static function fileResolve(string $tgFileId): ?int
   {
     /**
-     * Check the $telegramFileId in database.
+     * Check the $tgFileId in database.
      * If it has already been stored, then returns
      * the stored primary key. Otherwise, it
      * downloads the file and insert it to the
@@ -46,7 +47,7 @@ abstract class LoggerFoundation
 
     $pdo = DB::pdo();
     $st  = $pdo->prepare("SELECT `id` FROM `tg_files` WHERE tg_file_id = ?");
-    $st->execute([$telegramFileId]);
+    $st->execute([$tgFileId]);
 
     if ($r = $st->fetch(PDO::FETCH_NUM)) {
       return (int)$r[0];
@@ -54,7 +55,7 @@ abstract class LoggerFoundation
 
     /* This operation may error. */
     $v = json_decode(
-      Exe::getFile(["file_id" => $telegramFileId])
+      Exe::getFile(["file_id" => $tgFileId])
       ->getBody()->__toString(),
       true
     );
@@ -67,6 +68,7 @@ abstract class LoggerFoundation
 
 
     /* Get file extension. */
+    var_dump($v);
     $fileExt = explode(".", $v["result"]["file_path"]);
     if (count($fileExt) > 1) {
       $fileExt = strtolower(end($fileExt));
@@ -76,7 +78,7 @@ abstract class LoggerFoundation
 
 
     $tmpDownloadDir = "/tmp/telegram_tmp_download";
-    $tmpFile = $tmpDownloadDir."/".bin2hex($telegramFileId).(
+    $tmpFile = $tmpDownloadDir."/".bin2hex($tgFileId).(
       isset($fileExt) ? ".".$fileExt : ""
     );
 
@@ -89,6 +91,7 @@ abstract class LoggerFoundation
 
 
     /* Download the file. */
+    var_dump("file_res");
     $response = SaberGM::download(
       "https://api.telegram.org/file/bot".BOT_TOKEN."/".$v["result"]["file_path"],
       $tmpFile
@@ -103,13 +106,56 @@ abstract class LoggerFoundation
 
     $md5Hash    = md5_file($tmpFile, true);
     $sha1Hash   = sha1_file($tmpFile, true);
-    $targetFile = bin2hex($md5Hash).bin2hex($sha1_file).(
-      isset($fileExt) ? ".".$fileExt : ""
-    );
+    $targetFile = STORAGE_PATH."/telegram/files/".
+      bin2hex($md5Hash).bin2hex($sha1_file).(
+        isset($fileExt) ? ".".$fileExt : ""
+      );
 
     rename($tmpFile, $targetFile);
 
+    $pdo->prepare("INSERT INTO `tg_files` (`tg_file_id`, `md5_sum`, `sha1_sum`, `file_type`, `ext`, `size`, `hit_count`, `description`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, 1, NULL, NOW())")
+      ->execute(
+        [
+          $tgFileId,
+          $md5Hash,
+          $sha1Hash,
+          mime_content_type($targetFile),
+          $fileExt,
+          filesize($targetFile)
+        ]
+      );
+
     return $fileId;
+  }
+
+  /**
+   * @param $tgUserId
+   * @return ?int
+   */
+  public static function getLatestUserPhoto(string $tgUserId): ?int
+  {
+    $json = json_decode(
+      Exe::getUserProfilePhotos(
+        [
+          "user_id" => $tgUserId,
+          "offset" => 0,
+          "limit" => 1
+        ]
+      )->getBody()->__toString(),
+      true
+    );
+
+    if (isset($json["result"]["photos"][0])) {
+      $c = count($json["result"]["photos"][0]);
+      if ($c > 0) {
+        $p = $json["result"]["photos"][0][$c - 1];
+        if (isset($p["file_id"])) {
+          return self::fileResolve($p["file_id"]);
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -346,7 +392,7 @@ abstract class LoggerFoundation
 
     } else {
 
-      // $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
+      $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
       /* Insert new user to database. */
       $pdo->prepare("INSERT INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW())")
