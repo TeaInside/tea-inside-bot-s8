@@ -484,11 +484,11 @@ abstract class LoggerFoundation
       $createGroupHistory = ($st->rowCount() == 1);
       $data["group_id"] = $pdo->lastInsertId();
 
-      if ($createGroupHistory) {
-        echo "conflict!\n";
+      if (!$createGroupHistory) {
+        echo "group conflict!\n";
         var_dump("ret group: ".$data["group_id"]." ".$data["tg_group_id"]);
       } else {
-        echo "no conflict!\n";
+        echo "group no conflict!\n";
       }
 
       self::groupAdminResolve($data["tg_group_id"], $data["group_id"]);
@@ -629,10 +629,10 @@ abstract class LoggerFoundation
       $data["user_id"] = $pdo->lastInsertId();
 
       if (!$createUserHistory) {
-        echo "conflict!\n";
-        var_dump("ret: ".$data["user_id"]." ".$data["tg_user_id"]);
+        echo "user conflict!\n";
+        var_dump("ret user: ".$data["user_id"]." ".$data["tg_user_id"]);
       } else {
-        echo "no conflict!\n";
+        echo "user no conflict!\n";
       }
     }
 
