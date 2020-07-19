@@ -75,7 +75,6 @@ abstract class LoggerFoundation
 
 
     /* Get file extension. */
-    var_dump($v);
     $fileExt = explode(".", $v["result"]["file_path"]);
     if (count($fileExt) > 1) {
       $fileExt = strtolower(end($fileExt));
@@ -98,7 +97,6 @@ abstract class LoggerFoundation
 
 
     /* Download the file. */
-    var_dump("file_res");
     $response = SaberGM::download(
       "https://api.telegram.org/file/bot".BOT_TOKEN."/".$v["result"]["file_path"],
       $tmpFile
@@ -111,29 +109,88 @@ abstract class LoggerFoundation
     }
 
 
-    $md5Hash    = md5_file($tmpFile, true);
-    $sha1Hash   = sha1_file($tmpFile, true);
-    $targetFile = STORAGE_PATH."/telegram/files/".
-      bin2hex($md5Hash).bin2hex($sha1_file).(
-        isset($fileExt) ? ".".$fileExt : ""
-      );
+    $md5Hash = md5_file($tmpFile, true);
+    $sha1Hash = sha1_file($tmpFile, true);
+    $fullHexHash = bin2hex($md5Hash).bin2hex($sha1_file);
+    $indexPath = self::genIndexPath($fullHexHash);
+    $targetFile = STORAGE_PATH."/telegram/files/".$indexPath."/".$fullHexHash.(
+      isset($fileExt) ? ".".$fileExt : ""
+    );
+
+    self::mkdirRecursive(STORAGE_PATH."/telegram/files/".$indexPath);
 
     rename($tmpFile, $targetFile);
 
-    $pdo->prepare("INSERT INTO `tg_files` (`tg_file_id`, `md5_sum`, `sha1_sum`, `file_type`, `ext`, `size`, `hit_count`, `description`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NOW())")
-      ->execute(
-        [
-          $tgFileId,
-          $md5Hash,
-          $sha1Hash,
-          mime_content_type($targetFile),
-          $fileExt,
-          filesize($targetFile),
-          $addHitCount ? 1 : 0
-        ]
-      );
+    /* Move file failed. */
+    if (!file_exists($targetFile)) {
+      @unlink($tmpFile);
+      return null;
+    }
 
-    return $pdo->lastInserId();
+    /* Check by hash file. */
+    $st = $pdo->prepare("SELECT `id` FROM `tg_files` WHERE `md5_sum` = ? AND `sha1_sum` = ? LIMIT 1");
+    $st->execute([$md5Hash, $sha1Hash]);
+
+    if ($u = $st->fetch(PDO::FETCH_NUM)) {
+      $u = (int)$u[0];
+
+      /** 
+       * This part handles duplicate file
+       * with different telegram file id.
+       * In this case, we update the
+       * supplied tg_file_id.
+       */
+
+      $hitCountQuery = $addHitCount ? "`hit_count`=`hit_count`+1," : "";
+      $pdo->prepare("UPDATE `tg_files` SET {$hitCountQuery} `tg_file_id` = ? WHERE `id` = ?")
+        ->execute([$tgFileId, $u]);
+
+
+      $fileId = $u;
+    } else {
+
+      $pdo->prepare("INSERT INTO `tg_files` (`tg_file_id`, `md5_sum`, `sha1_sum`, `file_type`, `ext`, `size`, `hit_count`, `description`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NOW())")
+        ->execute(
+          [
+            $tgFileId,
+            $md5Hash,
+            $sha1Hash,
+            mime_content_type($targetFile),
+            $fileExt,
+            filesize($targetFile),
+            $addHitCount ? 1 : 0
+          ]
+        );
+
+      $fileId = $pdo->lastInsertId();
+    }
+
+    return $fileId;
+  }
+
+  /**
+   * @param string $fullHexHash
+   * @return string
+   */
+  public static function genIndexPath(string $fullHexHash): string
+  {
+    return implode("/", str_split(substr($fullHexHash, 0, 14), 2));
+  }
+
+  /**
+   * @param string $dir
+   * @return void
+   */
+  public static function mkdirRecursive(string $dir): void
+  {
+    $exp = explode("/", $dir);
+    if (count($exp) == 1) return;
+
+    $dir = "";
+    foreach ($exp as $p) {
+      $dir .= $p."/";
+      is_dir($dir) or mkdir($dir, 0755);
+    }
   }
 
   /** 
@@ -150,17 +207,10 @@ abstract class LoggerFoundation
         )->getBody()->__toString(),
         true
     );
-    $currentFileId = $o["result"]["photo"]["big_file_id"] ?? null;
 
-    if (!is_null($photoId)) {
-      $st = $this->pdo->prepare("SELECT `telegram_file_id` FROM `files` WHERE `id` = :id LIMIT 1;");
-      $st->execute([":id" => $photoId]);
-      if (($r = $st->fetch(PDO::FETCH_ASSOC)) && ($r["telegram_file_id"] === $currentFileId)) {
-        return $photoId;
-      }
-    }
-
-    return static::fileResolve($currentFileId);
+    return isset($o["result"]["photo"]["big_file_id"])
+      ? static::fileResolve($o["result"]["photo"]["big_file_id"])
+      : null;
   }
 
 
@@ -260,22 +310,36 @@ abstract class LoggerFoundation
         $exeUpdate = true;
       }
 
-      if ($data["username"] != $u["username"]) {
+      if ($data["username"] !== $u["username"]) {
         $query .= ($exeUpdate ? "," : "")."`username`=:username";
         $updateData["username"] = $data["username"];
         $exeUpdate = $createGroupHistory = true;
       }
 
-      if ($data["name"] != $u["name"]) {
+      if ($data["name"] !== $u["name"]) {
         $query .= ($exeUpdate ? "," : "")."`name`=:name";
         $updateData["name"] = $data["name"];
         $exeUpdate = $createGroupHistory = true;
       }
 
-      if ($data["link"] != $u["link"]) {
+      if ($data["link"] !== $u["link"]) {
         $query .= ($exeUpdate ? "," : "")."`link`=:link";
         $updateData["link"] = $data["link"];
         $exeUpdate = $createGroupHistory = true; 
+      }
+
+      if (!($u["msg_count"] % 5)) {
+        $fetchPhoto = true;
+        $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
+
+        if ($data["photo"] != $u["photo"]) {
+          $query .= ($exeUpdate ? "," : "")."`photo`=:photo";
+          $updateData["photo"] = $data["photo"];
+          $exeUpdate = $createGroupHistory = true; 
+        }
+
+      } else {
+        $fetchPhoto = true;
       }
 
       if ($exeUpdate) {
@@ -289,7 +353,9 @@ abstract class LoggerFoundation
          * same as before if and only if the
          * logger does not fetch the photo.
          */
-        if ($createGroupHistory && is_null($data["photo"])) {
+        if ((!$fetchPhoto) && $createGroupHistory &&
+            is_null($data["photo"])
+        ) {
           $data["photo"] = $u["photo"];
         }
       }
@@ -297,6 +363,9 @@ abstract class LoggerFoundation
       $data["group_id"] = $u["id"];
 
     } else {
+
+      $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
+
       $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW())")->execute($data);
       $createGroupHistory = true;
       $data["group_id"] = $pdo->lastInsertId();
