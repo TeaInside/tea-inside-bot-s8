@@ -447,6 +447,8 @@ abstract class LoggerFoundation
           $exeUpdate = $createGroupHistory = true; 
         }
 
+        self::groupAdminResolve($data["tg_group_id"], $u["id"]);
+
       } else {
         $fetchPhoto = true;
       }
