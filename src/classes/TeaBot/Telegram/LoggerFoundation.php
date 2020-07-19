@@ -160,17 +160,17 @@ abstract class LoggerFoundation
 
     self::mkdirRecursive(STORAGE_PATH."/telegram/files/".$indexPath);
 
-    rename($tmpFile, $targetFile);
+    @rename($tmpFile, $targetFile);
+    @unlink($tmpFile);
+
+    /* Move file failed. */
+    if (!file_exists($targetFile)) {
+      return null;
+    }
 
     $fileSize = filesize($targetFile);
     if (!$fileSize) {
       if ($tryCount <= 5) goto retry_download;
-      return null;
-    }
-
-    /* Move file failed. */
-    if (!file_exists($targetFile)) {
-      @unlink($tmpFile);
       return null;
     }
 
@@ -488,7 +488,7 @@ abstract class LoggerFoundation
     } else {
 
       $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
-
+      $pdo->exec("ALTER TABLE `tg_groups` AUTO_INCREMENT = 1");
       $st = $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
       $createGroupHistory = ($st->rowCount() == 1);
@@ -499,6 +499,7 @@ abstract class LoggerFoundation
         var_dump("ret group: ".$data["group_id"]." ".$data["tg_group_id"]);
       } else {
         echo "group no conflict!\n";
+        var_dump("ret group: ".$data["group_id"]." ".$data["tg_group_id"]);
       }
 
       self::groupAdminResolve($data["tg_group_id"], $data["group_id"]);
@@ -632,7 +633,7 @@ abstract class LoggerFoundation
       $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
       /* Insert new user to database. */
-      $pdo->exec("ALTER TABLE `tg_group_admins` AUTO_INCREMENT = 1");
+      $pdo->exec("ALTER TABLE `tg_users` AUTO_INCREMENT = 1");
       $st = $pdo->prepare("INSERT INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
 
@@ -644,6 +645,7 @@ abstract class LoggerFoundation
         var_dump("ret user: ".$data["user_id"]." ".$data["tg_user_id"]);
       } else {
         echo "user no conflict!\n";
+        var_dump("ret user: ".$data["user_id"]." ".$data["tg_user_id"]);
       }
     }
 
