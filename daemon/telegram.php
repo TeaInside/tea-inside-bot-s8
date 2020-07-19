@@ -22,8 +22,8 @@ go(function () {
     ]
   );
 
-  $socket = stream_socket_server(
-    $tcpAddr, $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $ctx);
+  $socket = stream_socket_server($tcpAddr, $errno, $errstr,
+    STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $ctx);
 
   if (!$socket) {
     echo "$errstr ($errno)\n";
@@ -36,35 +36,33 @@ go(function () {
       go(function () use ($r, $conn) {
         stream_set_timeout($conn, 5);
 
-        $body = fread($conn, 4096);
-        $bodyLen = unpack("S", substr($body, 0, 2))[1];
-        $readLen = strlen($body) - 2;
+        $data = fread($conn, 4096);
+        $dataLen = unpack("S", substr($data, 0, 2))[1];
+        $receivedLen = strlen($data) - 2;
+        $data = substr($data, 2);
 
-        $r = substr($r, 2);
-        while ($readLen < $bodyLen) {
-          $r .= fread($conn, 4096);
-          $readLen = strlen($r);
+        while ($dataLen > $receivedLen) {
+          $data .= fread($conn, 4096);
+          $receivedLen = strlen($data);
         }
 
-        $r = json_decode($r, true);
-        if (is_array($r)) {
+        $data = json_decode($data, true);
+        if (is_array($data)) {
           fwrite($conn, "ok");
+          fclose($conn);
+
+          try {
+            $bot = new \TeaBot\Telegram\TeaBot($data);
+            $bot->run();
+          } catch (\Error $e) {
+            $bot->errorReport($e);
+          }
+
+        } else {
+          fwrite($conn, "fail");
+          fclose($conn);
         }
-
-        fclose($conn);
-
-
-        try {
-          $bot = new \TeaBot\Telegram\TeaBot($r);
-          $bot->run();
-        } catch (\Error $e) {
-          $bot->errorReport($e);
-          throw $e;
-        }
-        echo "OK!\n";
-        unset($bot);
       });
-      echo "Done!\n";
     }
   }
 

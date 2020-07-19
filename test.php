@@ -54,6 +54,9 @@ go(function () use ($json) {
     "headers" => ["Content-Type" => \Swlib\Http\ContentType::JSON]
    ]
   );
-  $ret = $saber->post("/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY, $json);
+  $ret = $saber->post(
+    "/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY,
+    json_decode($json, true)
+  );
   echo $ret->getBody()->__toString()."\n";
 });
