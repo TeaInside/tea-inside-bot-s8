@@ -32,6 +32,42 @@ abstract class LoggerFoundation
   }
 
   /**
+   * @param int $groupId
+   * @return void
+   */
+  public static function incrementGroupMsgCount(int $groupId): void
+  {
+    DB::pdo()
+      ->prepare("UPDATE `tg_groups` SET `msg_count`=`msg_count`+1 WHERE `id`=?")
+      ->execute([$groupId]);
+  }
+
+  /**
+   * @param int $userId
+   * @param int $type
+   * @return void
+   * @throws \TeaBot\Telegram\Exceptions\LoggerException
+   */
+  public static function incrementUserMsgCount(int $userId, int $type): void
+  {
+    switch ($type) {
+      case 1:
+        DB::pdo()
+          ->prepare("UPDATE `tg_users` SET `private_msg_count`=`private_msg_count`+1 WHERE `id`=?")
+          ->execute([$userId]);
+        break;
+      case 2:
+        DB::pdo()
+          ->prepare("UPDATE `tg_users` SET `group_msg_count`=`group_msg_count`+1 WHERE `id`=?")
+          ->execute([$userId]);
+        break;
+      default:
+        throw new LoggerException("Invalid type: {$type}");
+        break;
+    }
+  }
+
+  /**
    * @param string $tgFileId
    * @param bool   $addHitCount
    * @return ?int
@@ -496,7 +532,6 @@ abstract class LoggerFoundation
       $data["user_id"] = $u["id"];
 
     } else {
-
       $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
       /* Insert new user to database. */

@@ -36,7 +36,7 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
         "tg_group_id" => $data["chat_id"],
         "name" => $data["chat_title"],
         "username" => $data["chat_username"],
-        "msg_count" => 1
+        "msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
       ]
     );
 
@@ -47,7 +47,7 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
         "last_name" => $data["last_name"],
         "username" => $data["username"],
         "is_bot" => $data["is_bot"] ? 1 : 0,
-        "group_msg_count" => 1
+        "group_msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
       ]
     );
 
@@ -147,6 +147,11 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
           )
         ]
       );
+
+      if (isset($data["in"]["not_edit_event"])) {
+        self::incrementUserMsgCount($userId, 2);
+        self::incrementGroupMsgCount($groupId);
+      }
     }
   }
 }

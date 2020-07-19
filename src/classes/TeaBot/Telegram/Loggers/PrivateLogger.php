@@ -30,7 +30,7 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
    * @param \TeaBot\Telegram\Data $data
    * @return void
    */
-  public static function touchTextMessage(): void
+  public static function touchTextMessage(Data $data): void
   {
     $userId = self::userInsert(
       [
@@ -39,11 +39,15 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
         "first_name" => $data["first_name"],
         "last_name" => $data["last_name"],
         "is_bot" => $data["is_bot"] ? 1 : 0,
-        "private_msg_count" => 1
+        "private_msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
       ]
     );
 
     $pdo = DB::pdo();
+
+    if (isset($data["reply_to"]["message_id"])) {
+      (new Logger(Data::buildMsg($data["reply_to"])))->run();
+    }
 
     /**
      * Check whether the tg_msg_id has already
@@ -68,6 +72,10 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
             "is_bot" => $ff["is_bot"] ? 1 : 0
           ]
         );
+      }
+
+      if (!isset($data["in"]["not_edit_event"])) {
+        /* TODO: Save edited message here... */
       }
 
     } else {
@@ -128,6 +136,9 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
           )
         ]
       );
+      if (isset($data["in"]["not_edit_event"])) {
+        self::incrementUserMsgCount($userId, 1);
+      }
     }
   }
 }
