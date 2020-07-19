@@ -52,9 +52,7 @@ abstract class LoggerFoundation
       return (int)$r[0];
     }
 
-    /**
-     * This operation may error.
-     */
+    /* This operation may error. */
     $v = json_decode(
       Exe::getFile(["file_id" => $telegramFileId])
       ->getBody()->__toString(),
@@ -62,17 +60,13 @@ abstract class LoggerFoundation
     );
 
 
-    /**
-     * Return null if it cannot find the file path.
-     */
+    /* Return null if it cannot find the file path. */
     if (!isset($v["result"]["file_path"])) {
       return null;
     }
 
 
-    /**
-     *  Get file extension.
-     */
+    /* Get file extension. */
     $fileExt = explode(".", $v["result"]["file_path"]);
     if (count($fileExt) > 1) {
       $fileExt = strtolower(end($fileExt));
@@ -87,27 +81,21 @@ abstract class LoggerFoundation
     );
 
 
-    /**
-     * Make sure the target directory exists.
-     */
+    /* Make sure the target directory exists. */
     is_dir(STORAGE_PATH) or mkdir(STORAGE_PATH);
     is_dir(STORAGE_PATH."/telegram") or mkdir(STORAGE_PATH."/telegram");
     is_dir(STORAGE_PATH."/telegram/files") or mkdir(STORAGE_PATH."/telegram/files");
     is_dir($tmpDownloadDir) or mkdir($tmpDownloadDir);
 
 
-    /**
-     * Download the file.
-     */
+    /* Download the file. */
     $response = SaberGM::download(
       "https://api.telegram.org/file/bot".BOT_TOKEN."/".$v["result"]["file_path"],
       $tmpFile
     );
 
 
-    /**
-     * Download failed.
-     */
+    /* Download failed. */
     if (!file_exists($tmpFile)) {
       return null;
     }
@@ -122,6 +110,114 @@ abstract class LoggerFoundation
     rename($tmpFile, $targetFile);
 
     return $fileId;
+  }
+
+  /**
+   * @const array
+   */
+  const GROUP_INSERT_MANDATORY_FIELDS = [
+    "tg_group_id",
+    "name",
+    "username",
+  ];
+
+  /**
+   * @const array
+   */
+  const GROUP_INSERT_DEFAULT_VALUES = [
+    "photo" => null,
+    "msg_count" => 0
+  ];
+
+  /**
+   * @param array $data
+   * @return int
+   * @throws \TeaBot\Telegram\Exceptions\LoggerException
+   */
+  public static function groupInsert(array $data): ?int
+  {
+    foreach (self::GROUP_INSERT_MANDATORY_FIELDS as $v) {
+      if (!array_key_exists($v, $data)) {
+        throw new LoggerException(
+          "Invalid data to be inserted (missing mandatory fields): "
+          .json_encode($data));
+      }
+    }
+
+    foreach (self::GROUP_INSERT_DEFAULT_VALUES as $k => $v) {
+      isset($data[$k]) or $data[$k] = $v;
+    }
+
+    if (is_string($data["username"])) {
+      $data["link"] = "https://t.me/".$username;
+    } else {
+      $data["link"] = null;
+    }
+
+    /**
+     * Check whether the group has already been
+     * stored in database or not.
+     */
+    $pdo = DB::pdo();
+    $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ?");
+    $st->execute([$data["tg_group_id"]]);
+
+    if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
+
+      /**
+       * We need to build the query based
+       * on differential condition in
+       * order to reduce query size.
+       */
+      $updateData = [];
+      $exeUpdate = false;
+      $query = "UPDATE `tg_groups` SET ";
+
+      if ($data["msg_count"] != 0) {
+        $query .= "`msg_count`=`msg_count`+1";
+        $exeUpdate = true;
+      }
+
+      if ($data["username"] != $u["username"]) {
+        $query .= ($exeUpdate ? "," : "")."`username`=:username";
+        $updateData["username"] = $data["username"];
+        $exeUpdate = $createGroupHistory = true;
+      }
+
+      if ($data["name"] != $u["name"]) {
+        $query .= ($exeUpdate ? "," : "")."`name`=:name";
+        $updateData["name"] = $data["name"];
+        $exeUpdate = $createGroupHistory = true;
+      }
+
+      if ($exeUpdate) {
+        $query .= " WHERE `id` = :id";
+        $updateData["id"] = $u["id"];
+        $pdo->prepare($query)->execute($updateData);
+      }
+
+      $data["group_id"] = $u["id"];
+
+    } else {
+      $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW())")->execute($data);
+      $createGroupHistory = true;
+      $data["group_id"] = $pdo->lastInsertId();
+    }
+
+
+    if ($createGroupHistory) {
+
+      /* Unset unused keys. */
+      $data = array_filter($data, function ($k) {
+        return in_array($k, ["group_id", "name", "username", "link", "photo"]);
+      }, ARRAY_FILTER_USE_KEY);
+
+      /* Record group history. */
+      $pdo->prepare("INSERT INTO `tg_group_history` (`group_id`, `name`, `username`, `link`, `photo`, `created_at`) VALUES (:group_id, :name, :username, :link, :photo, NOW());")->execute($data);
+    }
+
+
+    return (int)$data["group_id"];
   }
 
 
@@ -199,19 +295,19 @@ abstract class LoggerFoundation
       if ($data["username"] !== $u["username"]) {
         $query .= ($exeUpdate ? "," : "")."`username`=:username";
         $updateData["username"] = $data["username"];
-        $exeUpdate = true;
+        $exeUpdate = $createUserHistory = true;
       }
 
       if ($data["first_name"] !== $u["first_name"]) {
         $query .= ($exeUpdate ? "," : "")."`first_name`=:first_name";
         $updateData["first_name"] = $data["first_name"];
-        $exeUpdate = true;
+        $exeUpdate = $createUserHistory = true;
       }
 
       if ($data["last_name"] !== $u["last_name"]) {
         $query .= ($exeUpdate ? "," : "")."`last_name`=:last_name";
         $updateData["last_name"] = $data["last_name"];
-        $exeUpdate = true;
+        $exeUpdate = $createUserHistory = true;
       }
 
       /**
@@ -225,8 +321,9 @@ abstract class LoggerFoundation
       }
 
       if ($exeUpdate) {
+        $query .= " WHERE `id` = :id";
+        $updateData["id"] = $u["id"];
         $pdo->prepare($query)->execute($updateData);
-        $createUserHistory = true;
       }
 
       $data["user_id"] = $u["id"];
@@ -248,11 +345,7 @@ abstract class LoggerFoundation
 
       /* Unset unused keys. */
       $data = array_filter($data, function ($k) {
-        return in_array($k,
-          [
-            "user_id", "username", "first_name",
-            "last_name", "photo", "created_at"
-          ]);
+        return in_array($k, ["user_id", "username", "first_name", "last_name", "photo"]);
       }, ARRAY_FILTER_USE_KEY);
 
       /* Record user history. */
@@ -262,6 +355,6 @@ abstract class LoggerFoundation
     }
 
 
-    return $data["user_id"];
+    return (int)$data["user_id"];
   }
 }
