@@ -479,8 +479,9 @@ abstract class LoggerFoundation
 
       $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
 
-      $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)")->execute($data);
-      $createGroupHistory = ($pdo->rowCount() == 1);
+      $st = $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
+      $st->execute($data);
+      $createGroupHistory = ($st->rowCount() == 1);
       $data["group_id"] = $pdo->lastInsertId();
 
       if ($createGroupHistory) {
