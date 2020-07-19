@@ -148,7 +148,7 @@ abstract class LoggerFoundation
 
     $md5Hash = md5_file($tmpFile, true);
     $sha1Hash = sha1_file($tmpFile, true);
-    $fullHexHash = bin2hex($md5Hash).bin2hex($sha1_file);
+    $fullHexHash = bin2hex($md5Hash).bin2hex($sha1Hash);
     $indexPath = self::genIndexPath($fullHexHash);
     $targetFile = STORAGE_PATH."/telegram/files/".$indexPath."/".$fullHexHash.(
       isset($fileExt) ? ".".$fileExt : ""
