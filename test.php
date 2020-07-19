@@ -3,9 +3,9 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345849882,
+    "update_id": 345849899,
     "message": {
-        "message_id": 2700,
+        "message_id": 2752,
         "from": {
             "id": 243692601,
             "is_bot": false,
@@ -20,7 +20,14 @@ $json = '{
             "type": "supergroup",
             "username": null
         },
-        "date": 1595124711,
+        "date": 1595128514,
+        "forward_from": {
+            "id": 448907482,
+            "is_bot": true,
+            "first_name": "Ice Tea",
+            "username": "MyIceTea_Bot"
+        },
+        "forward_date": 1595128509,
         "text": "/debug",
         "entities": [
             {

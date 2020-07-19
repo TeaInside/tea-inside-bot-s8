@@ -24,7 +24,8 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
       [
         "tg_group_id" => $this->data["chat_id"],
         "name" => $this->data["chat_title"],
-        "username" => $this->data["chat_username"]
+        "username" => $this->data["chat_username"],
+        "msg_count" => 1
       ]
     );
 
@@ -34,7 +35,8 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
         "first_name" => $this->data["first_name"],
         "last_name" => $this->data["last_name"],
         "username" => $this->data["username"],
-        "is_bot" => $this->data["is_bot"] ? 1 : 0
+        "is_bot" => $this->data["is_bot"] ? 1 : 0,
+        "group_msg_count" => 1
       ]
     );
 
@@ -82,7 +84,8 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
         $pdo->prepare("INSERT INTO `tg_group_message_fwd` (`user_id`, `msg_id`, `tg_forwarded_date`) VALUES (?, ?, ?)")
           ->execute(
             [
-              $forwarderUserId, $msgId,
+              $forwarderUserId,
+              $msgId,
               date("Y-m-d H:i:s", $this->data["msg"]["forward_date"])
             ]
           );
@@ -94,7 +97,7 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
             $msgId,
             $this->data["text"],
             json_encode($this->data["text_entities"], JSON_UNESCAPED_SLASHES),
-            null,
+            null, /* file */
             $this->data["is_edited_msg"] ? 1 : 0,
           ]
         );

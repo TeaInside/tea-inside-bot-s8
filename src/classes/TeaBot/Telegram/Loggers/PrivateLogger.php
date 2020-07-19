@@ -46,10 +46,8 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
 
     $msgId = $pdo->lastInsertId();
 
-
-
+    /* Store forward message info. */
     if ($this->data["is_forwarded_msg"]) {
-
       $ff = $this->data["msg"]["forward_from"];
       $forwarderUserId = self::userInsert(
         [
@@ -64,13 +62,12 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
       $pdo->prepare("INSERT INTO `tg_private_message_fwd` (`user_id`, `msg_id`, `tg_forwarded_date`) VALUES (?, ?, ?);")
         ->execute(
           [
-            $forwarderUserId, $msgId,
+            $forwarderUserId,
+            $msgId,
             date("Y-m-d H:i:s", $this->data["msg"]["forward_date"])
           ]
         );
     }
-
-
 
     $pdo->prepare("INSERT INTO `tg_private_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())")
       ->execute(
@@ -78,8 +75,8 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
           $msgId,
           $this->data["text"],
           json_encode($this->data["text_entities"]),
-          null, // file
-          0 // is_edited
+          null, /* file */
+          $this->data["is_edited_msg"] ? 1 : 0,
         ]
       );
   }
