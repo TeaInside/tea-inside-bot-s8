@@ -41,9 +41,9 @@ final class TeaBot
    */
   public function run(): void
   {
-    // // Run the logger.
-    // $logger = new Logger($this->data);
-    // $logger->run();
+    // Run the logger.
+    $logger = new Logger($this->data);
+    $logger->run();
 
     $res = new Response($this->data);
     $res->execRoutes();

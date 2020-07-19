@@ -47,15 +47,13 @@ $json = '{
 
 loadConfig("telegram/telegram_bot");
 
-
-$ch = curl_init(
-  "http://127.0.0.1:8000/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY);
-curl_setopt_array($ch,
-  [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => TRUE,
-    CURLOPT_POSTFIELDS => $json
-  ]
-);
-echo curl_exec($ch)."\n";
-curl_close($ch);
+go(function () use ($json) {
+  $saber = \Swlib\Saber::create(
+   [
+    "base_uri" => "http://127.0.0.1:8000",
+    "headers" => ["Content-Type" => \Swlib\Http\ContentType::JSON]
+   ]
+  );
+  $ret = $saber->post("/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY, $json);
+  echo $ret->getBody()->__toString()."\n";
+});

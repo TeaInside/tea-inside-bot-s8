@@ -13,4 +13,10 @@ use TeaBot\Telegram\Contracts\LoggerInterface;
  */
 class GroupLogger extends LoggerFoundation implements LoggerInterface
 {
+  /**
+   * @return void
+   */
+  public function logText(): void
+  {
+  }
 }

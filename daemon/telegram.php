@@ -33,34 +33,38 @@ go(function () {
     echo "Listening on ".$tcpAddr."...\n";
 
     while ($conn = stream_socket_accept($socket, -1)) {
-      stream_set_timeout($conn, 5);
-      $r = fread($conn, 4096);
-      $bodyLen = unpack("S", substr($r, 0, 2))[1];
-      $readLen = strlen($r) - 2;
-      $r = substr($r, 2);
-      while ($readLen < $bodyLen) {
-        $r .= fread($conn, 4096);
-        $readLen = strlen($r);
-      }
+      go(function () use ($r, $conn) {
+        stream_set_timeout($conn, 5);
 
-      $r = json_decode($r, true);
-      if (is_array($r)) {
-        fwrite($conn, "ok");
-      }
-      fclose($conn);
+        $body = fread($conn, 4096);
+        $bodyLen = unpack("S", substr($body, 0, 2))[1];
+        $readLen = strlen($body) - 2;
 
-      // go(function () use ($r) {
-      //   try {
-      //     $bot = new \TeaBot\Telegram\TeaBot($r);
-      //     $bot->run();
-      //   } catch (\Error $e) {
-      //     $bot->errorReport($e);
-      //     throw $e;
-      //   }
-      //   echo "OK!\n";
-      //   unset($bot);
-      // });
-      // echo "Done!\n";
+        $r = substr($r, 2);
+        while ($readLen < $bodyLen) {
+          $r .= fread($conn, 4096);
+          $readLen = strlen($r);
+        }
+
+        $r = json_decode($r, true);
+        if (is_array($r)) {
+          fwrite($conn, "ok");
+        }
+
+        fclose($conn);
+
+
+        try {
+          $bot = new \TeaBot\Telegram\TeaBot($r);
+          $bot->run();
+        } catch (\Error $e) {
+          $bot->errorReport($e);
+          throw $e;
+        }
+        echo "OK!\n";
+        unset($bot);
+      });
+      echo "Done!\n";
     }
   }
 
