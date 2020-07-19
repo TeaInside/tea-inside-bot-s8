@@ -3,9 +3,9 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345849662,
+    "update_id": 345849882,
     "message": {
-        "message_id": 82012,
+        "message_id": 2700,
         "from": {
             "id": 243692601,
             "is_bot": false,
@@ -15,23 +15,12 @@ $json = '{
             "language_code": "en"
         },
         "chat": {
-            "id": 243692601,
-            "first_name": "Ammar",
-            "last_name": "Faizi",
-            "username": "ammarfaizi2",
-            "type": "private",
-            "title": null
+            "id": -1001149709623,
+            "title": "Test Driven Development",
+            "type": "supergroup",
+            "username": null
         },
-        "date": 1595074777,
-        "forward_from": {
-            "id": 243692601,
-            "is_bot": false,
-            "first_name": "Ammar",
-            "last_name": "Faizi",
-            "username": "ammarfaizi2",
-            "language_code": "en"
-        },
-        "forward_date": 1586456036,
+        "date": 1595124711,
         "text": "/debug",
         "entities": [
             {
