@@ -403,6 +403,8 @@ abstract class LoggerFoundation
     $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`link`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ?");
     $st->execute([$data["tg_group_id"]]);
 
+    $createGroupHistory = false;
+
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
 
       /**
@@ -612,11 +614,17 @@ abstract class LoggerFoundation
       $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
       /* Insert new user to database. */
-      $pdo->prepare("INSERT INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW())")
-        ->execute($data);
-      $createUserHistory = true;
-      $data["user_id"] = $pdo->lastInsertId();
+      $st = $pdo->prepare("INSERT IGNORE INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
+      $st->execute($data);
 
+      $createUserHistory = ($st->rowCount() == 1);
+      $data["user_id"] = $pdo->lastInsertId();
+      if ($createUserHistory == 2) {
+        echo "conflict!\n";
+        var_dump("ret: ".$data["user_id"]." ".$data["tg_user_id"]);
+      } else {
+        echo "no conflict!\n";
+      }
     }
 
 
