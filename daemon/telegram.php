@@ -49,16 +49,18 @@ go(function () {
       }
       fclose($conn);
 
-      go(function () use ($r) {
-        try {
-          $bot = new \TeaBot\Telegram\TeaBot($r);
-          $bot->run();
-        } catch (\Error $e) {
-          // $bot->errorReport($e);
-          throw $e;
-        }
-        unset($bot);
-      });
+      // go(function () use ($r) {
+      //   try {
+      //     $bot = new \TeaBot\Telegram\TeaBot($r);
+      //     $bot->run();
+      //   } catch (\Error $e) {
+      //     $bot->errorReport($e);
+      //     throw $e;
+      //   }
+      //   echo "OK!\n";
+      //   unset($bot);
+      // });
+      // echo "Done!\n";
     }
   }
 
