@@ -355,7 +355,6 @@ abstract class LoggerFoundation
 
       $pdo->prepare("DELETE FROM `tg_group_admins` WHERE `group_id` = ?")
         ->execute([$groupId]);
-      $pdo->exec("ALTER TABLE `tg_group_admins` AUTO_INCREMENT = 1");
       if (count($data)) {
         $pdo->prepare($query)->execute($data);
       }
@@ -488,7 +487,6 @@ abstract class LoggerFoundation
     } else {
 
       $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
-      $pdo->exec("ALTER TABLE `tg_groups` AUTO_INCREMENT = 1");
       $st = $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
       $createGroupHistory = ($st->rowCount() == 1);
@@ -633,7 +631,6 @@ abstract class LoggerFoundation
       $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
       /* Insert new user to database. */
-      $pdo->exec("ALTER TABLE `tg_users` AUTO_INCREMENT = 1");
       $st = $pdo->prepare("INSERT INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
 
