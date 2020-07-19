@@ -48,8 +48,8 @@ final class TeaBot
       DB::close();
     });
 
-    $res = new Response($this->data);
-    $res->execRoutes();
+    // $res = new Response($this->data);
+    // $res->execRoutes();
   }
 
   /**
