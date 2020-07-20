@@ -67,7 +67,7 @@ final class TeaBot
   public function errorReport($e)
   {
     $now = date("c");
-    $strInput = json_encode($this->data->in, JSON_UNESCAPED_SLASHES);
+    $strInput = json_encode($this->data["in"], JSON_UNESCAPED_SLASHES);
     $inputHash = sha1($strInput);
 
     $strErr = "{$now}\n[error:{$inputHash}]\n".
