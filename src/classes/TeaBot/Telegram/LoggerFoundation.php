@@ -344,7 +344,7 @@ abstract class LoggerFoundation
       }
 
       $c = count($data["result"]);
-      $query = "INSERT INTO `tg_group_admins` (`user_id`,`group_id`,`role`,`permissions`,`created_at`) VALUES ";
+      $query = "INSERT INTO `tg_group_admins` (`user_id`,`group_id`,`role`,`info`,`created_at`) VALUES ";
 
       $data = [];
       for ($i = 0; $i < $c; $i++) { 
@@ -455,7 +455,7 @@ abstract class LoggerFoundation
         if ($data["photo"] != $u["photo"]) {
           $query .= ($exeUpdate ? "," : "")."`photo`=:photo";
           $updateData["photo"] = $data["photo"];
-          $exeUpdate = $createGroupHistory = true; 
+          $exeUpdate = $createGroupHistory = true;
         }
 
         self::groupAdminResolve($data["tg_group_id"], $u["id"]);

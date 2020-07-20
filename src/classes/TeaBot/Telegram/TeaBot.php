@@ -4,6 +4,7 @@ namespace TeaBot\Telegram;
 
 use DB;
 use Error;
+use Exception;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -42,9 +43,17 @@ final class TeaBot
   public function run(): void
   {
     go(function () {
-      // Run the logger.
-      $logger = new Logger($this->data);
-      $logger->run();
+
+      try {
+        // Run the logger.
+        $logger = new Logger($this->data);
+        $logger->run();
+      } catch (Exception $e) {
+        $this->errorReport($e);
+      } catch (Error $e) {
+        $this->errorReport($e);
+      }
+
       DB::close();
     });
 
@@ -53,9 +62,9 @@ final class TeaBot
   }
 
   /**
-   * @param \Error $e
+   * @param mixed $e
    */
-  public function errorReport(Error $e)
+  public function errorReport($e)
   {
     $now = date("c");
     $strInput = json_encode($this->data->in, JSON_UNESCAPED_SLASHES);
