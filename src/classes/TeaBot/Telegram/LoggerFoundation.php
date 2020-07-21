@@ -461,7 +461,7 @@ abstract class LoggerFoundation
         self::groupAdminResolve($data["tg_group_id"], $u["id"]);
 
       } else {
-        $fetchPhoto = true;
+        $fetchPhoto = false;
       }
 
       if ($exeUpdate) {
@@ -491,14 +491,6 @@ abstract class LoggerFoundation
       $st->execute($data);
       $createGroupHistory = ($st->rowCount() == 1);
       $data["group_id"] = $pdo->lastInsertId();
-
-      if (!$createGroupHistory) {
-        echo "group conflict!\n";
-        var_dump("ret group: ".$data["group_id"]." ".$data["tg_group_id"]);
-      } else {
-        echo "group no conflict!\n";
-        var_dump("ret group: ".$data["group_id"]." ".$data["tg_group_id"]);
-      }
 
       self::groupAdminResolve($data["tg_group_id"], $data["group_id"]);
     }
@@ -636,14 +628,6 @@ abstract class LoggerFoundation
 
       $createUserHistory = ($st->rowCount() == 1);
       $data["user_id"] = $pdo->lastInsertId();
-
-      if (!$createUserHistory) {
-        echo "user conflict!\n";
-        var_dump("ret user: ".$data["user_id"]." ".$data["tg_user_id"]);
-      } else {
-        echo "user no conflict!\n";
-        var_dump("ret user: ".$data["user_id"]." ".$data["tg_user_id"]);
-      }
     }
 
 
