@@ -7,9 +7,12 @@ loadConfig("telegram/quran");
 loadConfig("telegram/calculus");
 loadConfig("telegram/telegram_bot");
 
-Swoole\Runtime::enableCoroutine();
+\Swoole\Runtime::enableCoroutine();
 
-Co\run(function() {
+\TeaBot\Telegram\Log::registerLogStream(STDOUT);
+\TeaBot\Telegram\Log::registerLogStream(fopen(TELEGRAM_DAEMON_LOG_FILE, "a"));
+
+\Co\run(function() {
 go(function () {
 
   $tcpAddr = "tcp://127.0.0.1:7777";
@@ -70,13 +73,3 @@ go(function () {
 
 });
 });
-
-function tcp_pack(string $data): string
-{
-  return pack('n', strlen($data)).$data;
-}
-
-function tcp_length(string $head): int
-{
-  return unpack('n', $head)[1];
-}
