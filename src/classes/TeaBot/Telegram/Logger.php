@@ -47,6 +47,16 @@ final class Logger
         case "text":
           $logger->logText();
           break;
+        case "photo":
+          $logger->logPhoto();
+          break;
+        case "sticker":
+          $logger->logSticker();
+          break;
+
+        default:
+          // Unknown type of message.
+          break;
       }
     }
   }
