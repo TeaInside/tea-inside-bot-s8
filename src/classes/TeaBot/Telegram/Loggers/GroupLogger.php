@@ -22,7 +22,7 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
    */
   public function logText(): void
   {
-    self::touchTextMessage($this->data);
+    $msgId = self::touchMessage($this->data);
   }
 
 
@@ -70,7 +70,7 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
    * @param \TeaBot\Telegram\Data $data
    * @return void
    */
-  public static function touchTextMessage(Data $data): void
+  public static function touchMessage(Data $data): void
   {
     $groupId = self::groupInsert(
       [
