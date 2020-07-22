@@ -25,6 +25,47 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
     self::touchTextMessage($this->data);
   }
 
+
+  /**
+   * @return void
+   */
+  public function logPhoto(): void
+  {
+  }
+
+
+  /**
+   * @return void
+   */
+  public function logSticker(): void
+  {
+  }
+
+
+  /**
+   * @return void
+   */
+  public function logAnimation(): void
+  {
+  }
+
+
+  /**
+   * @return void
+   */
+  public function logVoice(): void
+  {
+  }
+
+
+  /**
+   * @return void
+   */
+  public function logVideo(): void
+  {
+  }
+
+
   /**
    * @param \TeaBot\Telegram\Data $data
    * @return void
