@@ -5,6 +5,8 @@ require __DIR__."/../bootstrap/telegram/autoload.php";
 error_reporting(E_ALL);
 ini_set("display_errors", true);
 
+file_put_contents(TELEGRAM_DAEMON_PID_FILE, getmypid());
+
 loadConfig("telegram/api");
 loadConfig("telegram/quran");
 loadConfig("telegram/calculus");
