@@ -2,6 +2,9 @@
 
 require __DIR__."/../bootstrap/telegram/autoload.php";
 
+error_reporting(E_ALL);
+ini_set("display_errors", true);
+
 loadConfig("telegram/api");
 loadConfig("telegram/quran");
 loadConfig("telegram/calculus");
