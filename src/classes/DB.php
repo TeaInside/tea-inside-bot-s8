@@ -18,7 +18,6 @@ final class DB
   {
     global $dbCollections;
     $cid = Swoole\Coroutine::getCid();
-    var_dump($cid);
 
     if (!isset($dbCollections[$cid])) {
       $dbCollections[$cid] = new \PDO(...PDO_PARAM);

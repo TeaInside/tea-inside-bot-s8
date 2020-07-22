@@ -14,6 +14,7 @@ define("TELEGRAM_WEBHOOK_KEY", "xxxxxxxxxxxxxxxxxxx");
 define("TELEGRAM_ERROR_REPORT_CHAT_ID", []);
 define("TELEGRAM_DAEMON_ERROR_LOG", STORAGE_PATH."/logs/telegram_daemon_error.log");
 define("TELEGRAM_DAEMON_LOG_FILE", STORAGE_PATH."/logs/daemon.log");
+define("TELEGRAM_DAEMON_PID_FILE", STORAGE_PATH."/pid/telegram_daemon.pid");
 
 define("CALCULUS_API_KEY", "xxxxxxxxx");
 define("SRABATSROBOT_API_KEY", "xxxxxxxxx");
