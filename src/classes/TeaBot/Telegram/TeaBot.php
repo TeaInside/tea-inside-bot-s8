@@ -135,11 +135,11 @@ final class TeaBot
           true
         );
 
-        Exe::sendMessage(
+        $v["result"]["message_id"]Exe::sendMessage(
           [
             "chat_id" => $chatId,
             "text" => $inputData,
-            "reply_to_message_id" => $v["result"]["message_id"]
+            "reply_to_message_id" => $v["result"]["message_id"] ?? null
           ]
         );
       }
@@ -158,7 +158,7 @@ final class TeaBot
         [
           "chat_id" => $chatId,
           "text" => $inputData,
-          "reply_to_message_id" => $v["result"]["message_id"]
+          "reply_to_message_id" => $v["result"]["message_id"] ?? null
         ]
       );
     }
