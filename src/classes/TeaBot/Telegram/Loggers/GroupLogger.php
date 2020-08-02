@@ -145,7 +145,6 @@ class GroupLogger extends LoggerFoundation
       /*enddebug*/
 
       $pdo->rollBack();
-      $teaBot and $teaBot->errorReport($e);
       if (preg_match("/Deadlock found/S", $e->getMessage())) {
 
         if ($tryCounter >= 5) {
@@ -158,6 +157,8 @@ class GroupLogger extends LoggerFoundation
 
         goto deadlock_recovery;
       }
+
+      $teaBot and $teaBot->errorReport($e);
 
       return false;
     } catch (Error $e) {
@@ -167,7 +168,6 @@ class GroupLogger extends LoggerFoundation
       /*enddebug*/
 
       $pdo->rollBack();
-      $teaBot and $teaBot->errorReport($e);
       if (preg_match("/Deadlock found/S", $e->getMessage())) {
 
         if ($tryCounter >= 5) {
@@ -180,6 +180,8 @@ class GroupLogger extends LoggerFoundation
 
         goto deadlock_recovery;
       }
+
+      $teaBot and $teaBot->errorReport($e);
 
       return false;
     }
