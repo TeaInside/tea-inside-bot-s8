@@ -44,7 +44,9 @@ class GroupLogger extends LoggerFoundation
       ]
     );
 
-    /*__debug_flag:2:41IAgrLEoviU0twCDaX0/BKF9KL80gLPFCsFJT0VKFvTmgukDgA=*/
+    /*debug:2*/
+    var_dump("got groupId: ".$groupId);
+    /*enddebug*/
 
     $userId = self::userInsert(
       [
@@ -57,13 +59,17 @@ class GroupLogger extends LoggerFoundation
       ]
     );
 
-    /*__debug_flag:2:41IAgrLEoviU0twCDaX0/BKF0uLUIs8UKwUlPRUIU9OaC6QKAA==*/
+    /*debug:2*/
+    var_dump("got userId: ".$userId);
+    /*enddebug*/
 
 
     $pdo = DB::pdo();
     $teaBot = $this->logger->teaBot ?? null;
 
-    /*__debug_flag:5:41IAApXkzBQFW4WY4PL8/JzUGOf8ovzSksy8VCur9NQS58wUDU1rLpA6AA==*/
+    /*debug:5*/
+    $cid = \Swoole\Coroutine::getCid();
+    /*enddebug*/
 
     /*
      * If the message is supposed to reply another message,
@@ -81,18 +87,27 @@ class GroupLogger extends LoggerFoundation
       }
     }
 
+    $tryCounter = 0;
+    deadlock_recovery:
     try {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8KwUlPZXkzBRNay6IUgA=*/
+      /*debug:5*/
+      var_dump("beginTransaction: ".$cid);
+      /*enddebug*/
 
+      $tryCounter++;
       $pdo->beginTransaction();
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8BX9vKwUlPZXkzBRNay6IagA=*/
+      /*debug:5*/
+      var_dump("beginTransaction OK: ".$cid);
+      /*enddebug*/
 
       $needToSaveMsg = true;
       $msgId = self::touchMessage(
         $groupId, $userId, $data, $needToSaveMsg, $teaBot);
 
-      /*__debug_flag:7:41IAg7LEoviU0twCDaW81NSU+JL8+OLEstT43OJ0KwUlPQ0VkGhIfjBQzLc4XcFeQalESQEok6akqWnNBTECAA==*/
+      /*debug:7*/
+      var_dump("need_to_save_msg: ".($needToSaveMsg ? "t" : "f"));
+      /*enddebug*/
 
       if ($needToSaveMsg) {
         /*
@@ -117,21 +132,55 @@ class GroupLogger extends LoggerFoundation
         self::incrementGroupMsgCount($groupId);
       }
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaXk/NzczBIrBSU9leTMFE1rLogCAA==*/
+      /*debug:5*/
+      var_dump("commit: ".$cid);
+      /*enddebug*/
 
       $pdo->commit();
 
     } catch (PDOException $e) {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
+      if (preg_match("/Deadlock found/S", $e->getMessage())) {
+
+        if ($tryCounter >= 5) {
+          throw new Error("Cannot recover from deadlock!");
+        }
+
+        /*debug:5*/
+        echo "Recovering from deadlock: {$cid}...\n";
+        /*enddebug*/
+
+        goto deadlock_recovery;
+      }
+
       return false;
     } catch (Error $e) {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
+      if (preg_match("/Deadlock found/S", $e->getMessage())) {
+
+        if ($tryCounter >= 5) {
+          throw new Error("Cannot recover from deadlock!");
+        }
+
+        /*debug:5*/
+        echo "Recovering from deadlock: {$cid}...\n";
+        /*enddebug*/
+
+        goto deadlock_recovery;
+      }
+
       return false;
     }
 

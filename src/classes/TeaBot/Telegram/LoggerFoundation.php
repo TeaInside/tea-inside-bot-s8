@@ -93,26 +93,38 @@ abstract class LoggerFoundation
     }
 
     try {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8KwUlPZXkzBRNay6IUgA=*/
+      /*debug:5*/
+      var_dump("beginTransaction: ".$cid);
+      /*enddebug*/
 
       $pdo->beginTransaction();
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8BX9vKwUlPZXkzBRNay6IagA=*/
+      /*debug:5*/
+      var_dump("beginTransaction OK: ".$cid);
+      /*enddebug*/
 
       $fileId = self::baseFileResolve($tgFileId, $addHitCount);
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaXk/NzczBIrBSU9leTMFE1rLogCAA==*/
+      /*debug:5*/
+      var_dump("commit: ".$cid);
+      /*enddebug*/
 
       $pdo->commit();
 
     } catch (PDOException $e) {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
       return null;
     } catch (Error $e) {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);

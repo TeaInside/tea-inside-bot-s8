@@ -24,9 +24,15 @@ final class DB
     if (!isset($dbCollections[$cid])) {
       $dbCollections[$cid] = new \PDO(...PDO_PARAM);
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaX8gtS8zLx0hQAXf4XkzBQrBSU9FSCtp6SjkJhcklmWiiyTnF+aV6KhkpLknJ+TkwqUzs8r1tS05oIYCgA=*/
+      /*debug:5*/
+      var_dump("opening PDO cid: ".$cid.", active PDO cid: ".count($dbCollections));
+      /*enddebug*/
     }
-    /*__debug_flag:5:41IAgtSc4lSFai4FMChLLIpPKc0t0FAqSi1JzE5VCHDxV0jOTLFSUNJTAdKa1mCFtWASAA==*/
+    /*debug:5*/
+    else {
+      var_dump("retake PDO cid: ".$cid);
+    }
+    /*enddebug*/
 
     return $dbCollections[$cid];
   }
@@ -41,7 +47,12 @@ final class DB
 
     unset($dbCollections[$cid]);
 
-    /*__debug_flag:5:41IAgsw0BQ0Nxczi+MSiosRKDZWUJOf8nJzU5JLM/LxiTU2FmhoFkHRxagmGnKZCNZcCGKDKKNgqRMdag6VqwWRZYlF8SmlugYZSck5+cWZeukKAi79CcmaKlYKSngqQ1lPSUUgEai5LRZZJzi/Nw7QVYjAA*/
+    /*debug:5*/
+    if ((!is_array($dbCollections)) || (!isset($dbCollections))) {
+      $dbCollections = [];
+    }
+    var_dump("closing PDO cid: ".$cid.", active PDO cid: ".count($dbCollections));
+    /*enddebug*/
   }
 
   /**

@@ -46,13 +46,17 @@ class PrivateLogger extends LoggerFoundation
       ]
     );
 
-    /*__debug_flag:2:41IAgrLEoviU0twCDaX0/BKF0uLUIs8UKwUlPRUIU9OaC6QKAA==*/
+    /*debug:2*/
+    var_dump("got userId: ".$userId);
+    /*enddebug*/
 
 
     $pdo = DB::pdo();
     $teaBot = $this->logger->teaBot ?? null;
 
-    /*__debug_flag:5:41IAApXkzBQFW4WY4PL8/JzUGOf8ovzSksy8VCur9NQS58wUDU1rLpA6AA==*/
+    /*debug:5*/
+    $cid = \Swoole\Coroutine::getCid();
+    /*enddebug*/
 
     /*
      * If the message is supposed to reply another message,
@@ -71,16 +75,22 @@ class PrivateLogger extends LoggerFoundation
     }
 
     try {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8KwUlPZXkzBRNay6IUgA=*/
+      /*debug:5*/
+      var_dump("beginTransaction: ".$cid);
+      /*enddebug*/
 
       $pdo->beginTransaction();
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8BX9vKwUlPZXkzBRNay6IagA=*/
+      /*debug:5*/
+      var_dump("beginTransaction OK: ".$cid);
+      /*enddebug*/
 
       $needToSaveMsg = true;
       $msgId = self::touchMessage($userId, $data, $needToSaveMsg, $teaBot);
 
-      /*__debug_flag:7:41IAg7LEoviU0twCDaW81NSU+JL8+OLEstT43OJ0KwUlPQ0VkGhIfjBQzLc4XcFeQalESQEok6akqWnNBTECAA==*/
+      /*debug:7*/
+      var_dump("need_to_save_msg: ".($needToSaveMsg ? "t" : "f"));
+      /*enddebug*/
 
       if ($needToSaveMsg) {
         /*
@@ -104,18 +114,26 @@ class PrivateLogger extends LoggerFoundation
         self::incrementUserMsgCount($userId, $type = 1);
       }
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaXk/NzczBIrBSU9leTMFE1rLogCAA==*/
+      /*debug:5*/
+      var_dump("commit: ".$cid);
+      /*enddebug*/
 
       $pdo->commit();
 
     } catch (PDOException $e) {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
       return false;
     } catch (Error $e) {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
@@ -149,7 +167,10 @@ class PrivateLogger extends LoggerFoundation
     $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_private_messages` WHERE `user_id` = ? AND `tg_msg_id` = ?");
     $st->execute([$userId, $data["msg_id"]]);
 
-    /*__debug_flag:7:41IAgrLEoviU0twCDaXUitTk0pJUhZTEkkQrJU1rLhTpaJXS4tQizxQdBRWQgmil3OL0+MwUpdhYqEoA*/
+    /*debug:7*/
+    var_dump("execute data:");
+    var_dump([$userId, $data["msg_id"]]);
+    /*enddebug*/
 
     /*
      * If the message has already been stored
@@ -157,7 +178,10 @@ class PrivateLogger extends LoggerFoundation
      */
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
 
-      /*__debug_flag:7:41IAg7LEoviU0twCDaW01JLkjMy8dIX8nBSF3OJ0PT09JU1rLjRlKqVwMQA=*/
+      /*debug:7*/
+      var_dump("fetching old msg...");
+      var_dump($u);
+      /*enddebug*/
 
       $msgId = (int)$u["id"];
 
@@ -185,7 +209,10 @@ class PrivateLogger extends LoggerFoundation
 
     } else {
 
-      /*__debug_flag:7:41IAg7LEoviU0twCDaXMvOLUopLMvHSFvNRyhdzidD09PSVNay40dSqlcDEA*/
+      /*debug:7*/
+      var_dump("inserting new msg...");
+      var_dump($u);
+      /*enddebug*/
 
       /*
        * Handle message that has not been stored
