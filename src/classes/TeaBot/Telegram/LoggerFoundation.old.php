@@ -15,19 +15,22 @@ use TeaBot\Telegram\Exceptions\LoggerException;
  * @package \TeaBot\Telegram
  * @version 8.0.0
  */
-abstract class LoggerFoundation {
-	/**
-	 * @var \TeaBot\Telegram\Logger
-	 */
-	protected Logger $logger;
+abstract class LoggerFoundation
+{
+  /**
+   * @var \Data
+   */
+  protected $data;
 
   /**
-   * @param \TeaBot\Telegram\Logger $logger
+   * @param \Data &$data
+   *
+   * Constructor.
    */
-	public function __construct(Logger $logger)
+  final public function __construct(Data &$data)
   {
-    $this->logger = $logger;
-	}
+    $this->data = $data;
+  }
 
   /**
    * @param int $groupId
