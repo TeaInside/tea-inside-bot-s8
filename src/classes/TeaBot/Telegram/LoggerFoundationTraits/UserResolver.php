@@ -55,7 +55,7 @@ trait UserResolver
       isset($data[$k]) or $data[$k] = $v;
     }
 
-    /**
+    /*
      * Check whether the user has already been
      * stored in database or not.
      */
@@ -67,7 +67,7 @@ trait UserResolver
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
 
-      /**
+      /*
        * We need to build the query based
        * on differential condition in
        * order to reduce query size.
@@ -109,7 +109,7 @@ trait UserResolver
         $updateData["id"] = $u["id"];
         $pdo->prepare($query)->execute($updateData);
 
-        /**
+        /*
          * In case createUserHistory is true,
          * we should assume the photo is the
          * same as before if and only if the
