@@ -135,7 +135,7 @@ final class TeaBot
           true
         );
 
-        $v["result"]["message_id"]Exe::sendMessage(
+        Exe::sendMessage(
           [
             "chat_id" => $chatId,
             "text" => $inputData,

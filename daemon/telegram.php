@@ -63,6 +63,7 @@ go(function () {
             $bot = new \TeaBot\Telegram\TeaBot($data);
             $bot->run();
           } catch (\Error $e) {
+            echo $e."";
             $bot->errorReport($e);
           } finally {
             DB::close();
