@@ -15,6 +15,11 @@ trait ResponseRoutes
    */
   public function execRoutes(): bool
   {
+    /* Skip edited message. */
+    if ($this->data["is_edited_msg"]) {
+      return false;
+    }
+
     /* Start command. */
     if (preg_match("/^(\/|\!|\~|\.)start$/USsi", $this->data["text"])) {
       if ($this->rtExec(Responses\Start::class, "start")) {

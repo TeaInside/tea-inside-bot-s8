@@ -86,7 +86,7 @@ class PrivateLogger extends LoggerFoundation
       /*enddebug*/
 
       $needToSaveMsg = true;
-      $msgId = self::touchMessage($userId, $data, $needToSaveMsg, $teaBot);
+      $msgId = self::touchMessage($userId, $data, $teaBot);
 
       if ($needToSaveMsg) {
         /*
@@ -138,14 +138,12 @@ class PrivateLogger extends LoggerFoundation
   /**
    * @param int                     $userId
    * @param \TeaBot\Telegram\Data   $data
-   * @param bool                    &$needToSaveMsg
    * @param \TeaBot\Telegram\TeaBot $teaBot
    * @return int
    */
   public static function touchMessage(
     int $userId,
     Data $data,
-    bool &$needToSaveMsg,
     ?TeaBot $teaBot = null
   ): int
   {
@@ -174,7 +172,6 @@ class PrivateLogger extends LoggerFoundation
       var_dump($u);
       /*enddebug*/
 
-      $needToSaveMsg = false;
       $msgId = (int)$u["id"];
 
       /*
@@ -195,18 +192,12 @@ class PrivateLogger extends LoggerFoundation
         );
       }
 
-      if (!isset($data["in"]["not_edit_event"])) {
-        /* TODO: Save edited message here... */
-      }
-
     } else {
 
       /*debug:7*/
       var_dump("inserting new msg...");
       var_dump($u);
       /*enddebug*/
-
-      $needToSaveMsg = true;
 
       /*
        * Handle message that has not been stored
@@ -256,9 +247,7 @@ class PrivateLogger extends LoggerFoundation
         );
       }
 
-      if (isset($data["in"]["not_edit_event"])) {
-        self::incrementUserMsgCount($userId, 1);
-      }
+      self::incrementUserMsgCount($userId, 1);
     }
 
     return $msgId;

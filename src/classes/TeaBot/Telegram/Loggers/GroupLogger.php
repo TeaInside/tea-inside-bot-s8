@@ -40,7 +40,7 @@ class GroupLogger extends LoggerFoundation
         "tg_group_id" => $data["chat_id"],
         "name" => $data["chat_title"],
         "username" => $data["chat_username"],
-        "msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
+        "msg_count" => 0
       ]
     );
 
@@ -55,7 +55,7 @@ class GroupLogger extends LoggerFoundation
         "last_name" => $data["last_name"],
         "username" => $data["username"],
         "is_bot" => $data["is_bot"] ? 1 : 0,
-        "group_msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
+        "group_msg_count" => 0
       ]
     );
 
@@ -191,10 +191,6 @@ class GroupLogger extends LoggerFoundation
         );
       }
 
-      if (!isset($data["in"]["not_edit_event"])) {
-        /* TODO: Save edited message here... */
-      }
-
     } else {
 
       /*
@@ -249,11 +245,9 @@ class GroupLogger extends LoggerFoundation
         );
       }
 
-      if (isset($data["in"]["not_edit_event"])) {
-        /* ($type = 2) means group_msg_count */
-        self::incrementUserMsgCount($userId, $type = 2);
-        self::incrementGroupMsgCount($groupId);
-      }
+      /* ($type = 2) means group_msg_count */
+      self::incrementUserMsgCount($userId, $type = 2);
+      self::incrementGroupMsgCount($groupId);
     }
 
     return $msgId;
