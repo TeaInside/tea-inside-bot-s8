@@ -8,9 +8,14 @@
  */
 function sh(?string $cwd = null, string $cmd, ?array $env = null): int
 {
-  echo "Executing {$cmd}...\n";
+  global $silentCmd;
+
+  if ((!isset($silentCmd)) || (!$silentCmd)) {
+    echo "Executing {$cmd}...\n";
+  }
+
   $proc = proc_open(
-    $cmd,
+    "exec ".$cmd,
     [
       ["file", "php://stdin", "r"],
       ["file", "php://stdout", "w"],
