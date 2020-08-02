@@ -45,16 +45,19 @@ final class TeaBot
     go(function () {
 
       try {
-        // Run the logger.
-        $logger = new Logger($this->data);
+
+        /* Run the logger. */
+        $logger = new Logger($this);
         $logger->run();
+
       } catch (Exception $e) {
         $this->errorReport($e);
       } catch (Error $e) {
         $this->errorReport($e);
+      } finally {
+        DB::close();
       }
 
-      DB::close();
     });
 
     // $res = new Response($this->data);

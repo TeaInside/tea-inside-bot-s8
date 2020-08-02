@@ -64,6 +64,8 @@ go(function () {
             $bot->run();
           } catch (\Error $e) {
             $bot->errorReport($e);
+          } finally {
+            DB::close();
           }
 
           // DB::dumpConnections();
