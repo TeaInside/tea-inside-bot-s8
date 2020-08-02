@@ -4,6 +4,7 @@ namespace TeaBot\Telegram\Loggers;
 
 use DB;
 use PDO;
+use PDOException;
 use TeaBot\Telegram\Data;
 use TeaBot\Telegram\Logger;
 use TeaBot\Telegram\LoggerFoundation;
@@ -72,28 +73,43 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
    */
   public static function touchMessage(Data $data): void
   {
-    $groupId = self::groupInsert(
-      [
-        "tg_group_id" => $data["chat_id"],
-        "name" => $data["chat_title"],
-        "username" => $data["chat_username"],
-        "msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
-      ]
-    );
+    try {
+      $groupId = self::groupInsert(
+        [
+          "tg_group_id" => $data["chat_id"],
+          "name" => $data["chat_title"],
+          "username" => $data["chat_username"],
+          "msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
+        ]
+      );
 
-    $userId = self::userInsert(
-      [
-        "tg_user_id" => $data["user_id"],
-        "first_name" => $data["first_name"],
-        "last_name" => $data["last_name"],
-        "username" => $data["username"],
-        "is_bot" => $data["is_bot"] ? 1 : 0,
-        "group_msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
-      ]
-    );
+      $userId = self::userInsert(
+        [
+          "tg_user_id" => $data["user_id"],
+          "first_name" => $data["first_name"],
+          "last_name" => $data["last_name"],
+          "username" => $data["username"],
+          "is_bot" => $data["is_bot"] ? 1 : 0,
+          "group_msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
+        ]
+      );
+      $pdo = DB::pdo();
+      $pdo->beginTransaction();
+      self::insertMessage($groupId, $userId, $data);
+      $pdo->commit();
+    } catch (PDOException $e) {
+      $pdo->rollBack();
+    }
+  }
 
-    $pdo = DB::pdo();
-
+  /**
+   * @param int                   $groupId
+   * @param int                   $userId
+   * @param \TeaBot\Telegram\Data $data
+   * @return void
+   */
+  private static function insertMessage(int $groupId, int $userId, Data $data): void
+  {
     if (isset($data["reply_to"]["message_id"])) {
       (new Logger(Data::buildMsg($data["reply_to"])))->run();
     }

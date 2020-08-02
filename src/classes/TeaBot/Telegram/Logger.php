@@ -21,13 +21,19 @@ final class Logger
   private $data;
 
   /**
+   * @var \TeaBot\Telegram\TeaBot
+   */
+  private $teaBot;
+
+  /**
    * @param \TeaBot\Telegram\Data
    *
    * Constructor.
    */
-  public function __construct(Data $data)
+  public function __construct(TeaBot $teaBot)
   {
-    $this->data = $data;
+    $this->teaBot = $teaBot;
+    $this->data   = $teaBot->data;
   }
 
   /** 
