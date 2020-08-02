@@ -103,11 +103,15 @@ class PrivateLogger extends LoggerFoundation
             break;
 
           case "photo":
+            self::savePhotoMessage($msgId, $data);
             break;
 
           case "video":
             break;
-        } 
+        }
+
+        /* ($type = 1) means private_msg_count */
+        self::incrementUserMsgCount($userId, $type = 1);
       }
 
       /*debug:5*/
@@ -257,8 +261,6 @@ class PrivateLogger extends LoggerFoundation
           ]
         );
       }
-
-      self::incrementUserMsgCount($userId, 1);
     }
 
     return $msgId;
@@ -280,6 +282,38 @@ class PrivateLogger extends LoggerFoundation
         $msgId,
         $data["text"],
         json_encode($data["text_entities"]),
+        $data["is_edited_msg"] ? 1 : 0,
+        (
+          isset($data["date"]) ?
+          date("Y-m-d H:i:s", $data["date"]) :
+          null
+        )
+      ]
+    );
+  }
+
+  /**
+   * @param int                   $msgId
+   * @param \TeaBot\Telegram\Data $data
+   * @return bool
+   */
+  public static function savePhotoMessage(int $msgId, Data $data): bool
+  {
+
+    /*
+     * Take the latest index of the array.
+     * It should give the best resolution.
+     */
+    $tgFileId = $data["photo"][count($data["photo"]) - 1]["file_id"];
+
+    return DB::pdo()->prepare("INSERT INTO `tg_private_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, NOW())")
+    ->execute(
+      [
+        $msgId,
+        $data["text"],
+        json_encode($data["text_entities"]),
+        static::fileResolve($tgFileId),
+        $fileId,
         $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?

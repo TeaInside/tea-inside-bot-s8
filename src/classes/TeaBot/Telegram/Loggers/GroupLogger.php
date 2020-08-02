@@ -117,11 +117,16 @@ class GroupLogger extends LoggerFoundation
             break;
 
           case "photo":
+            self::savePhotoMessage($msgId, $data);
             break;
 
           case "video":
             break;
-        } 
+        }
+
+        /* ($type = 2) means group_msg_count */
+        self::incrementUserMsgCount($userId, $type = 2);
+        self::incrementGroupMsgCount($groupId);
       }
 
       /*debug:5*/
@@ -262,10 +267,6 @@ class GroupLogger extends LoggerFoundation
           ]
         );
       }
-
-      /* ($type = 2) means group_msg_count */
-      self::incrementUserMsgCount($userId, $type = 2);
-      self::incrementGroupMsgCount($groupId);
     }
 
     return $msgId;
@@ -287,6 +288,37 @@ class GroupLogger extends LoggerFoundation
         $msgId,
         $data["text"],
         json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
+        $data["is_edited_msg"] ? 1 : 0,
+        (
+          isset($data["date"]) ?
+          date("Y-m-d H:i:s", $data["date"]) :
+          null
+        )
+      ]
+    );
+  }
+
+    /**
+   * @param int                   $msgId
+   * @param \TeaBot\Telegram\Data $data
+   * @return bool
+   */
+  public static function savePhotoMessage(int $msgId, Data $data): bool
+  {
+
+    /*
+     * Take the latest index of the array.
+     * It should give the best resolution.
+     */
+    $tgFileId = $data["photo"][count($data["photo"]) - 1]["file_id"];
+
+    return DB::pdo()->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, NOW())")
+    ->execute(
+      [
+        $msgId,
+        $data["text"],
+        json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
+        static::fileResolve($tgFileId),
         $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?

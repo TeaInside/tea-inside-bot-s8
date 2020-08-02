@@ -52,6 +52,7 @@ final class Data implements ArrayAccess
       if (isset($msg["photo"])) {
         $this->ct["msg_type"] = "photo";
         $this->ct["text"] = $msg["caption"] ?? null;
+        $this->ct["photo"] = $msg["photo"];
         $this->ct["text_entities"] = $msg["caption_entities"] ?? null;
       } else
       if (isset($msg["sticker"])) {
