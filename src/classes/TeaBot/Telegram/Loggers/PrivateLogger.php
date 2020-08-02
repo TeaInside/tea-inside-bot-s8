@@ -88,6 +88,10 @@ class PrivateLogger extends LoggerFoundation
       $needToSaveMsg = true;
       $msgId = self::touchMessage($userId, $data, $needToSaveMsg, $teaBot);
 
+      /*debug:7*/
+      var_dump("need_to_save_msg: ".($needToSaveMsg ? "t" : "f"));
+      /*enddebug*/
+
       if ($needToSaveMsg) {
         /*
          * Save the message data after touch the message info.
@@ -99,11 +103,15 @@ class PrivateLogger extends LoggerFoundation
             break;
 
           case "photo":
+            self::savePhotoMessage($msgId, $data);
             break;
 
           case "video":
             break;
-        } 
+        }
+
+        /* ($type = 1) means private_msg_count */
+        self::incrementUserMsgCount($userId, $type = 1);
       }
 
       /*debug:5*/
@@ -150,6 +158,7 @@ class PrivateLogger extends LoggerFoundation
   ): int
   {
     $pdo = DB::pdo();
+    $needToSaveMsg = true;
 
     /*
      * Check whether the tg_msg_id has already
@@ -174,7 +183,6 @@ class PrivateLogger extends LoggerFoundation
       var_dump($u);
       /*enddebug*/
 
-      $needToSaveMsg = false;
       $msgId = (int)$u["id"];
 
       /*
@@ -195,8 +203,8 @@ class PrivateLogger extends LoggerFoundation
         );
       }
 
-      if (!isset($data["in"]["not_edit_event"])) {
-        /* TODO: Save edited message here... */
+      if (isset($data["handle_replied_msg"])) {
+        $needToSaveMsg = false;
       }
 
     } else {
@@ -206,19 +214,18 @@ class PrivateLogger extends LoggerFoundation
       var_dump($u);
       /*enddebug*/
 
-      $needToSaveMsg = true;
-
       /*
        * Handle message that has not been stored
        * in database.
        */
 
-      $pdo->prepare("INSERT INTO `tg_private_messages` (`user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, 'text', '0', ?, ?, NOW())")
+      $pdo->prepare("INSERT INTO `tg_private_messages` (`user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, '0', ?, ?, NOW())")
       ->execute(
         [
           $userId,
           $data["msg_id"],
           $data["reply_to"]["message_id"] ?? null,
+          $data["msg_type"],
           $data["is_forwarded_msg"] ? 1 : 0,
           date("Y-m-d H:i:s", $data["date"])
         ]
@@ -255,10 +262,6 @@ class PrivateLogger extends LoggerFoundation
           ]
         );
       }
-
-      if (isset($data["in"]["not_edit_event"])) {
-        self::incrementUserMsgCount($userId, 1);
-      }
     }
 
     return $msgId;
@@ -280,6 +283,37 @@ class PrivateLogger extends LoggerFoundation
         $msgId,
         $data["text"],
         json_encode($data["text_entities"]),
+        $data["is_edited_msg"] ? 1 : 0,
+        (
+          isset($data["date"]) ?
+          date("Y-m-d H:i:s", $data["date"]) :
+          null
+        )
+      ]
+    );
+  }
+
+  /**
+   * @param int                   $msgId
+   * @param \TeaBot\Telegram\Data $data
+   * @return bool
+   */
+  public static function savePhotoMessage(int $msgId, Data $data): bool
+  {
+
+    /*
+     * Take the latest index of the array.
+     * It should give the best resolution.
+     */
+    $tgFileId = $data["photo"][count($data["photo"]) - 1]["file_id"];
+
+    return DB::pdo()->prepare("INSERT INTO `tg_private_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, NOW())")
+    ->execute(
+      [
+        $msgId,
+        $data["text"],
+        json_encode($data["text_entities"]),
+        static::fileResolve($tgFileId),
         $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?

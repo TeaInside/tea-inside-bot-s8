@@ -3,9 +3,9 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345860161,
-    "edited_message": {
-        "message_id": 3720,
+    "update_id": 345860270,
+    "message": {
+        "message_id": 82075,
         "from": {
             "id": 243692601,
             "is_bot": false,
@@ -15,16 +15,39 @@ $json = '{
             "language_code": "en"
         },
         "chat": {
-            "id": -1001226735471,
-            "title": "Private Cloud",
-            "type": "supergroup"
+            "id": 243692601,
+            "first_name": "Ammar",
+            "last_name": "Faizi",
+            "username": "ammarfaizi2",
+            "type": "private"
         },
-        "date": 1596386747,
-        "edit_date": 1596386750,
-        "text": "test edit"
+        "date": 1596389711,
+        "photo": [
+            {
+                "file_id": "AgACAgUAAxkBAAEBQJtfJvlP9MZj1xZThUC5ho1ROvAFigACg6oxG-kjOVWT6eGjDaWSP1oB7Wt0AAMBAAMCAANtAANGRQEAARoE",
+                "file_unique_id": "AQADWgHta3QAA0ZFAQAB",
+                "file_size": 31213,
+                "width": 320,
+                "height": 320
+            },
+            {
+                "file_id": "AgACAgUAAxkBAAEBQJtfJvlP9MZj1xZThUC5ho1ROvAFigACg6oxG-kjOVWT6eGjDaWSP1oB7Wt0AAMBAAMCAAN5AANERQEAARoE",
+                "file_unique_id": "AQADWgHta3QAA0RFAQAB",
+                "file_size": 95807,
+                "width": 960,
+                "height": 960
+            },
+            {
+                "file_id": "AgACAgUAAxkBAAEBQJtfJvlP9MZj1xZThUC5ho1ROvAFigACg6oxG-kjOVWT6eGjDaWSP1oB7Wt0AAMBAAMCAAN4AANHRQEAARoE",
+                "file_unique_id": "AQADWgHta3QAA0dFAQAB",
+                "file_size": 109637,
+                "width": 800,
+                "height": 800
+            }
+        ],
+        "caption": "test qweqwe"
     }
-}
-';
+}';
 
 
 loadConfig("telegram/telegram_bot");
