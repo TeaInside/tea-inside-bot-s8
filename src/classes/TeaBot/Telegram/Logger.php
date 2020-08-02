@@ -18,26 +18,26 @@ final class Logger
   /** 
    * @var \TeaBot\Telegram\Data
    */
-  private Data $data;
+  private ?Data $data;
 
   /**
    * @var \TeaBot\Telegram\TeaBot
    */
-  private TeaBot $teaBot;
+  private ?TeaBot $teaBot;
 
   /**
-   * @param \TeaBot\Telegram\TeaBot $teaBot
-   * @param \TeaBot\Telegram\Data   $data
+   * @param ?\TeaBot\Telegram\TeaBot $teaBot
+   * @param ?\TeaBot\Telegram\Data   $data
    *
    * Constructor.
    */
-  public function __construct(TeaBot $teaBot, ?Data $data = null)
+  public function __construct(?TeaBot $teaBot = null, ?Data $data = null)
   {
     $this->teaBot = $teaBot;
     if ($data instanceof Data) {
       $this->data = $data;
     } else {
-      $this->data = $teaBot->data;
+      $this->data = $teaBot->data ?? null;
     }
   }
 
@@ -51,9 +51,9 @@ final class Logger
   }
 
   /** 
-   * @return void
+   * @return bool
    */
-  public function run()
+  public function run(): bool
   {
     if (isset($this->data["msg_type"], $this->data["chat_type"])) {
 
@@ -63,7 +63,8 @@ final class Logger
         $logger = new GroupLogger($this);
       }
 
-      $logger->execute();
+      return $logger->execute();
     }
+    return false;
   }
 }

@@ -23,9 +23,13 @@ final class DB
       $dbCollections[$cid] = new \PDO(...PDO_PARAM);
       $dbCollections[$cid]->exec("SET @@global.time_zone = '+00:00';");
 
-      /*__debug_flag:41IAg7LEoviU0twCDaX8gtS8zLx0hQAXf4XkzBQrBSU9FSCtp6SjkJhcklmWiiyTnF+aV6KhkpLknJ+TkwqUzs8r1tS05oIYCgA=*/
+      /*debug:5*/
+      var_dump("opening PDO cid: ".$cid.", active PDO cid: ".count($dbCollections));
+      /*enddebug*/
     } else {
-      /*__debug_flag:41IAg7LEoviU0twCDaWi1JLE7FSFABd/heTMFCsFJT0VIK1pzQVRCAA=*/
+      /*debug:5*/
+      var_dump("retake PDO cid: ".$cid);
+      /*enddebug*/
     }
 
     return $dbCollections[$cid];
@@ -41,7 +45,9 @@ final class DB
 
     unset($dbCollections[$cid]);
 
-    /*__debug_flag:41IAgrLEoviU0twCDaXknPzizLx0hQAXf4XkzBQrBSU9FSCtp6SjkJhcklmWiiyTnF+aV6KhkpLknJ+TkwqUzs8r1tS05gIZCQA=*/
+    /*debug*/
+    var_dump("closing PDO cid: ".$cid.", active PDO cid: ".count($dbCollections));
+    /*enddebug*/
   }
 
   /**

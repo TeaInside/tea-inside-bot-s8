@@ -22,8 +22,9 @@ class GroupLogger extends LoggerFoundation
 {
   /**
    * @param string
+   * @return bool
    */
-  public function execute()
+  public function execute(): bool
   {
     $data = $this->data;
 
@@ -43,7 +44,9 @@ class GroupLogger extends LoggerFoundation
       ]
     );
 
-    var_dump("got groupId: ", $groupId);
+    /*debug:2*/
+    var_dump("got groupId: ".$groupId);
+    /*enddebug*/
 
     $userId = self::userInsert(
       [
@@ -56,18 +59,45 @@ class GroupLogger extends LoggerFoundation
       ]
     );
 
-    var_dump("got userId: ", $userId);
+    /*debug:2*/
+    var_dump("got userId: ".$userId);
+    /*enddebug*/
 
 
     $pdo = DB::pdo();
     $teaBot = $this->logger->teaBot ?? null;
 
-    /*__debug_flag:41IAApXkzBQFW4WY4PL8/JzUGOf8ovzSksy8VCur9NQS58wUDU1rLpA6AA==*/
+    /*debug:5*/
+    $cid = \Swoole\Coroutine::getCid();
+    /*enddebug*/
+
+    /*
+     * If the message is supposed to reply another message,
+     * we need to keep track the replied message first.
+     */
+    if (isset($data["reply_to"]["message_id"])) {
+      if (!(new Logger($teaBot, Data::buildMsg($data["reply_to"])))->run()) {
+        /*
+         * Failed to store replied message.
+         *
+         * Don't log here, the error log and report has been
+         * sent through that subroutine.
+         */
+        return false;
+      }
+    }
 
     try {
-      /*__debug_flag:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8KwUlPZXkzBRNay6IUgA=*/
+      /*debug:5*/
+      var_dump("beginTransaction: ".$cid);
+      /*enddebug*/
 
       $pdo->beginTransaction();
+
+      /*debug:5*/
+      var_dump("beginTransaction OK: ".$cid);
+      /*enddebug*/
+
 
       $msgId = self::touchMessage($groupId, $userId, $data);
 
@@ -87,22 +117,33 @@ class GroupLogger extends LoggerFoundation
           break;
       }
 
-      /*__debug_flag:41IAg7LEoviU0twCDaXk/NzczBIrBSU9leTMFE1rLogCAA==*/
+      /*debug:5*/
+      var_dump("commit: ".$cid);
+      /*enddebug*/
 
       $pdo->commit();
 
     } catch (PDOException $e) {
-      /*__debug_flag:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuiBIA*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
-
+      return false;
     } catch (Error $e) {
-      /*__debug_flag:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuiBIA*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
+      return false;
     }
+
+    return true;
   }
 
   /**
@@ -116,14 +157,6 @@ class GroupLogger extends LoggerFoundation
     int $groupId, int $userId, Data $data, ?TeaBot $teaBot = null): int
   {
     $pdo = DB::pdo();
-
-    /*
-     * If the message is supposed to reply another message,
-     * we need to keep track the replied message first.
-     */
-    if (isset($data["reply_to"]["message_id"])) {
-      (new Logger($teaBot, Data::buildMsg($data["reply_to"])))->run();
-    }
 
     /*
      * Check whether the tg_msg_id has already
@@ -224,5 +257,14 @@ class GroupLogger extends LoggerFoundation
     }
 
     return $msgId;
+  }
+
+  /**
+   * @param int $msgId
+   * @return bool
+   */
+  public static function saveTextMessage(int $msgId): bool
+  {
+    
   }
 }
