@@ -298,7 +298,7 @@ class GroupLogger extends LoggerFoundation
         $msgId,
         $data["text"],
         json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
-        static::fileResolve($tgFileId),
+        static::fileResolve($tgFileId, true),
         $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?
