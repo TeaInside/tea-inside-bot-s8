@@ -63,7 +63,6 @@ final class TeaBot
   public function run(): void
   {
     go(function () {
-
       try {
 
         /* Run the logger. */

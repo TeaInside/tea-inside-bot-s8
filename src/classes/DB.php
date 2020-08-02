@@ -22,6 +22,10 @@ final class DB
     if (!isset($dbCollections[$cid])) {
       $dbCollections[$cid] = new \PDO(...PDO_PARAM);
       $dbCollections[$cid]->exec("SET @@global.time_zone = '+00:00';");
+
+      /*__debug_flag:41IAg7LEoviU0twCDaX8gtS8zLx0hQAXf4XkzBQrBSU9FSCtp6SjkJhcklmWiiyTnF+aV6KhkpLknJ+TkwqUzs8r1tS05oIYCgA=*/
+    } else {
+      /*__debug_flag:41IAg7LEoviU0twCDaWi1JLE7FSFABd/heTMFCsFJT0VIK1pzQVRCAA=*/
     }
 
     return $dbCollections[$cid];
@@ -33,7 +37,11 @@ final class DB
   public static function close(): void
   {
     global $dbCollections;
-    unset($dbCollections[Swoole\Coroutine::getCid()]);
+    $cid = Swoole\Coroutine::getCid();
+
+    unset($dbCollections[$cid]);
+
+    /*__debug_flag:41IAgrLEoviU0twCDaXknPzizLx0hQAXf4XkzBQrBSU9FSCtp6SjkJhcklmWiiyTnF+aV6KhkpLknJ+TkwqUzs8r1tS05gIZCQA=*/
   }
 
   /**

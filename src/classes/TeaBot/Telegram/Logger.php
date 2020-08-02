@@ -26,14 +26,19 @@ final class Logger
   private TeaBot $teaBot;
 
   /**
-   * @param \TeaBot\Telegram\Data
+   * @param \TeaBot\Telegram\TeaBot $teaBot
+   * @param \TeaBot\Telegram\Data   $data
    *
    * Constructor.
    */
-  public function __construct(TeaBot $teaBot)
+  public function __construct(TeaBot $teaBot, ?Data $data = null)
   {
     $this->teaBot = $teaBot;
-    $this->data   = $teaBot->data;
+    if ($data instanceof Data) {
+      $this->data = $data;
+    } else {
+      $this->data = $teaBot->data;
+    }
   }
 
   /**

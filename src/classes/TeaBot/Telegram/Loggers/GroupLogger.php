@@ -25,38 +25,49 @@ class GroupLogger extends LoggerFoundation
    */
   public function execute()
   {
+    $data = $this->data;
+
+    /*
+     * Get $groupId and $userId from database first.
+     *
+     * Important Note:
+     * - $groupId and $userId are not chat/user ID that comes from Telegram.
+     * - They are ID from database auto increment.
+     */
+    $groupId = self::groupInsert(
+      [
+        "tg_group_id" => $data["chat_id"],
+        "name" => $data["chat_title"],
+        "username" => $data["chat_username"],
+        "msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
+      ]
+    );
+
+    var_dump("got groupId: ", $groupId);
+
+    $userId = self::userInsert(
+      [
+        "tg_user_id" => $data["user_id"],
+        "first_name" => $data["first_name"],
+        "last_name" => $data["last_name"],
+        "username" => $data["username"],
+        "is_bot" => $data["is_bot"] ? 1 : 0,
+        "group_msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
+      ]
+    );
+
+    var_dump("got userId: ", $userId);
+
+
     $pdo = DB::pdo();
+    $teaBot = $this->logger->teaBot ?? null;
+
+    /*__debug_flag:41IAApXkzBQFW4WY4PL8/JzUGOf8ovzSksy8VCur9NQS58wUDU1rLpA6AA==*/
 
     try {
+      /*__debug_flag:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8KwUlPZXkzBRNay6IUgA=*/
+
       $pdo->beginTransaction();
-      $data = $this->data;
-
-      /*
-       * Get $groupId and $userId from database first.
-       *
-       * Important Note:
-       * - $groupId and $userId are not chat/user ID that comes from Telegram.
-       * - They are ID from database auto increment.
-       */
-      $groupId = self::groupInsert(
-        [
-          "tg_group_id" => $data["chat_id"],
-          "name" => $data["chat_title"],
-          "username" => $data["chat_username"],
-          "msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
-        ]
-      );
-
-      $userId = self::userInsert(
-        [
-          "tg_user_id" => $data["user_id"],
-          "first_name" => $data["first_name"],
-          "last_name" => $data["last_name"],
-          "username" => $data["username"],
-          "is_bot" => $data["is_bot"] ? 1 : 0,
-          "group_msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
-        ]
-      );
 
       $msgId = self::touchMessage($groupId, $userId, $data);
 
@@ -76,23 +87,33 @@ class GroupLogger extends LoggerFoundation
           break;
       }
 
+      /*__debug_flag:41IAg7LEoviU0twCDaXk/NzczBIrBSU9leTMFE1rLogCAA==*/
+
       $pdo->commit();
+
     } catch (PDOException $e) {
+      /*__debug_flag:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuiBIA*/
+
       $pdo->rollBack();
-      $this->logger->teaBot->errorReport($e);
+      $teaBot and $teaBot->errorReport($e);
+
     } catch (Error $e) {
+      /*__debug_flag:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuiBIA*/
+
       $pdo->rollBack();
-      $this->logger->teaBot->errorReport($e);
+      $teaBot and $teaBot->errorReport($e);
     }
   }
 
   /**
-   * @param int                   $groupId
-   * @param int                   $userId
-   * @param \TeaBot\Telegram\Data $data
+   * @param int                     $groupId
+   * @param int                     $userId
+   * @param \TeaBot\Telegram\Data   $data
+   * @param \TeaBot\Telegram\TeaBot $teaBot
    * @return int
    */
-  private static function touchMessage(int $groupId, int $userId, Data $data): int
+  private static function touchMessage(
+    int $groupId, int $userId, Data $data, ?TeaBot $teaBot = null): int
   {
     $pdo = DB::pdo();
 
@@ -101,9 +122,7 @@ class GroupLogger extends LoggerFoundation
      * we need to keep track the replied message first.
      */
     if (isset($data["reply_to"]["message_id"])) {
-      (new Logger(
-        new TeaBot(Data::buildMsg($data["reply_to"]), true)
-      ))->run();
+      (new Logger($teaBot, Data::buildMsg($data["reply_to"])))->run();
     }
 
     /*
