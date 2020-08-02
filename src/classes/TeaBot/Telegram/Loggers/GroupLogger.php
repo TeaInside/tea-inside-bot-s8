@@ -23,5 +23,8 @@ class GroupLogger extends LoggerFoundation
    */
   public function execute()
   {
+  	switch ($this->data["msg_type"]) {
+
+  	}
   }
 }

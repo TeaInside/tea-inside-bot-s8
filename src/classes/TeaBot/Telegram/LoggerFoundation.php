@@ -22,11 +22,17 @@ abstract class LoggerFoundation {
 	protected Logger $logger;
 
   /**
+   * @var \TeaBot\Telegram\Data
+   */
+  protected Data $data;
+
+  /**
    * @param \TeaBot\Telegram\Logger $logger
    */
 	public function __construct(Logger $logger)
   {
     $this->logger = $logger;
+    $this->data   = $logger->data;
 	}
 
   /**
