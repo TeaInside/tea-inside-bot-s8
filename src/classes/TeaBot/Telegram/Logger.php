@@ -41,29 +41,16 @@ final class Logger
    */
   public function run()
   {
-    if (isset($this->data["msg_type"])) {
+    if (isset($this->data["msg_type"], $this->data["chat_type"])) {
 
-      if ($this->data["chat_type"] == "private") {
-        $logger = new PrivateLogger($this->data);
+      if ($this->data["chat_type"] === "private") {
+        $logger = new PrivateLogger($this);
       } else {
-        $logger = new GroupLogger($this->data);
+        $logger = new GroupLogger($this);
       }
 
-      switch ($this->data["msg_type"]) {
-        case "text":
-          $logger->logText();
-          break;
-        case "photo":
-          $logger->logPhoto();
-          break;
-        case "sticker":
-          $logger->logSticker();
-          break;
+      $logger->execute();
 
-        default:
-          // Unknown type of message.
-          break;
-      }
     }
   }
 }
