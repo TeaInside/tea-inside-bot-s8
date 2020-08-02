@@ -3,9 +3,9 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345849982,
-    "message": {
-        "message_id": 2793,
+    "update_id": 345860161,
+    "edited_message": {
+        "message_id": 3720,
         "from": {
             "id": 243692601,
             "is_bot": false,
@@ -15,38 +15,16 @@ $json = '{
             "language_code": "en"
         },
         "chat": {
-            "id": -1001149709623,
-            "title": "Test Driven Development",
-            "type": "supergroup",
-            "username": null
+            "id": -1001226735471,
+            "title": "Private Cloud",
+            "type": "supergroup"
         },
-        "date": 1595141419,
-        "reply_to_message": {
-            "message_id": 2668,
-            "from": {
-                "id": 466965678,
-                "is_bot": true,
-                "first_name": "Tea Inside",
-                "username": "TeaInsideBot"
-            },
-            "chat": {
-                "id": -1001149709623,
-                "title": "Test Driven Development",
-                "type": "supergroup"
-            },
-            "date": 1595121822,
-            "text": "This command can only be used in private message!"
-        },
-        "text": "/debug",
-        "entities": [
-            {
-                "offset": 0,
-                "length": 6,
-                "type": "bot_command"
-            }
-        ]
+        "date": 1596386747,
+        "edit_date": 1596386750,
+        "text": "test edit"
     }
-}';
+}
+';
 
 
 loadConfig("telegram/telegram_bot");

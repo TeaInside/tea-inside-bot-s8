@@ -7,8 +7,6 @@
  * @version 8.0
  */
 
-$dbCollections = [];
-
 final class DB
 {
   /**
@@ -19,18 +17,22 @@ final class DB
     global $dbCollections;
     $cid = Swoole\Coroutine::getCid();
 
+    if ((!is_array($dbCollections)) || (!isset($dbCollections))) {
+      $dbCollections = [];
+    }
+
     if (!isset($dbCollections[$cid])) {
       $dbCollections[$cid] = new \PDO(...PDO_PARAM);
-      $dbCollections[$cid]->exec("SET @@global.time_zone = '+00:00';");
 
       /*debug:5*/
       var_dump("opening PDO cid: ".$cid.", active PDO cid: ".count($dbCollections));
       /*enddebug*/
-    } else {
-      /*debug:5*/
-      var_dump("retake PDO cid: ".$cid);
-      /*enddebug*/
     }
+    /*debug:5*/
+    else {
+      var_dump("retake PDO cid: ".$cid);
+    }
+    /*enddebug*/
 
     return $dbCollections[$cid];
   }
@@ -45,7 +47,10 @@ final class DB
 
     unset($dbCollections[$cid]);
 
-    /*debug*/
+    /*debug:5*/
+    if ((!is_array($dbCollections)) || (!isset($dbCollections))) {
+      $dbCollections = [];
+    }
     var_dump("closing PDO cid: ".$cid.", active PDO cid: ".count($dbCollections));
     /*enddebug*/
   }
