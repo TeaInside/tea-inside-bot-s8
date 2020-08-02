@@ -219,12 +219,13 @@ class PrivateLogger extends LoggerFoundation
        * in database.
        */
 
-      $pdo->prepare("INSERT INTO `tg_private_messages` (`user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, 'text', '0', ?, ?, NOW())")
+      $pdo->prepare("INSERT INTO `tg_private_messages` (`user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, '0', ?, ?, NOW())")
       ->execute(
         [
           $userId,
           $data["msg_id"],
           $data["reply_to"]["message_id"] ?? null,
+          $data["msg_type"],
           $data["is_forwarded_msg"] ? 1 : 0,
           date("Y-m-d H:i:s", $data["date"])
         ]
@@ -313,7 +314,6 @@ class PrivateLogger extends LoggerFoundation
         $data["text"],
         json_encode($data["text_entities"]),
         static::fileResolve($tgFileId),
-        $fileId,
         $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?
