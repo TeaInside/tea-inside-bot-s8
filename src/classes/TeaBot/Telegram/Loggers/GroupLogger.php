@@ -131,13 +131,14 @@ class GroupLogger extends LoggerFoundation implements LoggerInterface
     } else {
 
       /* Insert new message. */
-      $pdo->prepare("INSERT INTO `tg_group_messages` (`group_id`, `user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, 'text', ?, ?, ?, NOW())")
+      $pdo->prepare("INSERT INTO `tg_group_messages` (`group_id`, `user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())")
         ->execute(
           [
             $groupId,
             $userId,
             $data["msg_id"],
             $data["reply_to"]["message_id"] ?? null,
+            $data["msg_type"],
             $data["is_edited_msg"] ? 1 : 0,
             $data["is_forwarded_msg"] ? 1 : 0,
             date("Y-m-d H:i:s", $data["date"])
