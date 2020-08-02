@@ -122,7 +122,7 @@ final class Data implements ArrayAccess
       [
         "update_id" => $updateId,
         "message" => $idt,
-        "not_edit_event" => true
+        "handle_replied_msg" => true
       ]
     );
   }

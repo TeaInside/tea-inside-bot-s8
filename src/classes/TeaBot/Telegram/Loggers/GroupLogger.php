@@ -98,23 +98,30 @@ class GroupLogger extends LoggerFoundation
       var_dump("beginTransaction OK: ".$cid);
       /*enddebug*/
 
+      $needToSaveMsg = true;
+      $msgId = self::touchMessage(
+        $groupId, $userId, $data, $needToSaveMsg, $teaBot);
 
-      $msgId = self::touchMessage($groupId, $userId, $data, $teaBot);
+      /*debug:7*/
+      var_dump("need_to_save_msg: ".($needToSaveMsg ? "t" : "f"));
+      /*enddebug*/
 
-      /*
-       * Save the message data after touch the message info.
-       */
-      switch ($this->data["msg_type"]) {
+      if ($needToSaveMsg) {
+        /*
+         * Save the message data after touch the message info.
+         */
+        switch ($this->data["msg_type"]) {
 
-        case "text":
-          self::saveTextMessage($msgId, $data);
-          break;
+          case "text":
+            self::saveTextMessage($msgId, $data);
+            break;
 
-        case "photo":
-          break;
+          case "photo":
+            break;
 
-        case "video":
-          break;
+          case "video":
+            break;
+        } 
       }
 
       /*debug:5*/
@@ -150,13 +157,20 @@ class GroupLogger extends LoggerFoundation
    * @param int                     $groupId
    * @param int                     $userId
    * @param \TeaBot\Telegram\Data   $data
+   * @param bool                    &$needToSaveMsg
    * @param \TeaBot\Telegram\TeaBot $teaBot
    * @return int
    */
   private static function touchMessage(
-    int $groupId, int $userId, Data $data, ?TeaBot $teaBot = null): int
+    int $groupId,
+    int $userId,
+    Data $data,
+    bool &$needToSaveMsg,
+    ?TeaBot $teaBot = null
+  ): int
   {
     $pdo = DB::pdo();
+    $needToSaveMsg = true;
 
     /*
      * Check whether the tg_msg_id has already
@@ -189,6 +203,10 @@ class GroupLogger extends LoggerFoundation
             "is_bot" => $ff["is_bot"] ? 1 : 0
           ]
         );
+      }
+
+      if (isset($data["handle_replied_msg"])) {
+        $needToSaveMsg = false;
       }
 
     } else {

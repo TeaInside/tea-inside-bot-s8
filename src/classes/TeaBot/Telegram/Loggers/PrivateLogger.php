@@ -86,7 +86,11 @@ class PrivateLogger extends LoggerFoundation
       /*enddebug*/
 
       $needToSaveMsg = true;
-      $msgId = self::touchMessage($userId, $data, $teaBot);
+      $msgId = self::touchMessage($userId, $data, $needToSaveMsg, $teaBot);
+
+      /*debug:7*/
+      var_dump("need_to_save_msg: ".($needToSaveMsg ? "t" : "f"));
+      /*enddebug*/
 
       if ($needToSaveMsg) {
         /*
@@ -138,16 +142,19 @@ class PrivateLogger extends LoggerFoundation
   /**
    * @param int                     $userId
    * @param \TeaBot\Telegram\Data   $data
+   * @param bool                    &$needToSaveMsg
    * @param \TeaBot\Telegram\TeaBot $teaBot
    * @return int
    */
   public static function touchMessage(
     int $userId,
     Data $data,
+    bool &$needToSaveMsg,
     ?TeaBot $teaBot = null
   ): int
   {
     $pdo = DB::pdo();
+    $needToSaveMsg = true;
 
     /*
      * Check whether the tg_msg_id has already
@@ -190,6 +197,10 @@ class PrivateLogger extends LoggerFoundation
             "is_bot" => $ff["is_bot"] ? 1 : 0
           ]
         );
+      }
+
+      if (isset($data["handle_replied_msg"])) {
+        $needToSaveMsg = false;
       }
 
     } else {
