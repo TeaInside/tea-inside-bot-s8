@@ -38,6 +38,15 @@ final class TeaBot
   }
 
   /**
+   * @param mixed $key
+   * @return mixed
+   */
+  public function __get($key)
+  {
+    return $this->{$key} ?? null;
+  }
+
+  /**
    * @return void
    */
   public function run(): void
