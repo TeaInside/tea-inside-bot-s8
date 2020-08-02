@@ -38,7 +38,9 @@ final class Data implements ArrayAccess
     $this->in = $in;
     $this->ct["in"] = &$this->in;
 
-    if (isset($in["update_id"], $in["message"], $in["edited_message"])) {
+    if (isset($in["update_id"]) &&
+       (isset($in["message"]) || isset($in["edited_message"]))
+    ) {
 
       $msg = $in["message"] ?? $in["edited_message"] ?? null;
 

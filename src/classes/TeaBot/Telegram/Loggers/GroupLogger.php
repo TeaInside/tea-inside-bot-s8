@@ -287,7 +287,7 @@ class GroupLogger extends LoggerFoundation
         $msgId,
         $data["text"],
         json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
-        $data["is_edited_msg "] ? 1 : 0,
+        $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?
           date("Y-m-d H:i:s", $data["date"]) :
