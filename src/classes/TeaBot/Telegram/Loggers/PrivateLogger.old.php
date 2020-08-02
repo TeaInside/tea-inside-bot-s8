@@ -90,7 +90,7 @@ class PrivateLogger extends LoggerFoundation implements LoggerInterface
       (new Logger(Data::buildMsg($data["reply_to"])))->run();
     }
 
-    /**
+    /*
      * Check whether the tg_msg_id has already
      * been stored in database or not.
      */

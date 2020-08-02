@@ -15,10 +15,10 @@ use TeaBot\Telegram\Contracts\LoggerInterface;
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
  * @license MIT
- * @package \TeaBot\Telegram\Loggers
+ * @package \TeaBot\Telegram\PrivateLogger
  * @version 8.0.0
  */
-class GroupLogger extends LoggerFoundation
+class PrivateLogger extends LoggerFoundation
 {
   /**
    * @param string
@@ -29,25 +29,12 @@ class GroupLogger extends LoggerFoundation
     $data = $this->data;
 
     /*
-     * Get $groupId and $userId from database first.
+     * Get $userId from database first.
      *
      * Important Note:
-     * - $groupId and $userId are not chat/user ID that comes from Telegram.
-     * - They are ID from database auto increment.
+     * - $userId IS not chat/user ID that comes from Telegram.
+     * - It is ID from database auto increment.
      */
-    $groupId = self::groupInsert(
-      [
-        "tg_group_id" => $data["chat_id"],
-        "name" => $data["chat_title"],
-        "username" => $data["chat_username"],
-        "msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
-      ]
-    );
-
-    /*debug:2*/
-    var_dump("got groupId: ".$groupId);
-    /*enddebug*/
-
     $userId = self::userInsert(
       [
         "tg_user_id" => $data["user_id"],
@@ -98,23 +85,25 @@ class GroupLogger extends LoggerFoundation
       var_dump("beginTransaction OK: ".$cid);
       /*enddebug*/
 
+      $needToSaveMsg = true;
+      $msgId = self::touchMessage($userId, $data, $needToSaveMsg, $teaBot);
 
-      $msgId = self::touchMessage($groupId, $userId, $data, $teaBot);
+      if ($needToSaveMsg) {
+        /*
+         * Save the message data after touch the message info.
+         */
+        switch ($this->data["msg_type"]) {
 
-      /*
-       * Save the message data after touch the message info.
-       */
-      switch ($this->data["msg_type"]) {
+          case "text":
+            self::saveTextMessage($msgId, $data);
+            break;
 
-        case "text":
-          self::saveTextMessage($msgId, $data);
-          break;
+          case "photo":
+            break;
 
-        case "photo":
-          break;
-
-        case "video":
-          break;
+          case "video":
+            break;
+        } 
       }
 
       /*debug:5*/
@@ -147,14 +136,18 @@ class GroupLogger extends LoggerFoundation
   }
 
   /**
-   * @param int                     $groupId
    * @param int                     $userId
    * @param \TeaBot\Telegram\Data   $data
+   * @param bool                    &$needToSaveMsg
    * @param \TeaBot\Telegram\TeaBot $teaBot
    * @return int
    */
-  private static function touchMessage(
-    int $groupId, int $userId, Data $data, ?TeaBot $teaBot = null): int
+  public static function touchMessage(
+    int $userId,
+    Data $data,
+    bool &$needToSaveMsg,
+    ?TeaBot $teaBot = null
+  ): int
   {
     $pdo = DB::pdo();
 
@@ -162,8 +155,13 @@ class GroupLogger extends LoggerFoundation
      * Check whether the tg_msg_id has already
      * been stored in database or not.
      */
-    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ?");
-    $st->execute([$groupId, $data["msg_id"]]);
+    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_private_messages` WHERE `user_id` = ? AND `tg_msg_id` = ?");
+    $st->execute([$userId, $data["msg_id"]]);
+
+    /*debug:7*/
+    var_dump("execute data:");
+    var_dump([$userId, $data["msg_id"]]);
+    /*enddebug*/
 
     /*
      * If the message has already been stored
@@ -171,6 +169,12 @@ class GroupLogger extends LoggerFoundation
      */
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
 
+      /*debug:7*/
+      var_dump("fetching old msg...");
+      var_dump($u);
+      /*enddebug*/
+
+      $needToSaveMsg = false;
       $msgId = (int)$u["id"];
 
       /*
@@ -197,27 +201,30 @@ class GroupLogger extends LoggerFoundation
 
     } else {
 
+      /*debug:7*/
+      var_dump("inserting new msg...");
+      var_dump($u);
+      /*enddebug*/
+
+      $needToSaveMsg = true;
+
       /*
        * Handle message that has not been stored
        * in database.
        */
 
-      $pdo->prepare("INSERT INTO `tg_group_messages` (`group_id`, `user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())")
+      $pdo->prepare("INSERT INTO `tg_private_messages` (`user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, 'text', '0', ?, ?, NOW())")
       ->execute(
-          [
-            $groupId,
-            $userId,
-            $data["msg_id"],
-            $data["reply_to"]["message_id"] ?? null,
-            $data["msg_type"],
-            $data["is_edited_msg"] ? 1 : 0,
-            $data["is_forwarded_msg"] ? 1 : 0,
-            date("Y-m-d H:i:s", $data["date"])
-          ]
+        [
+          $userId,
+          $data["msg_id"],
+          $data["reply_to"]["message_id"] ?? null,
+          $data["is_forwarded_msg"] ? 1 : 0,
+          date("Y-m-d H:i:s", $data["date"])
+        ]
       );
 
       $msgId = $pdo->lastInsertId();
-
 
       /*
        * If it is forwarded message, we should keep
@@ -235,7 +242,7 @@ class GroupLogger extends LoggerFoundation
           ]
         );
 
-        $pdo->prepare("INSERT INTO `tg_group_message_fwd` (`user_id`, `msg_id`, `tg_forwarded_date`) VALUES (?, ?, ?)")
+        $pdo->prepare("INSERT INTO `tg_private_message_fwd` (`user_id`, `msg_id`, `tg_forwarded_date`) VALUES (?, ?, ?);")
         ->execute(
           [
             $forwarderUserId,
@@ -250,9 +257,7 @@ class GroupLogger extends LoggerFoundation
       }
 
       if (isset($data["in"]["not_edit_event"])) {
-        /* ($type = 2) means group_msg_count */
-        self::incrementUserMsgCount($userId, $type = 2);
-        self::incrementGroupMsgCount($groupId);
+        self::incrementUserMsgCount($userId, 1);
       }
     }
 
@@ -264,18 +269,18 @@ class GroupLogger extends LoggerFoundation
    * @param \TeaBot\Telegram\Data $data
    * @return bool
    */
-  public static function saveTextMessage(int $msgId, Data $data): bool
+  public static function saveTextMessage(int $msgId, Data $data)
   {
     /*
      * Save the text message.
      */
-    return DB::pdo()->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, NULL, ?, ?, NOW())")
+    return DB::pdo()->prepare("INSERT INTO `tg_private_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, NULL, ?, ?, NOW())")
     ->execute(
       [
         $msgId,
         $data["text"],
-        json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
-        $data["is_edited_msg "] ? 1 : 0,
+        json_encode($data["text_entities"]),
+        $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?
           date("Y-m-d H:i:s", $data["date"]) :
