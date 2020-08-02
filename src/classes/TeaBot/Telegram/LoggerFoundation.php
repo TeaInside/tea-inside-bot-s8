@@ -78,7 +78,7 @@ abstract class LoggerFoundation {
    */
   public static function fileResolve(string $tgFileId, bool $addHitCount = false): ?int
   {
-    /**
+    /*
      * Check the $tgFileId in database.
      * If it has already been stored, then returns
      * the stored primary key. Otherwise, it
@@ -184,7 +184,7 @@ abstract class LoggerFoundation {
     if ($u = $st->fetch(PDO::FETCH_NUM)) {
       $u = (int)$u[0];
 
-      /** 
+      /*
        * This part handles duplicate file
        * with different telegram file id.
        * In this case, we update the
@@ -193,24 +193,24 @@ abstract class LoggerFoundation {
 
       $hitCountQuery = $addHitCount ? "`hit_count`=`hit_count`+1," : "";
       $pdo->prepare("UPDATE `tg_files` SET {$hitCountQuery} `tg_file_id` = ? WHERE `id` = ?")
-        ->execute([$tgFileId, $u]);
+      ->execute([$tgFileId, $u]);
 
 
       $fileId = $u;
     } else {
 
       $pdo->prepare("INSERT INTO `tg_files` (`tg_file_id`, `md5_sum`, `sha1_sum`, `file_type`, `ext`, `size`, `hit_count`, `description`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NOW())")
-        ->execute(
-          [
-            $tgFileId,
-            $md5Hash,
-            $sha1Hash,
-            mime_content_type($targetFile),
-            $fileExt,
-            $fileSize,
-            $addHitCount ? 1 : 0
-          ]
-        );
+      ->execute(
+        [
+          $tgFileId,
+          $md5Hash,
+          $sha1Hash,
+          mime_content_type($targetFile),
+          $fileExt,
+          $fileSize,
+          $addHitCount ? 1 : 0
+        ]
+      );
 
       $fileId = $pdo->lastInsertId();
     }
@@ -357,7 +357,8 @@ abstract class LoggerFoundation {
       }
 
       $pdo->prepare("DELETE FROM `tg_group_admins` WHERE `group_id` = ?")
-        ->execute([$groupId]);
+      ->execute([$groupId]);
+
       if (count($data)) {
         $pdo->prepare($query)->execute($data);
       }

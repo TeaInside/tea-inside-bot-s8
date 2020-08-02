@@ -17,16 +17,27 @@ final class TeaBot
   /**
    * @var \TeaBot\Telegram\Data
    */
-  private $data;
+  private Data $data;
 
   /**
-   * @param array &$data
+   * @var bool
+   */
+  private bool $dontResponse;
+
+  /**
+   * @param array|Data $data
+   * @param bool       $dontResponse
    *
    * Constructor.
    */
-  public function __construct(array &$data)
+  public function __construct($data, bool $dontResponse = false)
   {
-    $this->data = new Data($data);
+    if ($data instanceof Data) {
+      $this->data = $data;
+    } else {
+      $this->data = new Data($data);
+    }
+    $this->dontResponse = $dontResponse;
   }
 
   /**
@@ -69,8 +80,10 @@ final class TeaBot
 
     });
 
-    // $res = new Response($this->data);
-    // $res->execRoutes();
+    if (!$this->dontResponse) {
+      $res = new Response($this->data);
+      $res->execRoutes();
+    }
   }
 
   /**

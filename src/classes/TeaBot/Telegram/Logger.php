@@ -18,12 +18,12 @@ final class Logger
   /** 
    * @var \TeaBot\Telegram\Data
    */
-  private $data;
+  private Data $data;
 
   /**
    * @var \TeaBot\Telegram\TeaBot
    */
-  private $teaBot;
+  private TeaBot $teaBot;
 
   /**
    * @param \TeaBot\Telegram\Data
