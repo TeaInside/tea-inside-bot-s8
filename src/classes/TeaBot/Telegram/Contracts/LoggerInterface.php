@@ -14,4 +14,29 @@ interface LoggerInterface
    * @return void
    */
   public function logText(): void;
+
+  /**
+   * @return void
+   */
+  public function logPhoto(): void;
+
+  /**
+   * @return void
+   */
+  public function logSticker(): void;
+
+  /**
+   * @return void
+   */
+  public function logAnimation(): void;
+
+  /**
+   * @return void
+   */
+  public function logVoice(): void;
+
+  /**
+   * @return void
+   */
+  public function logVideo(): void;
 }

@@ -2,14 +2,22 @@
 
 require __DIR__."/../bootstrap/telegram/autoload.php";
 
+error_reporting(E_ALL);
+ini_set("display_errors", true);
+
 loadConfig("telegram/api");
 loadConfig("telegram/quran");
 loadConfig("telegram/calculus");
 loadConfig("telegram/telegram_bot");
 
-Swoole\Runtime::enableCoroutine();
+file_put_contents(TELEGRAM_DAEMON_PID_FILE, getmypid());
 
-Co\run(function() {
+\Swoole\Runtime::enableCoroutine();
+
+\TeaBot\Telegram\Log::registerLogStream(STDOUT);
+\TeaBot\Telegram\Log::registerLogStream(fopen(TELEGRAM_DAEMON_LOG_FILE, "a"));
+
+\Co\run(function() {
 go(function () {
 
   $tcpAddr = "tcp://127.0.0.1:7777";
@@ -33,7 +41,7 @@ go(function () {
     echo "Listening on ".$tcpAddr."...\n";
 
     while ($conn = stream_socket_accept($socket, -1)) {
-      go(function () use ($r, $conn) {
+      go(function () use ($conn) {
         stream_set_timeout($conn, 5);
 
         $data = fread($conn, 4096);
@@ -56,6 +64,8 @@ go(function () {
             $bot->run();
           } catch (\Error $e) {
             $bot->errorReport($e);
+          } finally {
+            DB::close();
           }
 
           // DB::dumpConnections();
@@ -70,13 +80,3 @@ go(function () {
 
 });
 });
-
-function tcp_pack(string $data): string
-{
-  return pack('n', strlen($data)).$data;
-}
-
-function tcp_length(string $head): int
-{
-  return unpack('n', $head)[1];
-}

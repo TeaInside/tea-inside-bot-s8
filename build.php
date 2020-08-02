@@ -26,7 +26,7 @@ if (isset($argv[1]) && ($argv[1] === "release")) {
     touch($swooleLockFile);
   }
 
-  /**
+  /*
    * Build telegram config.
    */
   recursiveCallbackScanDir($telegramConfigDir, function (string $dir, string $file) {

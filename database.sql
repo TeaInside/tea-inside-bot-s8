@@ -1,6 +1,6 @@
 -- Adminer 4.7.6 MySQL dump
 
-SET NAMES utf8mb4;
+SET NAMES utf8;
 SET time_zone = '+00:00';
 SET foreign_key_checks = 0;
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
@@ -64,7 +64,7 @@ CREATE TABLE `tg_group_admins` (
   `user_id` bigint(20) unsigned NOT NULL,
   `group_id` bigint(20) unsigned NOT NULL,
   `role` enum('creator','administrator','member','restricted','left','kicked') NOT NULL DEFAULT 'administrator',
-  `permissions` json DEFAULT NULL,
+  `info` json DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -272,4 +272,4 @@ CREATE TABLE `tg_user_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
--- 2020-07-19 08:07:11
+-- 2020-07-22 13:47:55

@@ -4,6 +4,7 @@ namespace TeaBot\Telegram;
 
 use DB;
 use Error;
+use Exception;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -16,16 +17,27 @@ final class TeaBot
   /**
    * @var \TeaBot\Telegram\Data
    */
-  private $data;
+  private Data $data;
 
   /**
-   * @param array &$data
+   * @var bool
+   */
+  private bool $dontResponse;
+
+  /**
+   * @param array|Data $data
+   * @param bool       $dontResponse
    *
    * Constructor.
    */
-  public function __construct(array &$data)
+  public function __construct($data, bool $dontResponse = false)
   {
-    $this->data = new Data($data);
+    if ($data instanceof Data) {
+      $this->data = $data;
+    } else {
+      $this->data = new Data($data);
+    }
+    $this->dontResponse = $dontResponse;
   }
 
   /**
@@ -37,28 +49,49 @@ final class TeaBot
   }
 
   /**
+   * @param mixed $key
+   * @return mixed
+   */
+  public function __get($key)
+  {
+    return $this->{$key} ?? null;
+  }
+
+  /**
    * @return void
    */
   public function run(): void
   {
     go(function () {
-      // Run the logger.
-      $logger = new Logger($this->data);
-      $logger->run();
-      DB::close();
+      try {
+
+        /* Run the logger. */
+        $logger = new Logger($this);
+        $logger->run();
+
+      } catch (Exception $e) {
+        $this->errorReport($e);
+      } catch (Error $e) {
+        $this->errorReport($e);
+      } finally {
+        DB::close();
+      }
+
     });
 
-    // $res = new Response($this->data);
-    // $res->execRoutes();
+    if (!$this->dontResponse) {
+      $res = new Response($this->data);
+      $res->execRoutes();
+    }
   }
 
   /**
-   * @param \Error $e
+   * @param mixed $e
    */
-  public function errorReport(Error $e)
+  public function errorReport($e)
   {
     $now = date("c");
-    $strInput = json_encode($this->data->in, JSON_UNESCAPED_SLASHES);
+    $strInput = json_encode($this->data["in"], JSON_UNESCAPED_SLASHES);
     $inputHash = sha1($strInput);
 
     $strErr = "{$now}\n[error:{$inputHash}]\n".

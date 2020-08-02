@@ -18,36 +18,53 @@ final class Logger
   /** 
    * @var \TeaBot\Telegram\Data
    */
-  private $data;
+  private ?Data $data;
 
   /**
-   * @param \TeaBot\Telegram\Data
+   * @var \TeaBot\Telegram\TeaBot
+   */
+  private ?TeaBot $teaBot;
+
+  /**
+   * @param ?\TeaBot\Telegram\TeaBot $teaBot
+   * @param ?\TeaBot\Telegram\Data   $data
    *
    * Constructor.
    */
-  public function __construct(Data $data)
+  public function __construct(?TeaBot $teaBot = null, ?Data $data = null)
   {
-    $this->data = $data;
+    $this->teaBot = $teaBot;
+    if ($data instanceof Data) {
+      $this->data = $data;
+    } else {
+      $this->data = $teaBot->data ?? null;
+    }
+  }
+
+  /**
+   * @param mixed $key
+   * @return mixed
+   */
+  public function __get($key)
+  {
+    return $this->{$key} ?? null;
   }
 
   /** 
-   * @return void
+   * @return bool
    */
-  public function run()
+  public function run(): bool
   {
-    if (isset($this->data["msg_type"])) {
-
-      if ($this->data["chat_type"] == "private") {
-        $logger = new PrivateLogger($this->data);
+    if (isset($this->data["msg_type"], $this->data["chat_type"])) {
+      var_dump($this->data["chat_type"]);
+      if ($this->data["chat_type"] === "private") {
+        $logger = new PrivateLogger($this);
       } else {
-        $logger = new GroupLogger($this->data);
+        $logger = new GroupLogger($this);
       }
 
-      switch ($this->data["msg_type"]) {
-        case "text":
-          $logger->logText();
-          break;
-      }
+      return $logger->execute();
     }
+    return false;
   }
 }
