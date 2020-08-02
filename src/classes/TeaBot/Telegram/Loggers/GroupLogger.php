@@ -107,7 +107,7 @@ class GroupLogger extends LoggerFoundation
       switch ($this->data["msg_type"]) {
 
         case "text":
-          self::saveTextMessage($msgId);
+          self::saveTextMessage($msgId, $data);
           break;
 
         case "photo":
@@ -260,11 +260,28 @@ class GroupLogger extends LoggerFoundation
   }
 
   /**
-   * @param int $msgId
+   * @param int                   $msgId
+   * @param \TeaBot\Telegram\Data $data
    * @return bool
    */
-  public static function saveTextMessage(int $msgId): bool
+  public static function saveTextMessage(int $msgId, Data $data): bool
   {
-    
+    /*
+     * Save the text message.
+     */
+    return DB::pdo()->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, NULL, ?, ?, NOW())")
+    ->execute(
+      [
+        $msgId,
+        $data["text"],
+        json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
+        $data["is_edited_msg "] ? 1 : 0,
+        (
+          isset($data["date"]) ?
+          date("Y-m-d H:i:s", $data["date"]) :
+          null
+        )
+      ]
+    );
   }
 }
