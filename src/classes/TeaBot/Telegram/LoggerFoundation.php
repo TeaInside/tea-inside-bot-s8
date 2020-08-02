@@ -4,10 +4,10 @@ namespace TeaBot\Telegram;
 
 use DB;
 use PDO;
-use Swlib\SaberGM;
 use TeaBot\Telegram\Exe;
 use Swoole\Coroutine\Channel;
 use TeaBot\Telegram\Exceptions\LoggerException;
+use TeaBot\Telegram\LoggerFoundationTraits\FileResolver;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -15,7 +15,10 @@ use TeaBot\Telegram\Exceptions\LoggerException;
  * @package \TeaBot\Telegram
  * @version 8.0.0
  */
-abstract class LoggerFoundation {
+abstract class LoggerFoundation
+{
+  use FileResolver;
+
 	/**
 	 * @var \TeaBot\Telegram\Logger
 	 */
@@ -74,145 +77,45 @@ abstract class LoggerFoundation {
   /**
    * @param string $tgFileId
    * @param bool   $addHitCount
+   * @param bool   $transactional
    * @return ?int
    */
-  public static function fileResolve(string $tgFileId, bool $addHitCount = false): ?int
+  public static function fileResolve(
+    string $tgFileId,
+    bool $addHitCount = false,
+    bool $transactional = false
+  ): ?int
   {
-    /*
-     * Check the $tgFileId in database.
-     * If it has already been stored, then returns
-     * the stored primary key. Otherwise, it
-     * downloads the file and insert it to the
-     * database.
-     */
 
-    $pdo = DB::pdo();
-    $st  = $pdo->prepare("SELECT `id` FROM `tg_files` WHERE tg_file_id = ?");
-    $st->execute([$tgFileId]);
-
-    if ($r = $st->fetch(PDO::FETCH_NUM)) {
-
-      if ($addHitCount) {
-        $pdo->prepare("UPDATE `tg_files` SET `hit_count`=`hit_count`+1 WHERE `id`=?")
-          ->execute([$r[0]]);
-      }
-
-      return (int)$r[0];
+    if (!$transactional) {
+      return self::baseFileResolve($tgFileId, $addHitCount);
     }
 
-    /* This operation may error. */
-    $v = json_decode(
-      Exe::getFile(["file_id" => $tgFileId])
-      ->getBody()->__toString(),
-      true
-    );
+    try {
+      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8KwUlPZXkzBRNay6IUgA=*/
 
+      $pdo->beginTransaction();
 
-    /* Return null if it cannot find the file path. */
-    if (!isset($v["result"]["file_path"])) {
+      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8BX9vKwUlPZXkzBRNay6IagA=*/
+
+      $fileId = self::baseFileResolve($tgFileId, $addHitCount);
+
+      /*__debug_flag:5:41IAg7LEoviU0twCDaXk/NzczBIrBSU9leTMFE1rLogCAA==*/
+
+      $pdo->commit();
+
+    } catch (PDOException $e) {
+      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+
+      $pdo->rollBack();
+      $teaBot and $teaBot->errorReport($e);
       return null;
-    }
+    } catch (Error $e) {
+      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
 
-
-    /* Get file extension. */
-    $fileExt = explode(".", $v["result"]["file_path"]);
-    if (count($fileExt) > 1) {
-      $fileExt = strtolower(end($fileExt));
-    } else {
-      $fileExt = null;
-    }
-
-
-    $tmpDownloadDir = "/tmp/telegram_tmp_download";
-    $tmpFile = $tmpDownloadDir."/".bin2hex($tgFileId).(
-      isset($fileExt) ? ".".$fileExt : ""
-    );
-
-
-    /* Make sure the target directory exists. */
-    is_dir(STORAGE_PATH) or mkdir(STORAGE_PATH);
-    is_dir(STORAGE_PATH."/telegram") or mkdir(STORAGE_PATH."/telegram");
-    is_dir(STORAGE_PATH."/telegram/files") or mkdir(STORAGE_PATH."/telegram/files");
-    is_dir($tmpDownloadDir) or mkdir($tmpDownloadDir);
-
-    $tryCount = 0;
-    retry_download:
-
-    $tryCount++;
-    /* Download the file. */
-    $response = SaberGM::download(
-      "https://api.telegram.org/file/bot".BOT_TOKEN."/".$v["result"]["file_path"],
-      $tmpFile
-    );
-
-
-    /* Download failed. */
-    if (!file_exists($tmpFile)) {
-      if ($tryCount <= 5) goto retry_download;
+      $pdo->rollBack();
+      $teaBot and $teaBot->errorReport($e);
       return null;
-    }
-
-
-    $md5Hash = md5_file($tmpFile, true);
-    $sha1Hash = sha1_file($tmpFile, true);
-    $fullHexHash = bin2hex($md5Hash).bin2hex($sha1Hash);
-    $indexPath = self::genIndexPath($fullHexHash);
-    $targetFile = STORAGE_PATH."/telegram/files/".$indexPath."/".$fullHexHash.(
-      isset($fileExt) ? ".".$fileExt : ""
-    );
-
-    self::mkdirRecursive(STORAGE_PATH."/telegram/files/".$indexPath);
-
-    @rename($tmpFile, $targetFile);
-    @unlink($tmpFile);
-
-    /* Move file failed. */
-    if (!file_exists($targetFile)) {
-      return null;
-    }
-
-    $fileSize = filesize($targetFile);
-    if (!$fileSize) {
-      if ($tryCount <= 5) goto retry_download;
-      return null;
-    }
-
-    /* Check by hash file. */
-    $st = $pdo->prepare("SELECT `id` FROM `tg_files` WHERE `md5_sum` = ? AND `sha1_sum` = ? LIMIT 1");
-    $st->execute([$md5Hash, $sha1Hash]);
-
-    if ($u = $st->fetch(PDO::FETCH_NUM)) {
-      $u = (int)$u[0];
-
-      /*
-       * This part handles duplicate file
-       * with different telegram file id.
-       * In this case, we update the
-       * supplied tg_file_id.
-       */
-
-      $hitCountQuery = $addHitCount ? "`hit_count`=`hit_count`+1," : "";
-      $pdo->prepare("UPDATE `tg_files` SET {$hitCountQuery} `tg_file_id` = ? WHERE `id` = ?")
-      ->execute([$tgFileId, $u]);
-
-
-      $fileId = $u;
-    } else {
-
-      $pdo->prepare("INSERT INTO `tg_files` (`tg_file_id`, `md5_sum`, `sha1_sum`, `file_type`, `ext`, `size`, `hit_count`, `description`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NOW())")
-      ->execute(
-        [
-          $tgFileId,
-          $md5Hash,
-          $sha1Hash,
-          mime_content_type($targetFile),
-          $fileExt,
-          $fileSize,
-          $addHitCount ? 1 : 0
-        ]
-      );
-
-      $fileId = $pdo->lastInsertId();
     }
 
     return $fileId;
