@@ -162,4 +162,29 @@ trait FileResolver
 
     return $fileId;
   }
+
+  /**
+   * @param string $fullHexHash
+   * @return string
+   */
+  public static function genIndexPath(string $fullHexHash): string
+  {
+    return implode("/", str_split(substr($fullHexHash, 0, 14), 2));
+  }
+
+  /**
+   * @param string $dir
+   * @return void
+   */
+  public static function mkdirRecursive(string $dir): void
+  {
+    $exp = explode("/", $dir);
+    if (count($exp) == 1) return;
+
+    $dir = "";
+    foreach ($exp as $p) {
+      $dir .= $p."/";
+      is_dir($dir) or mkdir($dir, 0755);
+    }
+  }
 }

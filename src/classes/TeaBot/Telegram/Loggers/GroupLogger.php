@@ -44,7 +44,9 @@ class GroupLogger extends LoggerFoundation
       ]
     );
 
-    /*__debug_flag:2:41IAgrLEoviU0twCDaX0/BKF9KL80gLPFCsFJT0VKFvTmgukDgA=*/
+    /*debug:2*/
+    var_dump("got groupId: ".$groupId);
+    /*enddebug*/
 
     $userId = self::userInsert(
       [
@@ -57,13 +59,17 @@ class GroupLogger extends LoggerFoundation
       ]
     );
 
-    /*__debug_flag:2:41IAgrLEoviU0twCDaX0/BKF0uLUIs8UKwUlPRUIU9OaC6QKAA==*/
+    /*debug:2*/
+    var_dump("got userId: ".$userId);
+    /*enddebug*/
 
 
     $pdo = DB::pdo();
     $teaBot = $this->logger->teaBot ?? null;
 
-    /*__debug_flag:5:41IAApXkzBQFW4WY4PL8/JzUGOf8ovzSksy8VCur9NQS58wUDU1rLpA6AA==*/
+    /*debug:5*/
+    $cid = \Swoole\Coroutine::getCid();
+    /*enddebug*/
 
     /*
      * If the message is supposed to reply another message,
@@ -82,11 +88,15 @@ class GroupLogger extends LoggerFoundation
     }
 
     try {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8KwUlPZXkzBRNay6IUgA=*/
+      /*debug:5*/
+      var_dump("beginTransaction: ".$cid);
+      /*enddebug*/
 
       $pdo->beginTransaction();
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWk1PTMvJCixLzixOSSzPw8BX9vKwUlPZXkzBRNay6IagA=*/
+      /*debug:5*/
+      var_dump("beginTransaction OK: ".$cid);
+      /*enddebug*/
 
 
       $msgId = self::touchMessage($groupId, $userId, $data, $teaBot);
@@ -107,18 +117,26 @@ class GroupLogger extends LoggerFoundation
           break;
       }
 
-      /*__debug_flag:5:41IAg7LEoviU0twCDaXk/NzczBIrBSU9leTMFE1rLogCAA==*/
+      /*debug:5*/
+      var_dump("commit: ".$cid);
+      /*enddebug*/
 
       $pdo->commit();
 
     } catch (PDOException $e) {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
       return false;
     } catch (Error $e) {
-      /*__debug_flag:5:41IAg7LEoviU0twCDaWi/JycpMTkbCsFJT2V5MwUTWsuNCUqqXpKSnBhAA==*/
+      /*debug:5*/
+      var_dump("rollback: ".$cid);
+      var_dump($e."");
+      /*enddebug*/
 
       $pdo->rollBack();
       $teaBot and $teaBot->errorReport($e);
