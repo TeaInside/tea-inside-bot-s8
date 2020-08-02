@@ -37,3 +37,7 @@ jobs:
           key: v1-ext-{{ checksum "src/ext/extchk.txt" }}
           paths:
             - ./src/ext
+
+      # Run tests
+      - run: php ./debug.php on
+      - run: php ./syntax_checker.php
