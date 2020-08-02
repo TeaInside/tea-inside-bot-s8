@@ -3,9 +3,9 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345859032,
+    "update_id": 345849982,
     "message": {
-        "message_id": 82068,
+        "message_id": 2793,
         "from": {
             "id": 243692601,
             "is_bot": false,
@@ -15,14 +15,28 @@ $json = '{
             "language_code": "en"
         },
         "chat": {
-            "id": 243692601,
-            "first_name": "Ammar",
-            "last_name": "Faizi",
-            "username": "ammarfaizi2",
-            "type": "private",
-            "title": null
+            "id": -1001149709623,
+            "title": "Test Driven Development",
+            "type": "supergroup",
+            "username": null
         },
-        "date": 1596378330,
+        "date": 1595141419,
+        "reply_to_message": {
+            "message_id": 2668,
+            "from": {
+                "id": 466965678,
+                "is_bot": true,
+                "first_name": "Tea Inside",
+                "username": "TeaInsideBot"
+            },
+            "chat": {
+                "id": -1001149709623,
+                "title": "Test Driven Development",
+                "type": "supergroup"
+            },
+            "date": 1595121822,
+            "text": "This command can only be used in private message!"
+        },
         "text": "/debug",
         "entities": [
             {
@@ -30,8 +44,7 @@ $json = '{
                 "length": 6,
                 "type": "bot_command"
             }
-        ],
-        "reply_to_message": null
+        ]
     }
 }';
 

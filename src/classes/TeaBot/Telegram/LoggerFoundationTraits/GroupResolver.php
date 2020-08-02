@@ -4,8 +4,8 @@ namespace TeaBot\Telegram\LoggerFoundationTraits;
 
 use DB;
 use PDO;
-use Swlib\SaberGM;
 use TeaBot\Telegram\Exe;
+use Swoole\Coroutine\Channel;
 use TeaBot\Telegram\Exceptions\LoggerException;
 
 /**

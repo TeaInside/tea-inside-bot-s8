@@ -4,7 +4,6 @@ namespace TeaBot\Telegram\LoggerFoundationTraits;
 
 use DB;
 use PDO;
-use Swlib\SaberGM;
 use TeaBot\Telegram\Exe;
 use TeaBot\Telegram\Exceptions\LoggerException;
 

@@ -5,7 +5,6 @@ namespace TeaBot\Telegram;
 use DB;
 use PDO;
 use TeaBot\Telegram\Exe;
-use Swoole\Coroutine\Channel;
 use TeaBot\Telegram\Exceptions\LoggerException;
 use TeaBot\Telegram\LoggerFoundationTraits\FileResolver;
 use TeaBot\Telegram\LoggerFoundationTraits\UserResolver;
