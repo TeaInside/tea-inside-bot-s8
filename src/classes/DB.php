@@ -86,6 +86,24 @@ final class DB
   }
 
   /**
+   * @param string $name
+   * @return bool
+   */
+  public static function mustNotBeInTransaction(string $name = "~")
+  {
+    /*debug:7*/
+    global $transactionStates;
+    $cid = Swoole\Coroutine::getCid();
+    if (isset($transactionStates[$cid]) && $transactionStates[$cid]) {
+      throw new Exception("Error logic: {$name} is not in transaction state.");
+    } else {
+      return true;
+    }
+    /*enddebug*/
+    return false;
+  }
+
+  /**
    * @return void
    */
   public static function close(): void
