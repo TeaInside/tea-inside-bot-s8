@@ -178,7 +178,9 @@ final class DBTransaction
       } else {
         $this->retVal = false;
       }
-    }
+    } /*debug:7*/ finally {
+      DB::dropTransactionState();
+    } /*enddebug*/
 
     return false;
   }

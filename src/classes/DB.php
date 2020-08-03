@@ -43,7 +43,46 @@ final class DB
    */
   public static function transaction(callable $callback, array $vars = [])
   {
+    /*debug:7*/
+    global $transactionStates;
+    $cid = Swoole\Coroutine::getCid();
+    if (!is_array($transactionStates)) {
+      $transactionStates = [$cid => true];
+    } else {
+      $transactionStates[$cid] = true;
+    }
+    /*enddebug*/
     return new DBTransaction(DB::pdo(), $callback, $vars);
+  }
+
+  /**
+   * @return void
+   */
+  public static function dropTransactionState()
+  {
+    /*debug:7*/
+    global $transactionStates;
+    $cid = Swoole\Coroutine::getCid();
+    unset($transactionStates[$cid]);
+    /*enddebug*/
+  }
+
+  /**
+   * @param string $name
+   * @return bool
+   */
+  public static function mustBeInTransaction(string $name = "~")
+  {
+    /*debug:7*/
+    global $transactionStates;
+    $cid = Swoole\Coroutine::getCid();
+    if (isset($transactionStates[$cid]) && $transactionStates[$cid]) {
+      return true;
+    } else {
+      throw new Exception("Error logic: {$name} is not in transaction state.");
+    }
+    /*enddebug*/
+    return false;
   }
 
   /**

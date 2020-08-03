@@ -108,4 +108,54 @@ abstract class LoggerFoundation
       return self::baseFileResolve($tgFileId, $addHitCount);
     }
   }
+
+  /**
+   * @param array $data
+   * @throws \PDOException
+   * @return ?int
+   */
+  public function groupInsert(array $data): ?int
+  {
+    /**
+     * Information about $action
+     * @see TeaBot\Telegram\LoggerFoundationTraits\GroupResolver::baseGroupInsert
+     */
+    $action = -1;
+
+    $moreFetch = false;
+
+    $trx = DB::transaction(function (PDO $pdo) use (&$data, &$moreFetch, &$action) {
+      return self::baseGroupInsert($data, $moreFetch, $action);
+    });
+    /*debug:7*/
+    $trx->setName("baseGroupInsert");
+    /*enddebug*/
+    $trx->setErrorCallback(function (PDO $pdo, $e) {
+      throw $e;
+    });
+    $trx->setDeadlockTryCount(10);
+    $trx->setTrySleep(rand(1, 5));
+    if (!$trx->execute()) {
+      return null;
+    }
+    $retVal = $trx->getRetVal();
+
+    /*
+     * In some conditions, we need to fetch photo and group admins.
+     */
+    if ($moreFetch) {
+
+      /*
+       * Don't fetch photo and group admins in transaction.
+       */
+      $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
+      self::groupAdminResolve($data["tg_group_id"], $u["id"]);
+
+      $trx = DB::transaction(function (PDO $pdo) use (&$data) {
+      });
+    }
+
+
+    return $retVal;
+  }
 }
