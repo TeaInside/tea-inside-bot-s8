@@ -38,6 +38,21 @@ final class DB
   }
 
   /**
+   * @param callable $callback
+   */
+  public static function transaction(callable $callback)
+  {
+    $pdo = DB::pdo();
+    try {
+      $pdo->beginTransaction();
+      $callback($pdo);
+      $pdo->commit();
+    } catch (PDOException $e) {
+      $pdo->rollBack();
+    }
+  }
+
+  /**
    * @return void
    */
   public static function close(): void

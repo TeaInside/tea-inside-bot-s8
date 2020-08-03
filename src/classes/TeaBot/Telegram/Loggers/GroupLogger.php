@@ -20,14 +20,13 @@ use TeaBot\Telegram\Contracts\LoggerInterface;
  */
 class GroupLogger extends LoggerFoundation
 {
-  /**
-   * @param string
-   * @return bool
+  /** 
+   * @param \TeaBot\Telegram\Data $data
+   * @return array
    */
-  public function execute(): bool
+  public static function getCompulsoryIds(Data $data): array
   {
-    $data = $this->data;
-
+    $pdo = DB::pdo();
     /*
      * Get $groupId and $userId from database first.
      *
@@ -44,10 +43,6 @@ class GroupLogger extends LoggerFoundation
       ]
     );
 
-    /*debug:2*/
-    var_dump("got groupId: ".$groupId);
-    /*enddebug*/
-
     $userId = self::userInsert(
       [
         "tg_user_id" => $data["user_id"],
@@ -58,13 +53,18 @@ class GroupLogger extends LoggerFoundation
         "group_msg_count" => 0
       ]
     );
+  }
 
-    /*debug:2*/
-    var_dump("got userId: ".$userId);
-    /*enddebug*/
+  /**
+   * @param string
+   * @return bool
+   */
+  public function execute(): bool
+  {
 
+    $data = $this->data;
+    [$userId, $groupId] = self::getCompulsoryIds($data);
 
-    $pdo = DB::pdo();
     $teaBot = $this->logger->teaBot ?? null;
 
     /*debug:5*/
@@ -91,14 +91,14 @@ class GroupLogger extends LoggerFoundation
     deadlock_recovery:
     try {
       /*debug:5*/
-      var_dump("beginTransaction: ".$cid);
+      var_dump("beginTransaction [execute] : ".$cid);
       /*enddebug*/
 
       $tryCounter++;
       $pdo->beginTransaction();
 
       /*debug:5*/
-      var_dump("beginTransaction OK: ".$cid);
+      var_dump("beginTransaction OK [execute] : ".$cid);
       /*enddebug*/
 
       $needToSaveMsg = true;
@@ -152,7 +152,7 @@ class GroupLogger extends LoggerFoundation
         }
 
         /*debug:5*/
-        echo "Recovering from deadlock: {$cid}...\n";
+        echo "{$tryCounter} Recovering from deadlock: {$cid}...\n";
         /*enddebug*/
 
         goto deadlock_recovery;
@@ -175,7 +175,7 @@ class GroupLogger extends LoggerFoundation
         }
 
         /*debug:5*/
-        echo "Recovering from deadlock: {$cid}...\n";
+        echo "{$tryCounter} Recovering from deadlock: {$cid}...\n";
         /*enddebug*/
 
         goto deadlock_recovery;
