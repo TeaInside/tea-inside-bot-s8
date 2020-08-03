@@ -63,7 +63,7 @@ trait GroupResolver
      * stored in database or not.
      */
     $pdo = DB::pdo();
-    $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`link`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ?");
+    $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`link`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ? FOR UPDATE");
     $st->execute([$data["tg_group_id"]]);
 
     $createGroupHistory = false;

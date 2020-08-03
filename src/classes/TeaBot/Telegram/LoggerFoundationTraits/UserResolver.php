@@ -60,7 +60,7 @@ trait UserResolver
      * stored in database or not.
      */
     $pdo = DB::pdo();
-    $st = $pdo->prepare("SELECT `id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count` FROM `tg_users` WHERE `tg_user_id` = ?");
+    $st = $pdo->prepare("SELECT `id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count` FROM `tg_users` WHERE `tg_user_id` = ? FOR UPDATE");
     $st->execute([$data["tg_user_id"]]);
 
     $createUserHistory = false;
