@@ -20,9 +20,9 @@ const USER_INSERT_MANDATORY_FIELDS = [
 ];
 /*enddebug*/
 
-const GROUP_INSERT_ACT_NEW_DATA    = 0;
-const GROUP_INSERT_ACT_UPDATE_OLD  = 1;
-const GROUP_INSERT_ACT_NO_CHANGES  = 2;
+const USER_INSERT_ACT_NEW_DATA    = 0;
+const USER_INSERT_ACT_UPDATE_OLD  = 1;
+const USER_INSERT_ACT_NO_CHANGES  = 2;
 
 
 /**
@@ -35,11 +35,14 @@ trait UserResolver
 {
 
   /**
-   * @param array $data
+   * @param array &$data
+   * @param bool  &$moreFetch
+   * @param int   &$action
    * @return int
    * @throws \TeaBot\Telegram\Exceptions\LoggerException
    */
-  public static function baseUserInsert(array $data): int
+  public static function baseUserInsert(
+    array &$data, bool &$moreFetch, int &$action): ?int
   {
     /*debug:8*/
     foreach (USER_INSERT_MANDATORY_FIELDS as $v) {
@@ -120,48 +123,44 @@ trait UserResolver
       }
 
       if ($exeUpdate) {
+        $action = USER_INSERT_ACT_UPDATE_OLD;
         $query .= " WHERE `id` = :id";
         $updateData["id"] = $u["id"];
         $pdo->prepare($query)->execute($updateData);
-
-        /*
-         * In case createUserHistory is true,
-         * we should assume the photo is the
-         * same as before if and only if the
-         * logger does not fetch the photo.
-         */
-        if ($createUserHistory && is_null($data["photo"])) {
-          $data["photo"] = $u["photo"];
-        }
+        $moreFetch = true;
+      } else {
+        $moreFetch = (rand(1, 10) == 10);
+        $action = USER_INSERT_ACT_NO_CHANGES;
       }
 
       $data["user_id"] = $u["id"];
-
     } else {
-      $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
+      if (!array_key_exists("photo", $data)) {
+        $data["photo"] = null;
+      }
+
+      $action = GROUP_INSERT_ACT_NEW_DATA;
       /* Insert new user to database. */
       $st = $pdo->prepare("INSERT INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
 
       $createUserHistory = ($st->rowCount() == 1);
       $data["user_id"] = $pdo->lastInsertId();
+      $moreFetch = true;
     }
 
 
     if ($createUserHistory) {
 
       /* Unset unused keys. */
-      $data = array_filter($data, function ($k) {
+      $cleanData = array_filter($data, function ($k) {
         return in_array($k, ["user_id", "username", "first_name", "last_name", "photo"]);
       }, ARRAY_FILTER_USE_KEY);
 
       /* Record user history. */
-      $pdo->prepare("INSERT INTO `tg_user_history` (`user_id`, `username`, `first_name`, `last_name`, `photo`, `created_at`) VALUES (:user_id, :username, :first_name, :last_name, :photo, NOW())")
-        ->execute($data);
-
+      $pdo->prepare("INSERT INTO `tg_user_history` (`user_id`, `username`, `first_name`, `last_name`, `photo`, `created_at`) VALUES (:user_id, :username, :first_name, :last_name, :photo, NOW())")->execute($cleanData);
     }
-
 
     return (int)$data["user_id"];
   }

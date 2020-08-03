@@ -120,17 +120,17 @@ trait GroupResolver
         $data["photo"] = $u["photo"];
       }
 
-      if (($u["msg_count"] % 5) === 0) {
-        $moreFetch = true;
-      }
-
       if ($exeUpdate) {
         $action = GROUP_INSERT_ACT_UPDATE_OLD;
         $query .= " WHERE `id` = :id";
         $updateData["id"] = $u["id"];
         $pdo->prepare($query)->execute($updateData);
+        $moreFetch = true;
       } else {
         $action = GROUP_INSERT_ACT_NO_CHANGES;
+        if (($u["msg_count"] % 5) === 0) {
+          $moreFetch = true;
+        }
       }
 
       $data["group_id"] = $u["id"];
