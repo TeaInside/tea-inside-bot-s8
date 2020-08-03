@@ -7,6 +7,7 @@ use PDO;
 use TeaBot\Telegram\Exe;
 use TeaBot\Telegram\Exceptions\LoggerException;
 
+/*debug:8*/
 /**
  * @const array
  */
@@ -17,15 +18,12 @@ const USER_INSERT_MANDATORY_FIELDS = [
   "last_name",
   "is_bot"
 ];
+/*enddebug*/
 
-/**
- * @const array
- */
-const USER_INSERT_DEFAULT_VALUES = [
-  "photo" => null,
-  "group_msg_count" => 0,
-  "private_msg_count" => 0
-];
+const GROUP_INSERT_ACT_NEW_DATA    = 0;
+const GROUP_INSERT_ACT_UPDATE_OLD  = 1;
+const GROUP_INSERT_ACT_NO_CHANGES  = 2;
+
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -41,8 +39,9 @@ trait UserResolver
    * @return int
    * @throws \TeaBot\Telegram\Exceptions\LoggerException
    */
-  public static function userInsert(array $data): int
+  public static function baseUserInsert(array $data): int
   {
+    /*debug:8*/
     foreach (USER_INSERT_MANDATORY_FIELDS as $v) {
       if (!array_key_exists($v, $data)) {
         throw new LoggerException(
@@ -50,10 +49,11 @@ trait UserResolver
           .json_encode($data));
       }
     }
+    /*enddebug*/
 
-    foreach (USER_INSERT_DEFAULT_VALUES as $k => $v) {
-      isset($data[$k]) or $data[$k] = $v;
-    }
+    /*debug:7*/
+    DB::mustBeInTransaction("baseUserInsert");
+    /*enddebug*/
 
     /*
      * Check whether the user has already been
@@ -66,7 +66,6 @@ trait UserResolver
     $createUserHistory = false;
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
-
       /*
        * We need to build the query based
        * on differential condition in
@@ -102,6 +101,22 @@ trait UserResolver
         $query .= ($exeUpdate ? "," : "")."`last_name`=:last_name";
         $updateData["last_name"] = $data["last_name"];
         $exeUpdate = $createUserHistory = true;
+      }
+
+      if (array_key_exists("photo", $data) &&
+         ($data["photo"] !== $u["photo"])) {
+        $query .= ($exeUpdate ? "," : "")."`photo`=:photo";
+        $updateData["photo"] = $data["photo"];
+        $exeUpdate = $createUserHistory = true;
+      } else if ($createUserHistory) {
+        /*
+         * In case createUserHistory is true,
+         * we should assume the photo is the
+         * same as before if and only if there
+         * is no photo update requested from
+         * the parameter.
+         */
+        $data["photo"] = $u["photo"];
       }
 
       if ($exeUpdate) {
