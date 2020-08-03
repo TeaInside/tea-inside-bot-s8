@@ -79,6 +79,7 @@ abstract class LoggerFoundation
    * @param string $tgFileId
    * @param bool   $addHitCount
    * @param bool   $transactional
+   * @throws \PDOException
    * @return ?int
    */
   final public static function fileResolve(
@@ -87,50 +88,24 @@ abstract class LoggerFoundation
     bool $transactional = false
   ): ?int
   {
-
-    if (!$transactional) {
+    if ($transactional) {
+      $trx = DB::transaction(function (PDO $pdo) use ($tgFileId, $addHitCount) {
+        return self::baseFileResolve($tgFileId, $addHitCount);
+      });
+      /*debug:7*/
+      $trx->setName("baseFileResolve");
+      /*enddebug*/
+      $trx->setErrorCallback(function (PDO $pdo, $e) {
+        throw $e;
+      });
+      $trx->setDeadlockTryCount(10);
+      $trx->setTrySleep(rand(1, 5));
+      if (!$trx->execute()) {
+        return null;
+      }
+      return $trx->getRetVal();
+    } else {
       return self::baseFileResolve($tgFileId, $addHitCount);
     }
-
-    try {
-      /*debug:5*/
-      var_dump("beginTransaction: ".$cid);
-      /*enddebug*/
-
-      $pdo->beginTransaction();
-
-      /*debug:5*/
-      var_dump("beginTransaction OK: ".$cid);
-      /*enddebug*/
-
-      $fileId = self::baseFileResolve($tgFileId, $addHitCount);
-
-      /*debug:5*/
-      var_dump("commit: ".$cid);
-      /*enddebug*/
-
-      $pdo->commit();
-
-    } catch (PDOException $e) {
-      /*debug:5*/
-      var_dump("rollback: ".$cid);
-      var_dump($e."");
-      /*enddebug*/
-
-      $pdo->rollBack();
-      $teaBot and $teaBot->errorReport($e);
-      return null;
-    } catch (Error $e) {
-      /*debug:5*/
-      var_dump("rollback: ".$cid);
-      var_dump($e."");
-      /*enddebug*/
-
-      $pdo->rollBack();
-      $teaBot and $teaBot->errorReport($e);
-      return null;
-    }
-
-    return $fileId;
   }
 }

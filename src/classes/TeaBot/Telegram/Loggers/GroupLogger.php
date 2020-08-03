@@ -89,6 +89,12 @@ class GroupLogger extends LoggerFoundation
         case "video":
           break;
       }
+
+      /*
+       * ($type = 2) means `group_msg_count`
+       */
+      self::incrementUserMsgCount($userId, $type = 2);
+      self::incrementGroupMsgCount($groupId);
     }
     return true;
   }
