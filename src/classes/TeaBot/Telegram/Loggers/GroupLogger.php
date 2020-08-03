@@ -183,7 +183,7 @@ class GroupLogger extends LoggerFoundation
      * Check whether the tg_msg_id has already
      * been stored in database or not.
      */
-    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ? FOR SHARE");
+    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ?");
     $st->execute([$groupId, $data["msg_id"]]);
 
     /*
