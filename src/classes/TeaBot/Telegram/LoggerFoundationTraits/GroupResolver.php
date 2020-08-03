@@ -8,6 +8,7 @@ use TeaBot\Telegram\Exe;
 use Swoole\Coroutine\Channel;
 use TeaBot\Telegram\Exceptions\LoggerException;
 
+/*debug:8*/
 /**
  * @const array
  */
@@ -16,6 +17,7 @@ const GROUP_INSERT_MANDATORY_FIELDS = [
   "name",
   "username"
 ];
+/*enddebug*/
 
 const GROUP_INSERT_ACT_NEW_DATA    = 0;
 const GROUP_INSERT_ACT_UPDATE_OLD  = 1;
@@ -39,6 +41,7 @@ trait GroupResolver
   public static function baseGroupInsert(
     array &$data, bool &$moreFetch, int &$action): ?int
   {
+    /*debug:8*/
     foreach (GROUP_INSERT_MANDATORY_FIELDS as $v) {
       if (!array_key_exists($v, $data)) {
         throw new LoggerException(
@@ -46,6 +49,7 @@ trait GroupResolver
           .json_encode($data));
       }
     }
+    /*endebug*/
 
     /*debug:7*/
     DB::mustBeInTransaction("baseGroupInsert");
@@ -102,7 +106,7 @@ trait GroupResolver
 
       if (array_key_exists("photo", $data) &&
          ($data["photo"] !== $u["photo"])) {
-        $query .= ($exeUpdate ? "," : "")."`link`=:link";
+        $query .= ($exeUpdate ? "," : "")."`photo`=:photo";
         $updateData["photo"] = $data["photo"];
         $exeUpdate = $createGroupHistory = true;
       } else if ($createGroupHistory) {
@@ -116,6 +120,10 @@ trait GroupResolver
         $data["photo"] = $u["photo"];
       }
 
+      if (($u["msg_count"] % 5) === 0) {
+        $moreFetch = true;
+      }
+
       if ($exeUpdate) {
         $action = GROUP_INSERT_ACT_UPDATE_OLD;
         $query .= " WHERE `id` = :id";
@@ -127,155 +135,28 @@ trait GroupResolver
 
       $data["group_id"] = $u["id"];
     } else {
+
+      if (!array_key_exists("photo", $data)) {
+        $data["photo"] = null;
+      }
+
       $action = GROUP_INSERT_ACT_NEW_DATA;
       $st = $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
       $createGroupHistory = ($st->rowCount() == 1);
       $data["group_id"] = $pdo->lastInsertId();
+      $moreFetch = true;
     }
 
 
     if ($createGroupHistory) {
       /* Unset unused keys. */
-      $data = array_filter($data, function ($k) {
+      $cleanData = array_filter($data, function ($k) {
         return in_array($k, ["group_id", "name", "username", "link", "photo"]);
       }, ARRAY_FILTER_USE_KEY);
 
       /* Record group history. */
-      $pdo->prepare("INSERT INTO `tg_group_history` (`group_id`, `name`, `username`, `link`, `photo`, `created_at`) VALUES (:group_id, :name, :username, :link, :photo, NOW())")->execute($data);
-    }
-
-    return (int)$data["group_id"];
-  }
-
-  /**
-   * @param array $data
-   * @param bool  &$moreFetch
-   * @return int
-   * @throws \TeaBot\Telegram\Exceptions\LoggerException
-   */
-  public static function xbaseGroupInsert(array $data, bool &$moreFetch): ?int
-  {
-    foreach (GROUP_INSERT_MANDATORY_FIELDS as $v) {
-      if (!array_key_exists($v, $data)) {
-        throw new LoggerException(
-          "Invalid data to be inserted (missing mandatory fields): "
-          .json_encode($data));
-      }
-    }
-
-    foreach (GROUP_INSERT_DEFAULT_VALUES as $k => $v) {
-      isset($data[$k]) or $data[$k] = $v;
-    }
-
-    if (is_string($data["username"])) {
-      $data["link"] = "https://t.me/".$data["username"];
-    } else {
-      $data["link"] = null;
-    }
-
-    /*
-     * Check whether the group has already been
-     * stored in database or not.
-     */
-    $pdo = DB::pdo();
-
-    $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`link`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ? FOR UPDATE");
-    $st->execute([$data["tg_group_id"]]);
-
-    $createGroupHistory = false;
-
-    if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
-
-      /**
-       * We need to build the query based
-       * on differential condition in
-       * order to reduce query size.
-       */
-      $updateData = [];
-      $exeUpdate = false;
-      $query = "UPDATE `tg_groups` SET ";
-
-      if ($data["msg_count"] != 0) {
-        $query .= "`msg_count`=`msg_count`+1";
-        $exeUpdate = true;
-      }
-
-      if ($data["username"] !== $u["username"]) {
-        $query .= ($exeUpdate ? "," : "")."`username`=:username";
-        $updateData["username"] = $data["username"];
-        $exeUpdate = $createGroupHistory = true;
-      }
-
-      if ($data["name"] !== $u["name"]) {
-        $query .= ($exeUpdate ? "," : "")."`name`=:name";
-        $updateData["name"] = $data["name"];
-        $exeUpdate = $createGroupHistory = true;
-      }
-
-      if ($data["link"] !== $u["link"]) {
-        $query .= ($exeUpdate ? "," : "")."`link`=:link";
-        $updateData["link"] = $data["link"];
-        $exeUpdate = $createGroupHistory = true;
-      }
-
-      if (!($u["msg_count"] % 5)) {
-        $fetchPhoto = true;
-        $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
-
-        if ($data["photo"] != $u["photo"]) {
-          $query .= ($exeUpdate ? "," : "")."`photo`=:photo";
-          $updateData["photo"] = $data["photo"];
-          $exeUpdate = $createGroupHistory = true;
-        }
-
-        self::groupAdminResolve($data["tg_group_id"], $u["id"]);
-
-      } else {
-        $fetchPhoto = false;
-      }
-
-      if ($exeUpdate) {
-        $query .= " WHERE `id` = :id";
-        $updateData["id"] = $u["id"];
-        $pdo->prepare($query)->execute($updateData);
-
-        /*
-         * In case createGroupHistory is true,
-         * we should assume the photo is the
-         * same as before if and only if the
-         * logger does not fetch the photo.
-         */
-        if ((!$fetchPhoto) && $createGroupHistory &&
-            is_null($data["photo"])
-        ) {
-          $data["photo"] = $u["photo"];
-        }
-      }
-
-      $data["group_id"] = $u["id"];
-
-    } else {
-
-      $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
-      $st = $pdo->prepare("INSERT INTO `tg_groups` (`tg_group_id`, `name`, `username`, `link`, `photo`, `msg_count`, `created_at`) VALUES (:tg_group_id, :name, :username, :link, :photo, :msg_count, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
-      $st->execute($data);
-      $createGroupHistory = ($st->rowCount() == 1);
-      $data["group_id"] = $pdo->lastInsertId();
-
-      self::groupAdminResolve($data["tg_group_id"], $data["group_id"]);
-    }
-
-
-    if ($createGroupHistory) {
-
-      /* Unset unused keys. */
-      $data = array_filter($data, function ($k) {
-        return in_array($k, ["group_id", "name", "username", "link", "photo"]);
-      }, ARRAY_FILTER_USE_KEY);
-
-      /* Record group history. */
-      $pdo->prepare("INSERT INTO `tg_group_history` (`group_id`, `name`, `username`, `link`, `photo`, `created_at`) VALUES (:group_id, :name, :username, :link, :photo, NOW())")->execute($data);
+      $pdo->prepare("INSERT INTO `tg_group_history` (`group_id`, `name`, `username`, `link`, `photo`, `created_at`) VALUES (:group_id, :name, :username, :link, :photo, NOW())")->execute($cleanData);
     }
 
     return (int)$data["group_id"];

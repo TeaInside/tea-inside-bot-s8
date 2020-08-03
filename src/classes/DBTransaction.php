@@ -49,6 +49,11 @@ final class DBTransaction
   private string $name = "~";
 
   /**
+   * @var callable
+   */
+  private $beforeCallback;
+
+  /**
    * @param \PDO     $pdo
    * @param callable $callback
    * @param array    $vars
@@ -62,10 +67,20 @@ final class DBTransaction
 
   /**
    * @param callable $callback
+   * @return void
    */
-  public function setErrorCallback(callable $callback)
+  public function setErrorCallback(callable $callback): void
   {
     $this->errorCallback = $callback;
+  }
+
+  /**
+   * @param callable $callback
+   * @return void
+   */
+  public function setBeforeCallback(callable $callback): void
+  {
+    $this->beforeCallback = $callback;
   }
 
   /**
@@ -117,6 +132,10 @@ final class DBTransaction
     $pdo = $this->pdo;
     $tryCounter = 0;
 
+    if (is_callable($this->beforeCallback)) {
+      call_user_func_array($this->beforeCallback, [&$this->vars]);
+    }
+
     tryLabel:
 
     try {
@@ -130,7 +149,7 @@ final class DBTransaction
 
       $this->retVal = call_user_func_array(
         $this->callback,
-        [$pdo, $this->vars]
+        [$pdo, &$this->vars]
       );
 
       $pdo->commit();
@@ -173,7 +192,7 @@ final class DBTransaction
       if (is_callable($this->errorCallback)) {
         $this->retVal = call_user_func_array(
           $this->errorCallback,
-          [$pdo, $e, $this->vars]
+          [$pdo, $e, &$this->vars]
         );
       } else {
         $this->retVal = false;

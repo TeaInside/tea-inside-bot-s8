@@ -69,12 +69,65 @@ class GroupLogger extends LoggerFoundation
     $trx->setDeadlockTryCount(20);
     $trx->setTrySleep(rand(1, 20));
 
-    if ($trx->execute()) {
+    if (!$trx->execute()) {
       return false;
     }
 
-    if ($vars["save_msg_data"]->state) {
+    $vars["msgId"] = $trx->getRetVal();
 
+    if ($vars["saveMsgData"]->state) {
+      /*
+       * Save the message data after touch the message info.
+       */
+
+      /*debug:7*/
+      $name = "~~no_op_save_msg~~";
+      /*endebug*/
+      $callback = function () { return true; };
+      $beforeCallback = function () {};
+      switch ($this->data["msg_type"]) {
+
+        case "text":
+          /*debug:7*/
+          $name = "saveTextMessage";
+          /*endebug*/
+          $callback = [self::class, "saveTextMessage"];
+          break;
+
+        case "photo":
+          /*debug:7*/
+          $name = "savePhotoMessage";
+          /*endebug*/
+          $callback = [self::class, "savePhotoMessage"];
+          $beforeCallback = function (array &$vars) {
+            /* TODO: Download the photo here. */
+            /* This must not be in transaction. */
+          };
+          break;
+
+        default:
+          break;
+      }
+
+      $trx = DB::transaction(function (PDO $pdo, array &$vars) use ($callback) {
+        $ret = $callback($pdo, $vars);
+
+        /* ($type = 2) means `group_msg_count` */
+        self::incrementUserMsgCount($vars["userId"], $type = 2);
+        self::incrementGroupMsgCount($vars["groupId"]);
+
+        return $ret;
+      }, $vars);
+      /*debug:7*/
+      $trx->setName($name);
+      /*enddebug*/
+      $trx->setBeforeCallback($beforeCallback);
+      $trx->setErrorCallback($errCallback);
+      $trx->setDeadlockTryCount(20);
+      $trx->setTrySleep(rand(1, 20));
+      if (!$trx->execute()) {
+        return false;
+      }
     }
 
     return $ret;
@@ -130,6 +183,8 @@ class GroupLogger extends LoggerFoundation
     $saveMsg = true;
     $msgId = self::touchMessage($groupId, $userId, $data, $saveMsg, $teaBot);
     $saveMsgData->state = $saveMsg;
+
+    return true;
   }
 
 
@@ -160,7 +215,7 @@ class GroupLogger extends LoggerFoundation
      * Check whether the tg_msg_id has already
      * been stored in database or not.
      */
-    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ? FOR SHARE");
+    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ?");
     $st->execute([$groupId, $data["msg_id"]]);
 
     /*
@@ -254,5 +309,33 @@ class GroupLogger extends LoggerFoundation
     }
 
     return $msgId;
+  }
+
+  /**
+   * @param int                   $msgId
+   * @param \TeaBot\Telegram\Data $data
+   * @return bool
+   */
+  // int $msgId, Data $data
+  public static function saveTextMessage(PDO $pdo, array $vars): bool
+  {
+    extract($vars);
+    /*
+     * Save the text message.
+     */
+    return $pdo->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, NULL, ?, ?, NOW())")
+    ->execute(
+      [
+        $msgId,
+        $data["text"],
+        json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
+        $data["is_edited_msg"] ? 1 : 0,
+        (
+          isset($data["date"]) ?
+          date("Y-m-d H:i:s", $data["date"]) :
+          null
+        )
+      ]
+    );
   }
 }
