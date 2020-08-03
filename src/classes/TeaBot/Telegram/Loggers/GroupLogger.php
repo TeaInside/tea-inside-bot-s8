@@ -183,7 +183,7 @@ class GroupLogger extends LoggerFoundation
      * Check whether the tg_msg_id has already
      * been stored in database or not.
      */
-    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ? FOR UPDATE");
+    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ? FOR SHARE");
     $st->execute([$groupId, $data["msg_id"]]);
 
     /*
@@ -193,6 +193,11 @@ class GroupLogger extends LoggerFoundation
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
 
       $msgId = (int)$u["id"];
+
+      if (!$u["has_edited_msg"]) {
+        $pdo->prepare("UPDATE `tg_group_messages` SET `has_edited_msg` = '1' WHERE `id` = ?")
+        ->execute([$msgId]);
+      }
 
       /*
        * In case forwarded message gets edited.
