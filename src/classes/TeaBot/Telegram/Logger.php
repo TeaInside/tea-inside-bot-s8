@@ -56,7 +56,7 @@ final class Logger
   public function run(): bool
   {
     if (isset($this->data["msg_type"], $this->data["chat_type"])) {
-      var_dump($this->data["chat_type"]);
+
       if ($this->data["chat_type"] === "private") {
         $logger = new PrivateLogger($this);
       } else {

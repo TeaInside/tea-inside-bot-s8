@@ -39,17 +39,11 @@ final class DB
 
   /**
    * @param callable $callback
+   * @param array    $vars
    */
-  public static function transaction(callable $callback)
+  public static function transaction(callable $callback, array $vars = [])
   {
-    $pdo = DB::pdo();
-    try {
-      $pdo->beginTransaction();
-      $callback($pdo);
-      $pdo->commit();
-    } catch (PDOException $e) {
-      $pdo->rollBack();
-    }
+    return new DBTransaction(DB::pdo(), $callback, $vars);
   }
 
   /**

@@ -97,6 +97,10 @@ final class TeaBot
     $strErr = "{$now}\n[error:{$inputHash}]\n".
       $e->__toString();
 
+    /*debug:4*/
+    var_dump($strErr);
+    /*enddebug*/
+
     $inputData = "[input_data:{$inputHash}]\n".
       base64_encode(gzencode($strInput, 9));
 

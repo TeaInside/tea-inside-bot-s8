@@ -21,12 +21,12 @@ use TeaBot\Telegram\Contracts\LoggerInterface;
 class GroupLogger extends LoggerFoundation
 {
   /** 
-   * @param \TeaBot\Telegram\Data $data
+   * @param \PDO   $data
+   * @param array  $vars
    * @return array
    */
-  public static function getCompulsoryIds(Data $data): array
+  public static function getCompulsoryIds(PDO $pdo, array $vars): array
   {
-    $pdo = DB::pdo();
     /*
      * Get $groupId and $userId from database first.
      *
@@ -34,25 +34,63 @@ class GroupLogger extends LoggerFoundation
      * - $groupId and $userId are not chat/user ID that comes from Telegram.
      * - They are ID from database auto increment.
      */
-    $groupId = self::groupInsert(
-      [
-        "tg_group_id" => $data["chat_id"],
-        "name" => $data["chat_title"],
-        "username" => $data["chat_username"],
-        "msg_count" => 0
-      ]
-    );
+    $data = $vars["data"];
+    return [
+      "groupId" => self::groupInsert(
+        [
+          "tg_group_id" => $data["chat_id"],
+          "name" => $data["chat_title"],
+          "username" => $data["chat_username"],
+          "msg_count" => 0
+        ]
+      ),
+      "userId" => self::userInsert(
+        [
+          "tg_user_id" => $data["user_id"],
+          "first_name" => $data["first_name"],
+          "last_name" => $data["last_name"],
+          "username" => $data["username"],
+          "is_bot" => $data["is_bot"] ? 1 : 0,
+          "group_msg_count" => 0
+        ]
+      )
+    ];
+  }
 
-    $userId = self::userInsert(
-      [
-        "tg_user_id" => $data["user_id"],
-        "first_name" => $data["first_name"],
-        "last_name" => $data["last_name"],
-        "username" => $data["username"],
-        "is_bot" => $data["is_bot"] ? 1 : 0,
-        "group_msg_count" => 0
-      ]
-    );
+  /**
+   * @param \PDO  $pdo
+   * @param array $vars
+   * @return bool
+   */
+  public function saveMessageCallback(PDO $pdo, array $vars): bool
+  {
+    extract($vars);
+
+    $data = $this->data;
+    $teaBot = $this->logger->teaBot ?? null;
+
+    $needToSaveMsg = true;
+    $msgId = self::touchMessage($groupId, $userId, $data, $needToSaveMsg, $teaBot);
+
+    if ($needToSaveMsg) {
+      /*
+       * Save the message data after touch the message info.
+       */
+      switch ($this->data["msg_type"]) {
+
+        case "text":
+          self::saveTextMessage($msgId, $data);
+          break;
+
+        case "photo":
+          self::savePhotoMessage($msgId, $data);
+          break;
+
+        case "video":
+          break;
+      }
+    }
+    return true;
   }
 
   /**
@@ -61,15 +99,8 @@ class GroupLogger extends LoggerFoundation
    */
   public function execute(): bool
   {
-
     $data = $this->data;
-    [$userId, $groupId] = self::getCompulsoryIds($data);
-
     $teaBot = $this->logger->teaBot ?? null;
-
-    /*debug:5*/
-    $cid = \Swoole\Coroutine::getCid();
-    /*enddebug*/
 
     /*
      * If the message is supposed to reply another message,
@@ -87,106 +118,36 @@ class GroupLogger extends LoggerFoundation
       }
     }
 
-    $tryCounter = 0;
-    deadlock_recovery:
-    try {
-      /*debug:5*/
-      var_dump("beginTransaction [execute] : ".$cid);
-      /*enddebug*/
-
-      $tryCounter++;
-      $pdo->beginTransaction();
-
-      /*debug:5*/
-      var_dump("beginTransaction OK [execute] : ".$cid);
-      /*enddebug*/
-
-      $needToSaveMsg = true;
-      $msgId = self::touchMessage(
-        $groupId, $userId, $data, $needToSaveMsg, $teaBot);
-
-      /*debug:7*/
-      var_dump("need_to_save_msg: ".($needToSaveMsg ? "t" : "f"));
-      /*enddebug*/
-
-      if ($needToSaveMsg) {
-        /*
-         * Save the message data after touch the message info.
-         */
-        switch ($this->data["msg_type"]) {
-
-          case "text":
-            self::saveTextMessage($msgId, $data);
-            break;
-
-          case "photo":
-            self::savePhotoMessage($msgId, $data);
-            break;
-
-          case "video":
-            break;
-        }
-
-        /* ($type = 2) means group_msg_count */
-        self::incrementUserMsgCount($userId, $type = 2);
-        self::incrementGroupMsgCount($groupId);
-      }
-
-      /*debug:5*/
-      var_dump("commit: ".$cid);
-      /*enddebug*/
-
-      $pdo->commit();
-
-    } catch (PDOException $e) {
-      /*debug:5*/
-      var_dump("rollback: ".$cid);
-      var_dump($e."");
-      /*enddebug*/
-
-      $pdo->rollBack();
-      if (preg_match("/Deadlock found/S", $e->getMessage())) {
-
-        if ($tryCounter >= 5) {
-          throw new Error("Cannot recover from deadlock!");
-        }
-
-        /*debug:5*/
-        echo "{$tryCounter} Recovering from deadlock: {$cid}...\n";
-        /*enddebug*/
-
-        goto deadlock_recovery;
-      }
-
+    $errCallback = function (PDO $pdo, $e) use ($teaBot, &$ret) {
       $teaBot and $teaBot->errorReport($e);
-
       return false;
-    } catch (Error $e) {
-      /*debug:5*/
-      var_dump("rollback: ".$cid);
-      var_dump($e."");
-      /*enddebug*/
+    };
 
-      $pdo->rollBack();
-      if (preg_match("/Deadlock found/S", $e->getMessage())) {
+    $trx0 = DB::transaction(
+      [self::class, "getCompulsoryIds"],
+      ["data" => $data]
+    );
+    /*debug:7*/
+    $trx0->setName("getCompulsoryIds");
+    /*enddebug*/
+    $trx0->setErrorCallback($errCallback);
+    $trx0->setDeadlockTryCount(10);
+    $trx0->setTrySleep(rand(1, 5));
+    $trx0->execute();
 
-        if ($tryCounter >= 5) {
-          throw new Error("Cannot recover from deadlock!");
-        }
+    $trx1 = DB::transaction(
+      [$this, "saveMessageCallback"],
+      $trx0->getRetVal()
+    );
+    /*debug:7*/
+    $trx1->setName("saveMessageCallback");
+    /*enddebug*/
+    $trx1->setErrorCallback($errCallback);
+    $trx1->setDeadlockTryCount(10);
+    $trx1->setTrySleep(rand(1, 5));
+    $trx1->execute();
 
-        /*debug:5*/
-        echo "{$tryCounter} Recovering from deadlock: {$cid}...\n";
-        /*enddebug*/
-
-        goto deadlock_recovery;
-      }
-
-      $teaBot and $teaBot->errorReport($e);
-
-      return false;
-    }
-
-    return true;
+    return $trx1->getRetVal() ?? false;
   }
 
   /**

@@ -34,12 +34,29 @@ final class DBTransaction
   private int $trySleep = 2;
 
   /**
+   * @var mixed
+   */
+  private $retVal;
+
+  /**
+   * @var array
+   */
+  private array $vars;
+
+  /**
+   * @var string
+   */
+  private string $name = "~";
+
+  /**
    * @param \PDO     $pdo
    * @param callable $callback
+   * @param array    $vars
    */
-  public function __construct(PDO $pdo, callable $callback)
+  public function __construct(PDO $pdo, callable $callback, array $vars = [])
   {
     $this->pdo = $pdo;
+    $this->vars = $vars;
     $this->callback = $callback;
   }
 
@@ -70,12 +87,31 @@ final class DBTransaction
   }
 
   /**
+   * Useful for debugging.
+   *
+   * @param string $name
+   */
+  public function setName(string $name): void
+  {
+    $this->name = $name;
+  }
+
+  /**
+   * @return mixed
+   */
+  public function getRetVal()
+  {
+    return $this->retVal;
+  }
+
+  /**
    * @return bool
    */
   public function execute(): bool
   {
     /*debug:7*/
     $cid = \Swoole\Coroutine::getCid();
+    $trxName = $this->name;
     /*enddebug*/
 
     $pdo = $this->pdo;
@@ -89,22 +125,27 @@ final class DBTransaction
       $pdo->beginTransaction();
 
       /*debug:7*/
-      var_dump("[{$cid}] beginTransaction");
+      var_dump("[{$cid}] beginTransaction [{$trxName}]");
       /*enddebug*/
 
-      call_user_func_array($this->callback, [$pdo]);
+      $this->retVal = call_user_func_array(
+        $this->callback,
+        [$pdo, $this->vars]
+      );
 
       $pdo->commit();
 
       /*debug:7*/
-      var_dump("[{$cid}] commit");
+      var_dump("[{$cid}] commit [{$trxName}]");
       /*enddebug*/
+
+      return true;
 
     } catch (PDOException $e) {
 
       $pdo->rollback();
       /*debug:7*/
-      var_dump("[{$cid}] rollback");
+      var_dump("[{$cid}] rollback [{$trxName}]");
       /*enddebug*/
 
       if (preg_match("/Deadlock found/S", $e->getMessage())) {
@@ -116,8 +157,12 @@ final class DBTransaction
         if ($tryCounter <= $this->deadlockTryCount) {
 
           /*debug:7*/
-          var_dump("[$cid] Recovering from deadlock...");
+          var_dump(
+            "[$cid][tryCounter:{$tryCounter}][sleep:{$this->trySleep}] Recovering from deadlock [{$trxName}]..."
+          );
           /*enddebug*/
+
+          sleep($this->trySleep);
 
           goto tryLabel;
         }
@@ -126,8 +171,15 @@ final class DBTransaction
       echo "[".date("c")."]\n".$e;
 
       if (is_callable($this->errorCallback)) {
-        call_user_func_array($this->errorCallback, [$pdo, $e]);
+        $this->retVal = call_user_func_array(
+          $this->errorCallback,
+          [$pdo, $e, $this->vars]
+        );
+      } else {
+        $this->retVal = false;
       }
     }
+
+    return false;
   }
 }
