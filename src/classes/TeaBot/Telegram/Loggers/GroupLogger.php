@@ -133,7 +133,9 @@ class GroupLogger extends LoggerFoundation
     $trx0->setErrorCallback($errCallback);
     $trx0->setDeadlockTryCount(10);
     $trx0->setTrySleep(rand(1, 5));
-    $trx0->execute();
+    if (!$trx0->execute()) {
+      return false;
+    }
 
     $trx1 = DB::transaction(
       [$this, "saveMessageCallback"],
@@ -145,7 +147,9 @@ class GroupLogger extends LoggerFoundation
     $trx1->setErrorCallback($errCallback);
     $trx1->setDeadlockTryCount(10);
     $trx1->setTrySleep(rand(1, 5));
-    $trx1->execute();
+    if (!$trx1->execute()) {
+      return false;
+    }
 
     return $trx1->getRetVal() ?? false;
   }
