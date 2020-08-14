@@ -58,12 +58,13 @@ trait GroupResolver
       $data["link"] = null;
     }
 
-    /**
+    /*
      * Check whether the group has already been
      * stored in database or not.
      */
     $pdo = DB::pdo();
-    $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`link`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ?");
+
+    $st = $pdo->prepare("SELECT `id`,`name`,`username`,`photo`,`link`,`msg_count` FROM `tg_groups` WHERE `tg_group_id` = ? FOR UPDATE");
     $st->execute([$data["tg_group_id"]]);
 
     $createGroupHistory = false;
@@ -160,7 +161,6 @@ trait GroupResolver
       /* Record group history. */
       $pdo->prepare("INSERT INTO `tg_group_history` (`group_id`, `name`, `username`, `link`, `photo`, `created_at`) VALUES (:group_id, :name, :username, :link, :photo, NOW())")->execute($data);
     }
-
 
     return (int)$data["group_id"];
   }

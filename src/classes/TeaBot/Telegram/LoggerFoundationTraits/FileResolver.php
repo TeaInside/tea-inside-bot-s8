@@ -32,7 +32,7 @@ trait FileResolver
      */
 
     $pdo = DB::pdo();
-    $st  = $pdo->prepare("SELECT `id` FROM `tg_files` WHERE tg_file_id = ?");
+    $st  = $pdo->prepare("SELECT `id` FROM `tg_files` WHERE tg_file_id = ? FOR UPDATE");
     $st->execute([$tgFileId]);
 
     if ($r = $st->fetch(PDO::FETCH_NUM)) {
@@ -123,7 +123,7 @@ trait FileResolver
     }
 
     /* Check by hash file. */
-    $st = $pdo->prepare("SELECT `id` FROM `tg_files` WHERE `md5_sum` = ? AND `sha1_sum` = ? LIMIT 1");
+    $st = $pdo->prepare("SELECT `id` FROM `tg_files` WHERE `md5_sum` = ? AND `sha1_sum` = ? LIMIT 1 FOR UPDATE");
     $st->execute([$md5Hash, $sha1Hash]);
 
     if ($u = $st->fetch(PDO::FETCH_NUM)) {

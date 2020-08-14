@@ -20,14 +20,13 @@ use TeaBot\Telegram\Contracts\LoggerInterface;
  */
 class GroupLogger extends LoggerFoundation
 {
-  /**
-   * @param string
-   * @return bool
+  /** 
+   * @param \PDO   $data
+   * @param array  $vars
+   * @return array
    */
-  public function execute(): bool
+  public static function getCompulsoryIds(PDO $pdo, array $vars): array
   {
-    $data = $this->data;
-
     /*
      * Get $groupId and $userId from database first.
      *
@@ -35,41 +34,79 @@ class GroupLogger extends LoggerFoundation
      * - $groupId and $userId are not chat/user ID that comes from Telegram.
      * - They are ID from database auto increment.
      */
-    $groupId = self::groupInsert(
-      [
-        "tg_group_id" => $data["chat_id"],
-        "name" => $data["chat_title"],
-        "username" => $data["chat_username"],
-        "msg_count" => 0
-      ]
-    );
+    $data = $vars["data"];
+    return [
+      "groupId" => self::groupInsert(
+        [
+          "tg_group_id" => $data["chat_id"],
+          "name" => $data["chat_title"],
+          "username" => $data["chat_username"],
+          "msg_count" => 0
+        ]
+      ),
+      "userId" => self::userInsert(
+        [
+          "tg_user_id" => $data["user_id"],
+          "first_name" => $data["first_name"],
+          "last_name" => $data["last_name"],
+          "username" => $data["username"],
+          "is_bot" => $data["is_bot"] ? 1 : 0,
+          "group_msg_count" => 0
+        ]
+      )
+    ];
+  }
 
-    /*debug:2*/
-    var_dump("got groupId: ".$groupId);
-    /*enddebug*/
+  /**
+   * @param \PDO  $pdo
+   * @param array $vars
+   * @return bool
+   */
+  public function saveMessageCallback(PDO $pdo, array $vars): bool
+  {
+    extract($vars);
 
-    $userId = self::userInsert(
-      [
-        "tg_user_id" => $data["user_id"],
-        "first_name" => $data["first_name"],
-        "last_name" => $data["last_name"],
-        "username" => $data["username"],
-        "is_bot" => $data["is_bot"] ? 1 : 0,
-        "group_msg_count" => 0
-      ]
-    );
-
-    /*debug:2*/
-    var_dump("got userId: ".$userId);
-    /*enddebug*/
-
-
-    $pdo = DB::pdo();
+    $data = $this->data;
     $teaBot = $this->logger->teaBot ?? null;
 
-    /*debug:5*/
-    $cid = \Swoole\Coroutine::getCid();
-    /*enddebug*/
+    $needToSaveMsg = true;
+    $msgId = self::touchMessage($groupId, $userId, $data, $needToSaveMsg, $teaBot);
+
+    if ($needToSaveMsg) {
+      /*
+       * Save the message data after touch the message info.
+       */
+      switch ($this->data["msg_type"]) {
+
+        case "text":
+          self::saveTextMessage($msgId, $data);
+          break;
+
+        case "photo":
+          self::savePhotoMessage($msgId, $data);
+          break;
+
+        case "video":
+          break;
+      }
+
+      /*
+       * ($type = 2) means `group_msg_count`
+       */
+      self::incrementUserMsgCount($userId, $type = 2);
+      self::incrementGroupMsgCount($groupId);
+    }
+    return true;
+  }
+
+  /**
+   * @param string
+   * @return bool
+   */
+  public function execute(): bool
+  {
+    $data = $this->data;
+    $teaBot = $this->logger->teaBot ?? null;
 
     /*
      * If the message is supposed to reply another message,
@@ -87,75 +124,40 @@ class GroupLogger extends LoggerFoundation
       }
     }
 
-    try {
-      /*debug:5*/
-      var_dump("beginTransaction: ".$cid);
-      /*enddebug*/
-
-      $pdo->beginTransaction();
-
-      /*debug:5*/
-      var_dump("beginTransaction OK: ".$cid);
-      /*enddebug*/
-
-      $needToSaveMsg = true;
-      $msgId = self::touchMessage(
-        $groupId, $userId, $data, $needToSaveMsg, $teaBot);
-
-      /*debug:7*/
-      var_dump("need_to_save_msg: ".($needToSaveMsg ? "t" : "f"));
-      /*enddebug*/
-
-      if ($needToSaveMsg) {
-        /*
-         * Save the message data after touch the message info.
-         */
-        switch ($this->data["msg_type"]) {
-
-          case "text":
-            self::saveTextMessage($msgId, $data);
-            break;
-
-          case "photo":
-            self::savePhotoMessage($msgId, $data);
-            break;
-
-          case "video":
-            break;
-        }
-
-        /* ($type = 2) means group_msg_count */
-        self::incrementUserMsgCount($userId, $type = 2);
-        self::incrementGroupMsgCount($groupId);
-      }
-
-      /*debug:5*/
-      var_dump("commit: ".$cid);
-      /*enddebug*/
-
-      $pdo->commit();
-
-    } catch (PDOException $e) {
-      /*debug:5*/
-      var_dump("rollback: ".$cid);
-      var_dump($e."");
-      /*enddebug*/
-
-      $pdo->rollBack();
+    $errCallback = function (PDO $pdo, $e) use ($teaBot, &$ret) {
       $teaBot and $teaBot->errorReport($e);
       return false;
-    } catch (Error $e) {
-      /*debug:5*/
-      var_dump("rollback: ".$cid);
-      var_dump($e."");
-      /*enddebug*/
+    };
 
-      $pdo->rollBack();
-      $teaBot and $teaBot->errorReport($e);
+    $trx0 = DB::transaction(
+      [self::class, "getCompulsoryIds"],
+      ["data" => $data]
+    );
+    /*debug:7*/
+    $trx0->setName("getCompulsoryIds");
+    /*enddebug*/
+    $trx0->setErrorCallback($errCallback);
+    $trx0->setDeadlockTryCount(10);
+    $trx0->setTrySleep(rand(1, 5));
+    if (!$trx0->execute()) {
       return false;
     }
 
-    return true;
+    $trx1 = DB::transaction(
+      [$this, "saveMessageCallback"],
+      $trx0->getRetVal()
+    );
+    /*debug:7*/
+    $trx1->setName("saveMessageCallback");
+    /*enddebug*/
+    $trx1->setErrorCallback($errCallback);
+    $trx1->setDeadlockTryCount(10);
+    $trx1->setTrySleep(rand(1, 5));
+    if (!$trx1->execute()) {
+      return false;
+    }
+
+    return $trx1->getRetVal() ?? false;
   }
 
   /**
@@ -191,6 +193,11 @@ class GroupLogger extends LoggerFoundation
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
 
       $msgId = (int)$u["id"];
+
+      if (!$u["has_edited_msg"]) {
+        $pdo->prepare("UPDATE `tg_group_messages` SET `has_edited_msg` = '1' WHERE `id` = ?")
+        ->execute([$msgId]);
+      }
 
       /*
        * In case forwarded message gets edited.
@@ -318,7 +325,7 @@ class GroupLogger extends LoggerFoundation
         $msgId,
         $data["text"],
         json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
-        static::fileResolve($tgFileId),
+        static::fileResolve($tgFileId, true),
         $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?

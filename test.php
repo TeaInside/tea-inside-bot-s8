@@ -3,9 +3,9 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345860270,
+    "update_id": 345849982,
     "message": {
-        "message_id": 82075,
+        "message_id": 2793,
         "from": {
             "id": 243692601,
             "is_bot": false,
@@ -15,37 +15,36 @@ $json = '{
             "language_code": "en"
         },
         "chat": {
-            "id": 243692601,
-            "first_name": "Ammar",
-            "last_name": "Faizi",
-            "username": "ammarfaizi2",
-            "type": "private"
+            "id": -1001149709623,
+            "title": "Test Driven Development",
+            "type": "supergroup",
+            "username": null
         },
-        "date": 1596389711,
-        "photo": [
-            {
-                "file_id": "AgACAgUAAxkBAAEBQJtfJvlP9MZj1xZThUC5ho1ROvAFigACg6oxG-kjOVWT6eGjDaWSP1oB7Wt0AAMBAAMCAANtAANGRQEAARoE",
-                "file_unique_id": "AQADWgHta3QAA0ZFAQAB",
-                "file_size": 31213,
-                "width": 320,
-                "height": 320
+        "date": 1595141419,
+        "reply_to_message": {
+            "message_id": 2668,
+            "from": {
+                "id": 466965678,
+                "is_bot": true,
+                "first_name": "Tea Inside",
+                "username": "TeaInsideBot"
             },
-            {
-                "file_id": "AgACAgUAAxkBAAEBQJtfJvlP9MZj1xZThUC5ho1ROvAFigACg6oxG-kjOVWT6eGjDaWSP1oB7Wt0AAMBAAMCAAN5AANERQEAARoE",
-                "file_unique_id": "AQADWgHta3QAA0RFAQAB",
-                "file_size": 95807,
-                "width": 960,
-                "height": 960
+            "chat": {
+                "id": -1001149709623,
+                "title": "Test Driven Development",
+                "type": "supergroup"
             },
+            "date": 1595121822,
+            "text": "This command can only be used in private message!"
+        },
+        "text": "/debug",
+        "entities": [
             {
-                "file_id": "AgACAgUAAxkBAAEBQJtfJvlP9MZj1xZThUC5ho1ROvAFigACg6oxG-kjOVWT6eGjDaWSP1oB7Wt0AAMBAAMCAAN4AANHRQEAARoE",
-                "file_unique_id": "AQADWgHta3QAA0dFAQAB",
-                "file_size": 109637,
-                "width": 800,
-                "height": 800
+                "offset": 0,
+                "length": 6,
+                "type": "bot_command"
             }
-        ],
-        "caption": "test qweqwe"
+        ]
     }
 }';
 

@@ -38,6 +38,15 @@ final class DB
   }
 
   /**
+   * @param callable $callback
+   * @param array    $vars
+   */
+  public static function transaction(callable $callback, array $vars = [])
+  {
+    return new DBTransaction(DB::pdo(), $callback, $vars);
+  }
+
+  /**
    * @return void
    */
   public static function close(): void

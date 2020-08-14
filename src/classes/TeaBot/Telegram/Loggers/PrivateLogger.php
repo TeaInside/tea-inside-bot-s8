@@ -313,7 +313,7 @@ class PrivateLogger extends LoggerFoundation
         $msgId,
         $data["text"],
         json_encode($data["text_entities"]),
-        static::fileResolve($tgFileId),
+        static::fileResolve($tgFileId, true),
         $data["is_edited_msg"] ? 1 : 0,
         (
           isset($data["date"]) ?
