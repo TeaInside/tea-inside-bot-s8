@@ -59,17 +59,14 @@ go(function () {
           fwrite($conn, "ok");
           fclose($conn);
 
-          go(function () use ($json) {
+          go(function () use ($data) {
             $saber = \Swlib\Saber::create(
              [
-              "base_uri" => "https://telegram-bot.teainside.org/webhook.php",
+              "base_uri" => "https://telegram-bot.teainside.org",
               "headers" => ["Content-Type" => \Swlib\Http\ContentType::JSON]
              ]
             );
-            $ret = $saber->post(
-              "/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY,
-              json_decode($json, true)
-            );
+            $ret = $saber->post("/webhook.php", $data);
             echo $ret->getBody()->__toString()."\n";
           });
 
