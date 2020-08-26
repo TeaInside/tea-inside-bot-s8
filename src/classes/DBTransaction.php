@@ -155,6 +155,7 @@ final class DBTransaction
       $pdo->commit();
 
       /*debug:7*/
+      DB::dropTransactionState();
       var_dump("[{$cid}] commit [{$trxName}]");
       /*enddebug*/
 
@@ -171,6 +172,10 @@ final class DBTransaction
 
         /*debug:7*/
         var_dump("[$cid] ".$e->getMessage());
+        /*enddebug*/
+
+        /*debug:10*/
+        var_dump("[$cid] ".$e);
         /*enddebug*/
 
         if ($tryCounter <= $this->deadlockTryCount) {
@@ -197,10 +202,12 @@ final class DBTransaction
       } else {
         $this->retVal = false;
       }
-    } /*debug:7*/ finally {
-      DB::dropTransactionState();
-    } /*enddebug*/
+    }
 
+
+    /*debug:7*/
+    DB::dropTransactionState();
+    /*enddebug*/
     return false;
   }
 }

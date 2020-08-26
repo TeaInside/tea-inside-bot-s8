@@ -173,17 +173,24 @@ abstract class LoggerFoundation
 
   /**
    * @param array $data
+   * @param bool  $transactional
    * @throws \PDOException
    * @return ?int
    */
-  public static function userInsert(array $data): ?int
+  public static function userInsert(array $data, bool $transactional = true): ?int
   {
+
     /**
      * Information about $action
      * @see TeaBot\Telegram\LoggerFoundationTraits\GroupResolver::baseUserInsert
      */
     $action = -1;
     $moreFetch = false;
+
+    if (!$transactional) {
+      return self::baseUserInsert($data, $moreFetch, $action);
+    }
+
     $errCallback = function (PDO $pdo, $e) {
       throw $e;
     };
@@ -213,16 +220,15 @@ abstract class LoggerFoundation
       /*
        * Don't fetch photo and group admins in transaction.
        */
-      $data["photo"] = self::getLatestGroupPhoto($data["tg_group_id"]);
-      self::groupAdminResolve($data["tg_group_id"], $retVal);
+      $data["photo"] = self::getLatestUserPhoto($data["tg_user_id"]);
 
       $trx = DB::transaction(
         function (PDO $pdo) use (&$data, $moreFetch, $action): bool {
-          return self::baseGroupInsert($data, $moreFetch, $action);
+          return self::baseUserInsert($data, $moreFetch, $action);
         }
       );
       /*debug:7*/
-      $trx->setName("updateGroupInfo");
+      $trx->setName("updateUserInfo");
       /*enddebug*/
       $trx->setErrorCallback($errCallback);
       $trx->setDeadlockTryCount(10);

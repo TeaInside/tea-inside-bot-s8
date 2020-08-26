@@ -21,6 +21,11 @@ if (isset($argv[1]) && ($argv[1] === "release")) {
   if (!file_exists($swooleLockFile)) {
     shw($swooleDir, "phpize");
     shw($swooleDir, "./configure --enable-openssl --enable-sockets --enable-http2 --enable-mysqlnd");
+
+    // Enable optimization.
+    file_put_contents($swooleDir."/Makefile",
+      str_replace(" -O0", " -O3", file_get_contents($swooleDir."/Makefile")));
+
     shw($swooleDir, "make");
     shw($swooleDir, "sudo make install");
     touch($swooleLockFile);
@@ -41,6 +46,11 @@ if (isset($argv[1]) && ($argv[1] === "release")) {
   if (!file_exists($swooleLockFile)) {
     shw($swooleDir, "phpize");
     shw($swooleDir, "./configure --enable-openssl --enable-sockets --enable-http2 --enable-mysqlnd");
+
+    // Enable optimization.
+    file_put_contents($swooleDir."/Makefile",
+      str_replace(" -O0", " -O3", file_get_contents($swooleDir."/Makefile")));
+
     shw($swooleDir, "make -j \$(nproc)");
     shw($swooleDir, "sudo make install");
     touch($swooleLockFile);

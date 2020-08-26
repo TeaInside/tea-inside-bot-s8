@@ -55,7 +55,11 @@ trait UserResolver
     /*enddebug*/
 
     /*debug:7*/
-    DB::mustBeInTransaction("baseUserInsert");
+    // DB::mustBeInTransaction("baseUserInsert");
+    /*enddebug*/
+
+    /*debug:10*/
+    $cid = \Swoole\Coroutine::getCid();
     /*enddebug*/
 
     /*
@@ -63,6 +67,11 @@ trait UserResolver
      * stored in database or not.
      */
     $pdo = DB::pdo();
+
+    /*debug:10*/
+    var_dump("[{$cid}] select");
+    /*enddebug*/
+
     $st = $pdo->prepare("SELECT `id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count` FROM `tg_users` WHERE `tg_user_id` = ? FOR UPDATE");
     $st->execute([$data["tg_user_id"]]);
 
@@ -79,11 +88,11 @@ trait UserResolver
       $query = "UPDATE `tg_users` SET ";
 
 
-      if ($data["group_msg_count"] != 0) {
+      if (($data["group_msg_count"] ?? 0) != 0) {
         $query .= "`group_msg_count`=`group_msg_count`+1";
         $exeUpdate = true;
       } else
-      if ($data["private_msg_count"] != 0) {
+      if (($data["private_msg_count"] ?? 0) != 0) {
         $query .= "`private_msg_count`=`private_msg_count`+1";
         $exeUpdate = true;
       }
@@ -122,10 +131,18 @@ trait UserResolver
         $data["photo"] = $u["photo"];
       }
 
+      if ($action === USER_INSERT_ACT_NEW_DATA) {
+        $query .= ($exeUpdate ? "," : "")."`updated_at`=NULL";
+        $createUserHistory = false;
+      }
+
       if ($exeUpdate) {
         $action = USER_INSERT_ACT_UPDATE_OLD;
         $query .= " WHERE `id` = :id";
         $updateData["id"] = $u["id"];
+        /*debug:10*/
+        var_dump("[{$cid}] update");
+        /*enddebug*/
         $pdo->prepare($query)->execute($updateData);
         $moreFetch = true;
       } else {
@@ -140,8 +157,20 @@ trait UserResolver
         $data["photo"] = null;
       }
 
-      $action = GROUP_INSERT_ACT_NEW_DATA;
+      if (!array_key_exists("group_msg_count", $data)) {
+        $data["group_msg_count"] = 0;
+      }
+
+      if (!array_key_exists("private_msg_count", $data)) {
+        $data["private_msg_count"] = 0;
+      }
+
+      $action = USER_INSERT_ACT_NEW_DATA;
       /* Insert new user to database. */
+      /*debug:10*/
+      var_dump("[{$cid}] insert");
+      /*enddebug*/
+      $pdo->exec("UNLOCK TABLES;");
       $st = $pdo->prepare("INSERT INTO `tg_users` (`tg_user_id`,`username`,`first_name`,`last_name`,`photo`,`group_msg_count`,`private_msg_count`,`is_bot`,`created_at`) VALUES (:tg_user_id, :username, :first_name, :last_name, :photo, :group_msg_count, :private_msg_count, :is_bot, NOW()) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`)");
       $st->execute($data);
 
@@ -159,9 +188,42 @@ trait UserResolver
       }, ARRAY_FILTER_USE_KEY);
 
       /* Record user history. */
+      /*debug:10*/
+      var_dump("[{$cid}] insert 2");
+      /*enddebug*/
       $pdo->prepare("INSERT INTO `tg_user_history` (`user_id`, `username`, `first_name`, `last_name`, `photo`, `created_at`) VALUES (:user_id, :username, :first_name, :last_name, :photo, NOW())")->execute($cleanData);
     }
 
     return (int)$data["user_id"];
+  }
+
+  /**
+   * @param string $tgUserId
+   * @return ?int
+   */
+  public static function getLatestUserPhoto(string $tgUserId): ?int
+  {
+    $json = json_decode(
+      Exe::getUserProfilePhotos(
+        [
+          "user_id" => $tgUserId,
+          "offset" => 0,
+          "limit" => 1
+        ]
+      )->getBody()->__toString(),
+      true
+    );
+
+    if (isset($json["result"]["photos"][0])) {
+      $c = count($json["result"]["photos"][0]);
+      if ($c > 0) {
+        $p = $json["result"]["photos"][0][$c - 1];
+        if (isset($p["file_id"])) {
+          return self::fileResolve($p["file_id"]);
+        }
+      }
+    }
+
+    return null;
   }
 }

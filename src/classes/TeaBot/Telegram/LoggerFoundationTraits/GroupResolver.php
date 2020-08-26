@@ -120,6 +120,11 @@ trait GroupResolver
         $data["photo"] = $u["photo"];
       }
 
+      if ($action === GROUP_INSERT_ACT_NEW_DATA) {
+        $query .= ($exeUpdate ? "," : "")."`updated_at`=NULL";
+        $createGroupHistory = false;
+      }
+
       if ($exeUpdate) {
         $action = GROUP_INSERT_ACT_UPDATE_OLD;
         $query .= " WHERE `id` = :id";
@@ -134,6 +139,7 @@ trait GroupResolver
       }
 
       $data["group_id"] = $u["id"];
+
     } else {
 
       if (!array_key_exists("photo", $data)) {
@@ -176,37 +182,6 @@ trait GroupResolver
     return isset($o["result"]["photo"]["big_file_id"])
       ? static::fileResolve($o["result"]["photo"]["big_file_id"])
       : null;
-  }
-
-
-  /**
-   * @param string $tgUserId
-   * @return ?int
-   */
-  final public static function getLatestUserPhoto(string $tgUserId): ?int
-  {
-    $json = json_decode(
-      Exe::getUserProfilePhotos(
-        [
-          "user_id" => $tgUserId,
-          "offset" => 0,
-          "limit" => 1
-        ]
-      )->getBody()->__toString(),
-      true
-    );
-
-    if (isset($json["result"]["photos"][0])) {
-      $c = count($json["result"]["photos"][0]);
-      if ($c > 0) {
-        $p = $json["result"]["photos"][0][$c - 1];
-        if (isset($p["file_id"])) {
-          return static::fileResolve($p["file_id"]);
-        }
-      }
-    }
-
-    return null;
   }
 
 
@@ -265,7 +240,7 @@ trait GroupResolver
       $query = "INSERT INTO `tg_group_admins` (`user_id`,`group_id`,`role`,`info`,`created_at`) VALUES ";
 
       $data = [];
-      for ($i = 0; $i < $c; $i++) { 
+      for ($i = 0; $i < $c; $i++) {
         $v = $channel->pop();
         $data = array_merge($data, $v[0]);
         $query .= ($i ? "," : "").$v[1];
