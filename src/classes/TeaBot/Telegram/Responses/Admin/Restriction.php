@@ -20,9 +20,11 @@ class Restriction extends ResponseFoundation
    */
   private function hasAbilityToUseBanHammer(): bool
   {
-    if (in_array($this->data["user_id"], SUDOERS)) {
-      return true;
-    }
+    // if (in_array($this->data["user_id"], SUDOERS)) {
+    //   return true;
+    // }
+
+    self::getPrivilegeInfo($this->data["user_id"], $this->data["chat_id"]);
 
     /*
       TODO: Check if it is an admin with can_restrict_members privilege.

@@ -49,6 +49,21 @@ trait Utils
     );
   }
 
+  /**
+   * @param int $userId
+   * @param int $chatId
+   * @return array
+   */
+  public static function getPrivilegeInfo(int $userId, int $chatId): array
+  {
+    $ret = json_decode(
+      Exe::getChatAdministrators(["chat_id" => $chatId])
+        ->getBody()->__toString(),
+      true
+    );
+    var_dump($ret);
+  }
+
 
   /**
    * @param string $name
@@ -76,7 +91,7 @@ trait Utils
         "text"                => $text,
         "parse_mode"          => "HTML",
       ];
-    } else {      
+    } else {
       $r = [
         "chat_id"             => $this->data["chat_id"],
         "reply_to_message_id" => $this->data["msg_id"],
