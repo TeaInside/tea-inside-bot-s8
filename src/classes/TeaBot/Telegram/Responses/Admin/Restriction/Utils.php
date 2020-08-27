@@ -54,7 +54,7 @@ trait Utils
    * @param int $chatId
    * @return array
    */
-  public static function getPrivilegeInfo(int $userId, int $chatId): array
+  public static function getPrivilegeInfo(int $userId, int $chatId): ?array
   {
     $ret = json_decode(
       Exe::getChatAdministrators(["chat_id" => $chatId])
@@ -62,6 +62,8 @@ trait Utils
       true
     );
     var_dump($ret);
+
+    return $ret;
   }
 
 
