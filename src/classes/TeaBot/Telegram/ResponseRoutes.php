@@ -2,10 +2,6 @@
 
 namespace TeaBot\Telegram;
 
-const INDEX_ROUTES_MAP = [
-  "S" => IndexRoutes\S::class
-];
-
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
  * @license MIT
@@ -34,11 +30,11 @@ trait ResponseRoutes
       /* $m[2] the command.    */
       /* $m[3] Index char.     */
       $i = strtoupper($m[3]);
-      /* $m[4] comamnd arg     */
+      /* $m[4] command arg     */
 
-
-      if (isset(INDEX_ROUTES_MAP[$i])) {
-        if ((INDEX_ROUTES_MAP[$i])::exec($this, $m[2], trim($m[4]))) {
+      $class = "\\TeaBot\\Telegram\\IndexRoutes\\".$i;
+      if (class_exists($class)) {
+        if ($class::exec($this, $m[2], trim($m[4]))) {
           return true;
         }
       }
