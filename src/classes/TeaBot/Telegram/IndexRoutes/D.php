@@ -22,16 +22,21 @@ class S extends IndexRouteFoundation
    */
   public static function execMapped(Response $res, string $cmd, string $arg): bool
   {
-    return self::mapExec(
-      [
-        "start" => [
-          Responses\Start::class,
-          "start",
-          null,
-          /* Only accepts empty arg. */
-          ($arg === "")
-        ],
-      ]
-    );
+    static $maps = [
+      "start" => [Responses\Start::class, "start"],
+    ];
+
+    if (isset($maps[$cmd])) {
+
+      $map  = $maps[$cmd];
+      $args = isset($map[3]) ? $map[3]($arg) : [];
+      $cond = isset($map[4]) ? $map[4]($res, $cmd, $arg) : true;
+
+      if ($cond && $res->rtExec($map[0], $map[1], $args)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
