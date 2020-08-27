@@ -40,11 +40,13 @@ final class TeaBot
   public function run(): void
   {
     /* Run logger here. */
-    go([$this, "runLogger"]);
+    // go([$this, "runLogger"]);
 
 
     if (!$this->skipResponse) {
       /* Run response here. */
+      $res = new Response($this->data);
+      $res->execRoutes();
     }
   }
 

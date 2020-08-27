@@ -1,0 +1,46 @@
+<?php
+
+namespace TeaBot\Telegram;
+
+/**
+ * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
+ * @license MIT
+ * @package \TeaBot\Telegram
+ * @version 8.0.0
+ */
+trait ResponseRoutes
+{
+  /**
+   * @return bool
+   */
+  public function execRoutes(): bool
+  {
+    /* Skip edited message. */
+    if ($this->data["is_edited_msg"]) {
+      return false;
+    }
+
+    /* Start command. */
+    if (preg_match("/^(\/|\!|\~|\.)start$/USsi", $this->data["text"])) {
+      if ($this->rtExec(Responses\Start::class, "start")) {
+        return true;
+      }
+    }
+
+    /* Debug command. */
+    if (preg_match("/^(\/|\!|\~|\.)debug$/USsi", $this->data["text"])) {
+      if ($this->rtExec(Responses\Debug::class, "debug")) {
+        return true;
+      }
+    }
+
+    /* Promote command. */
+    if (preg_match("/^(\/|\!|\~|\.)promote$/USsi", $this->data["text"])) {
+      if ($this->rtExec(Responses\Promote::class, "promote")) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+}

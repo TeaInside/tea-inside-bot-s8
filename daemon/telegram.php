@@ -5,23 +5,22 @@ require __DIR__."/../bootstrap/telegram/autoload.php";
 error_reporting(E_ALL);
 ini_set("display_errors", true);
 
+/* Load configurations. */
 loadConfig("telegram/api");
 loadConfig("telegram/quran");
 loadConfig("telegram/calculus");
 loadConfig("telegram/telegram_bot");
 
+/* Save PID. */
 file_put_contents(TELEGRAM_DAEMON_PID_FILE, getmypid());
 
-\Swoole\Runtime::enableCoroutine();
+// \TeaBot\Telegram\Log::registerLogStream(STDOUT);
+// \TeaBot\Telegram\Log::registerLogStream(fopen(TELEGRAM_DAEMON_LOG_FILE, "a"));
 
-\TeaBot\Telegram\Log::registerLogStream(STDOUT);
-\TeaBot\Telegram\Log::registerLogStream(fopen(TELEGRAM_DAEMON_LOG_FILE, "a"));
+$fx = function () {
 
-\Co\run(function() {
-go(function () {
-
-  $tcpAddr = "tcp://127.0.0.1:7777";
-  $ctx = stream_context_create(
+  $addr  = "tcp://127.0.0.1:7777";
+  $ctx   = stream_context_create(
     [
       "socket" => [
         "so_reuseaddr" => true,
@@ -29,66 +28,83 @@ go(function () {
       ]
     ]
   );
+  $flags = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
 
-  $socket = stream_socket_server($tcpAddr, $errno, $errstr,
-    STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $ctx);
-
-  if (!$socket) {
+  /* Run coroutine server. */
+  if (!($sock = stream_socket_server($addr, $errno, $errstr, $flags, $ctx))) {
     echo "$errstr ($errno)\n";
-  } else {
-
-    $i = 0;
-    echo "Listening on ".$tcpAddr."...\n";
-
-    while ($conn = stream_socket_accept($socket, -1)) {
-      go(function () use ($conn) {
-        stream_set_timeout($conn, 5);
-
-        $data = fread($conn, 4096);
-        $dataLen = unpack("S", substr($data, 0, 2))[1];
-        $receivedLen = strlen($data) - 2;
-        $data = substr($data, 2);
-
-        while ($dataLen > $receivedLen) {
-          $data .= fread($conn, 4096);
-          $receivedLen = strlen($data);
-        }
-
-        $data = json_decode($data, true);
-        if (is_array($data)) {
-          fwrite($conn, "ok");
-          fclose($conn);
-
-          go(function () use ($data) {
-            $saber = \Swlib\Saber::create(
-             [
-              "base_uri" => "https://telegram-bot.teainside.org",
-              "headers" => ["Content-Type" => \Swlib\Http\ContentType::JSON]
-             ]
-            );
-            $ret = $saber->post("/webhook.php", $data);
-            echo $ret->getBody()->__toString()."\n";
-          });
-
-          try {
-            $bot = new \TeaBot\Telegram\TeaBot($data);
-            $bot->run();
-          } catch (\Error $e) {
-            echo $e."";
-            $bot->errorReport($e);
-          } finally {
-            DB::close();
-          }
-
-          // DB::dumpConnections();
-
-        } else {
-          fwrite($conn, "fail");
-          fclose($conn);
-        }
-      });
-    }
+    return;
   }
 
-});
-});
+  echo "Listening on {$addr}...\n";
+
+  while ($conn = stream_socket_accept($socket, -1)) {
+
+    /* Create a new routine every time we accepts new connection. */
+    go(function () use ($conn) {
+      client_handler($conn);
+    });
+
+  }
+
+};
+
+\Swoole\Runtime::enableCoroutine();
+\Co\run(function () use ($fx) { go($fx); });
+
+/** 
+ * @param  $conn sock_fd
+ * @return void
+ */
+function client_handler($conn): void
+{
+  stream_set_timeout($conn, 10);
+
+  $data        = fread($conn, 4096);
+  $dataLen     = unpack("S", substr($data, 0, 2))[1];
+  $receivedLen = strlen($data) - 2;
+  $data        = substr($data, 2);
+
+  /* Read more if the payload has not been received completely. */
+  while ($dataLen > $receivedLen) {
+    $data        .= fread($conn, 4096);
+    $receivedLen  = strlen($data);
+  }
+
+  /* The payload must be a valid JSON array/object. */
+  $data = json_decode($data, true);
+
+  if (!is_array($data)) {
+
+    /* Invalid payload. */
+    fwrite($conn, "fail");
+    fclose($conn);
+    return;
+
+  }
+
+  fwrite($conn, "ok");
+  fclose($conn);
+
+  /* Send payload to old daemon. */
+  go(function () use ($data) {
+    $saber = \Swlib\Saber::create(
+      [
+        "base_uri" => "https://telegram-bot.teainside.org",
+        "headers"  => ["Content-Type" => \Swlib\Http\ContentType::JSON],
+        "timeout"  => 500,
+      ]
+    )->post("/webhook.php", $data);
+  });
+
+
+  try {
+
+    /* Run the bot handler. */
+    $bot = new \TeaBot\Telegram\TeaBot($data);
+    $bot->run();
+
+  } catch (\Error $e) {
+    echo $e."\n";
+  }
+}

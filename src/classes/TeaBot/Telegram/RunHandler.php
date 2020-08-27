@@ -77,12 +77,16 @@ class RunHandler
   public function run(): bool
   {
     try {
+
       $this->ret = call_user_func_array($this->callback, $this->params);
       return true;
+
     } catch (Throwable $e) {
+
       $this->e = $e;
       self::report($e);
       return false;
+
     }
   }
 

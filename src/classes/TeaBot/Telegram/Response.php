@@ -31,19 +31,18 @@ final class Response
 
   /**
    * @throws \Exception
-   * @param string $className
+   * @param string $class
    * @param string $methodName
    * @param array  $parameters
    * @return bool
    */
-  private function rtExec(
-    string $className, string $methodName, array $parameters = []): bool
+  private function rtExec(string $class, string $methodName, array $parameters = []): bool
   {
-    $obj = new $className($this->data);
+    $obj = new $class($this->data);
     if ($obj instanceof ResponseFoundation) {
       return $obj->{$methodName}(...$parameters);
     } else {
-      throw new Exception("Invalid ResponseFoundation instance: ".$className);
+      throw new Exception("Invalid ResponseFoundation instance: ".$class);
     }
   }
 }
