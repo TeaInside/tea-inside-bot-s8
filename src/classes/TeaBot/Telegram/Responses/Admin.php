@@ -38,7 +38,10 @@ final class Admin extends ResponseFoundation
         goto ret;
       }
 
-      $userId = $this->data["reply_to"]["from"]["id"];
+      $replyTo = $this->data["reply_to"];
+      $from    = $replyTo["from"];
+      $userId  = $from["id"];
+
       $ret = json_decode(
         Exe::promoteChatMember(
           [
@@ -56,9 +59,8 @@ final class Admin extends ResponseFoundation
       );
 
       $this->sendPromoteMessage(
-        $this->data["first_name"].(
-          isset($this->data["last_name"]) ? " ".$this->data["last_name"] : ""
-        ),
+        $from["first_name"]
+        .(isset($from["last_name"]) ? " ".$from["last_name"] : ""),
         $ret
       );
     }
