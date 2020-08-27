@@ -26,18 +26,25 @@ final class Admin extends ResponseFoundation
    */
   public function promote(): bool
   {
+    var_dump(0);
+
     if ($this->hasAbilityToPromoteOther()) {
 
+      var_dump(1);
 
       if (!isset($this->ct["reply_to"])) {
         /* No replied message, ignoring... */
         goto ret;
       }
 
+      var_dump(2);
+
       if (!isset($this->data["reply_to"]["from"]["id"])) {
         /* No user_id to replied message, ignoring... */
         goto ret;
       }
+
+      var_dump(3);
 
       $userId = $this->data["reply_to"]["from"]["id"];
       $ret = json_decode(
