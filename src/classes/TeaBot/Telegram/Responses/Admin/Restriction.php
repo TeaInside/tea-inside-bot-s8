@@ -20,9 +20,9 @@ class Restriction extends ResponseFoundation
    */
   private function hasAbilityToUseBanHammer(): bool
   {
-    // if (in_array($this->data["user_id"], SUDOERS)) {
-    //   return true;
-    // }
+    if (in_array($this->data["user_id"], SUDOERS)) {
+      return true;
+    }
 
     $info = self::getUserInfo($this->data["user_id"], $this->data["chat_id"]);
 
@@ -49,7 +49,7 @@ class Restriction extends ResponseFoundation
   {
     if (!$this->hasAbilityToUseBanHammer()) {
       /* Unauthorized user. */
-      $this->dontHavePrivilege();
+      $this->dontHavePermission();
       goto ret;
     }
 
@@ -71,6 +71,7 @@ class Restriction extends ResponseFoundation
     $ret = self::banMember($userId, $this->data["chat_id"]);
 
     $this->sendBanMessage(
+      $userId,
       $from["first_name"]
       .(isset($from["last_name"]) ? " ".$from["last_name"] : ""),
       "banned",
@@ -91,7 +92,7 @@ class Restriction extends ResponseFoundation
   {
     if (!$this->hasAbilityToUseBanHammer()) {
       /* Unauthorized user. */
-      $this->dontHavePrivilege();
+      $this->dontHavePermission();
       goto ret;
     }
 
@@ -113,6 +114,7 @@ class Restriction extends ResponseFoundation
     $ret = self::unbanMember($userId, $this->data["chat_id"]);
 
     $this->sendBanMessage(
+      $userId,
       $from["first_name"]
       .(isset($from["last_name"]) ? " ".$from["last_name"] : ""),
       "unbanned",
@@ -127,12 +129,12 @@ class Restriction extends ResponseFoundation
   /**
    * @return void
    */
-  private function dontHavePrivilege(): void
+  private function dontHavePermission(): void
   {
     Exe::sendMessage(
       [
         "chat_id"             => $this->data["chat_id"],
-        "text"                => "You don't have privilege to use this command!",
+        "text"                => "You don't have permission to use this command!",
         "reply_to_message_id" => $this->data["msg_id"],
       ]
     );

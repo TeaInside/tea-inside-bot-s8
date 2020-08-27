@@ -78,11 +78,11 @@ trait Utils
    * @return void
    */
   private function sendBanMessage(
-    string $name, string $rtype, string $reason, $ret): void
+    int $userId, string $name, string $rtype, string $reason, $ret): void
   {
     if (isset($ret["ok"], $ret["result"]) && $ret["ok"] && $ret["result"]) {
       $text =
-        "<a href=\"tg://user?id={$this->data["user_id"]}\">"
+        "<a href=\"tg://user?id={$userId}\">"
         .htmlspecialchars($name, ENT_QUOTES, "UTF-8")
         ."</a> has been {$rtype} from the group!";
 
