@@ -54,26 +54,19 @@ trait Utils
    * @param int $chatId
    * @return array
    */
-  public static function getPrivilegeInfo(int $userId, int $chatId): ?array
+  public static function getUserInfo(int $userId, int $chatId): ?array
   {
     $ret = json_decode(
-      Exe::getChatAdministrators(["chat_id" => $chatId])
-        ->getBody()->__toString(),
+      Exe::getChatMember(
+        [
+          "chat_id" => $chatId,
+          "user_id" => $userId,
+        ]
+      )->getBody()->__toString(),
       true
     );
 
-    if ((!isset($ret["result"])) || (!is_array($ret["result"]))) {
-      goto ret;
-    }
-
-    foreach ($ret["result"] as $k => $v) {
-      if ($v["user"]["id"] === $userId) {
-        return $v;
-      }
-    }
-
-    ret:
-    return null;
+    return isset($ret["result"]) ? $ret["result"] : null;
   }
 
 

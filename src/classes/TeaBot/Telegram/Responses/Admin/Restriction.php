@@ -20,20 +20,24 @@ class Restriction extends ResponseFoundation
    */
   private function hasAbilityToUseBanHammer(): bool
   {
-    // if (in_array($this->data["user_id"], SUDOERS)) {
-    //   return true;
-    // }
-
-    $priv = self::getPrivilegeInfo($this->data["user_id"], $this->data["chat_id"]);
-
-    if ($priv["status"] === "creator") {
+    if (in_array($this->data["user_id"], SUDOERS)) {
       return true;
     }
 
-    if (isset($priv["can_restrict_members"]) && $priv["can_restrict_members"]) {
+    $info = self::getUserInfo($this->data["user_id"], $this->data["chat_id"]);
+
+    if (!$info) {
+      goto ret;
+    }
+
+    if (
+      ($info["status"] === "creator")
+      || (isset($info["can_restrict_members"]) && $info["can_restrict_members"])
+    ) {
       return true;
     }
 
+    ret:
     return false;
   }
 
