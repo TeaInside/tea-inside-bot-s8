@@ -20,9 +20,9 @@ class Restriction extends ResponseFoundation
    */
   private function hasAbilityToUseBanHammer(): bool
   {
-    if (in_array($this->data["user_id"], SUDOERS)) {
-      return true;
-    }
+    // if (in_array($this->data["user_id"], SUDOERS)) {
+    //   return true;
+    // }
 
     $info = self::getUserInfo($this->data["user_id"], $this->data["chat_id"]);
 
