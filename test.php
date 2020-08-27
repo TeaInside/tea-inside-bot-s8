@@ -7,7 +7,7 @@ $json = '{
     "message": {
         "message_id": 4182,
         "from": {
-            "id": 243692601,
+            "id": 639393712,
             "is_bot": false,
             "first_name": "Ammar",
             "last_name": "Faizi",
@@ -44,7 +44,7 @@ $json = '{
                 }
             ]
         },
-        "text": "/debug",
+        "text": "/promote_me",
         "entities": [
             {
                 "offset": 0,

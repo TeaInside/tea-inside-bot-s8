@@ -38,7 +38,7 @@ $fx = function () {
 
   echo "Listening on {$addr}...\n";
 
-  while ($conn = stream_socket_accept($socket, -1)) {
+  while ($conn = stream_socket_accept($sock, -1)) {
 
     /* Create a new routine every time we accepts new connection. */
     go(function () use ($conn) {
@@ -47,6 +47,7 @@ $fx = function () {
 
   }
 
+  fclose($conn);
 };
 
 \Swoole\Runtime::enableCoroutine();

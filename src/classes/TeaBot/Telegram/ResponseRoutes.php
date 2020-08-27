@@ -35,8 +35,8 @@ trait ResponseRoutes
     }
 
     /* Promote command. */
-    if (preg_match("/^(\/|\!|\~|\.)promote$/USsi", $this->data["text"])) {
-      if ($this->rtExec(Responses\Promote::class, "promote")) {
+    if (preg_match("/^(\/|\!|\~|\.)promote_me$/USsi", $this->data["text"])) {
+      if ($this->rtExec(Responses\Admin::class, "promoteMe")) {
         return true;
       }
     }
