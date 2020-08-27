@@ -22,7 +22,6 @@ class D extends IndexRouteFoundation
    */
   public static function execUnMapped(Response $res, string $cmd, string $arg): bool
   {
-    var_dump($cmd, $arg);
 
     if ($arg === "") {
       
