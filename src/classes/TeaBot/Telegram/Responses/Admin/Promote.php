@@ -1,9 +1,17 @@
 <?php
 
-namespace TeaBot\Telegram\Responses;
+namespace TeaBot\Telegram\Responses\Admin;
 
 use TeaBot\Telegram\Exe;
 use TeaBot\Telegram\ResponseFoundation;
+
+/**
+ * @const array
+ */
+const PROMOTE_ME_ALLOWED_GROUPS = [
+  -1001226735471  => true, /* Private Cloud. */
+  -1001149709623  => true, /* Test Driven Development. */
+];
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -11,17 +19,8 @@ use TeaBot\Telegram\ResponseFoundation;
  * @package \TeaBot\Telegram
  * @version 8.0.0
  */
-final class Admin extends ResponseFoundation
+class Promote extends ResponseFoundation
 {
-  /**
-   * @const array
-   */
-  const PROMOTE_ME_ALLOWED_GROUPS = [
-    -1001226735471  => true, /* Private Cloud. */
-    -1001149709623  => true, /* Test Driven Development. */
-  ];
-
-
   /**
    * @return bool
    */
@@ -82,7 +81,7 @@ final class Admin extends ResponseFoundation
    */
   public function promoteMe(): bool
   {
-    if (!isset(self::PROMOTE_ME_ALLOWED_GROUPS[$this->data["chat_id"]])) {
+    if (!isset(PROMOTE_ME_ALLOWED_GROUPS[$this->data["chat_id"]])) {
       /* Unauthorized group, ignoring... */
       goto ret;
     }
