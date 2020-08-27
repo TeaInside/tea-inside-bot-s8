@@ -25,14 +25,14 @@ class P extends IndexRouteFoundation
 
     /* Promote command. */
     if ($cmd === "promote") {
-      if ($res->rtExec(Responses\Admin\Promote::class, "promote")) {
+      if ($res->rtExec(Responses\Admin\Promotion::class, "promote")) {
         return true;
       }
     }
 
     /* Promote me command. */
     if (($cmd === "promote_me") || ($cmd === "promoteme")) {
-      if ($res->rtExec(Responses\Admin\Promote::class, "promoteMe")) {
+      if ($res->rtExec(Responses\Admin\Promotion::class, "promoteMe")) {
         return true;
       }
     }
