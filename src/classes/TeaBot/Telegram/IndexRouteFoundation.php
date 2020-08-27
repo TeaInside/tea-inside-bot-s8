@@ -1,6 +1,6 @@
 <?php
 
-namespace TeaBot\Telegram\IndexRoutes;
+namespace TeaBot\Telegram;
 
 use TeaBot\Telegram\Response;
 use TeaBot\Telegram\Responses;
