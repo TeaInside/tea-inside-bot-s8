@@ -25,9 +25,7 @@ class S extends IndexRouteFoundation
     return self::mapExec(
       [
         "start" => [
-          Responses\Start::class,
-          "start",
-          null,
+          Responses\Start::class, "start", null,
           /* Only accepts empty arg. */
           ($arg === "")
         ],
