@@ -103,7 +103,7 @@ class Restriction extends ResponseFoundation
     $this->sendBanMessage(
       $from["first_name"]
       .(isset($from["last_name"]) ? " ".$from["last_name"] : ""),
-      "banned",
+      "unbanned",
       trim((string)$reason),
       $ret
     );

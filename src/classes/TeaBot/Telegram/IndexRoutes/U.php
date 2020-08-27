@@ -24,7 +24,7 @@ class U extends IndexRouteFoundation
   {
     /* Unban command. */
     if ($cmd === "unban") {
-      if ($res->rtExec(Responses\Admin\Restriction::class, "ban", [$arg])) {
+      if ($res->rtExec(Responses\Admin\Restriction::class, "unban", [$arg])) {
         return true;
       }
     }
