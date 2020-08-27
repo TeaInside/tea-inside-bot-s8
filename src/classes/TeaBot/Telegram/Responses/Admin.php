@@ -52,7 +52,7 @@ final class Admin extends ResponseFoundation
 
         $text =
           "<a href=\"tg://user?id={$this->data["user_id"]}\">"
-          .htmlspecialchars($name)
+          .htmlspecialchars($name, ENT_QUOTES, "UTF-8")
           ."</a> has been promoted to be an administrator!";
 
         Exe::sendMessage(
