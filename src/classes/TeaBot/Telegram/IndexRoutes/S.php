@@ -31,7 +31,8 @@ class S extends IndexRouteFoundation
           /* Only accepts empty arg. */
           ($arg === "")
         ],
-      ]
+      ],
+      $res, $cmd, $arg
     );
   }
 }
