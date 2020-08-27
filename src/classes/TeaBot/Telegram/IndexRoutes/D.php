@@ -28,7 +28,7 @@ class D extends IndexRouteFoundation
       
       /* Debug command. */
       if ($cmd === "debug") {
-        if ($this->rtExec(Responses\Debug::class, "debug")) {
+        if ($res->rtExec(Responses\Debug::class, "debug")) {
           return true;
         }
       }

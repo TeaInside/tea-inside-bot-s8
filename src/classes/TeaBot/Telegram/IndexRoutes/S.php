@@ -29,7 +29,7 @@ class S extends IndexRouteFoundation
       
       /* Start command. */
       if ($cmd === "start") {
-        if ($this->rtExec(Responses\Start::class, "start")) {
+        if ($res->rtExec(Responses\Start::class, "start")) {
           return true;
         }
       }
