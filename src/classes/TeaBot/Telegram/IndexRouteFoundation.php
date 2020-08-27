@@ -63,10 +63,10 @@ abstract class IndexRouteFoundation
     if (isset($maps[$cmd])) {
 
       $map  = $maps[$cmd];
-      $args = isset($map[3]) ? $map[3]($arg) : [];
+      $args = isset($map[2]) ? $map[2]($arg) : [];
 
-      if (isset($map[4])) {
-        $cond = is_callable($map[4]) ? $map[4]($res, $cmd, $arg) : (bool)$map[4];
+      if (isset($map[3])) {
+        $cond = is_callable($map[3]) ? $map[3]($res, $cmd, $arg) : (bool)$map[3];
       } else {
         $cond = true;
       }
