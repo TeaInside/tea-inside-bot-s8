@@ -61,9 +61,19 @@ trait Utils
         ->getBody()->__toString(),
       true
     );
-    var_dump($ret);
 
-    return $ret;
+    if ((!isset($ret["result"])) || (!is_array($ret["result"]))) {
+      goto ret;
+    }
+
+    foreach ($ret["result"] as $k => $v) {
+      if ($v["user"]["id"] === $userId) {
+        return $v;
+      }
+    }
+
+    ret:
+    return null;
   }
 
 

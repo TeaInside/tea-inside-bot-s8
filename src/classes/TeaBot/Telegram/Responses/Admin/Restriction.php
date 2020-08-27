@@ -24,11 +24,15 @@ class Restriction extends ResponseFoundation
     //   return true;
     // }
 
-    self::getPrivilegeInfo($this->data["user_id"], $this->data["chat_id"]);
+    $priv = self::getPrivilegeInfo($this->data["user_id"], $this->data["chat_id"]);
 
-    /*
-      TODO: Check if it is an admin with can_restrict_members privilege.
-    */
+    if ($priv["status"] === "creator") {
+      return true;
+    }
+
+    if (isset($priv["can_restrict_members"]) && $priv["can_restrict_members"]) {
+      return true;
+    }
 
     return false;
   }
@@ -40,7 +44,8 @@ class Restriction extends ResponseFoundation
   public function ban(?string $reason = ""): bool
   {
     if (!$this->hasAbilityToUseBanHammer()) {
-      /* Unauthorized user, ignoring... */
+      /* Unauthorized user. */
+      $this->dontHavePrivilege();
       goto ret;
     }
 
@@ -81,7 +86,8 @@ class Restriction extends ResponseFoundation
   public function unban(?string $reason = ""): bool
   {
     if (!$this->hasAbilityToUseBanHammer()) {
-      /* Unauthorized user, ignoring... */
+      /* Unauthorized user. */
+      $this->dontHavePrivilege();
       goto ret;
     }
 
@@ -112,5 +118,19 @@ class Restriction extends ResponseFoundation
 
     ret:
     return true;
+  }
+
+  /**
+   * @return void
+   */
+  private function dontHavePrivilege(): void
+  {
+    Exe::sendMessage(
+      [
+        "chat_id"             => $this->data["chat_id"],
+        "text"                => "You don't have privilege to use this command!",
+        "reply_to_message_id" => $this->data["msg_id"],
+      ]
+    );
   }
 }
