@@ -12,7 +12,7 @@ use TeaBot\Telegram\IndexRouteFoundation;
  * @package \TeaBot\Telegram\IndexRoutes
  * @version 8.0.0
  */
-class P extends IndexRouteFoundation
+class B extends IndexRouteFoundation
 {
   /**
    * @param \TeaBot\Telegram\Response $res
