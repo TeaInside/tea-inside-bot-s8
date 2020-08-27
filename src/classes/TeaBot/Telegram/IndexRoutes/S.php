@@ -12,7 +12,7 @@ use TeaBot\Telegram\IndexRouteFoundation;
  * @package \TeaBot\Telegram\IndexRoutes
  * @version 8.0.0
  */
-class S extends IndexRouteFoundation
+class D extends IndexRouteFoundation
 {
   /**
    * @param \TeaBot\Telegram\Response $res
@@ -20,17 +20,20 @@ class S extends IndexRouteFoundation
    * @param string                    $arg
    * @return bool
    */
-  public static function execMapped(Response $res, string $cmd, string $arg): bool
+  public static function execUnMapped(Response $res, string $cmd, string $arg): bool
   {
-    return self::mapExec(
-      [
-        "start" => [
-          Responses\Start::class, "start", null,
-          /* Only accepts empty arg. */
-          ($arg === "")
-        ],
-      ],
-      $res, $cmd, $arg
-    );
+
+    if ($arg === "") {
+      
+      /* Start command. */
+      if ($cmd === "start") {
+        if ($this->rtExec(Responses\Start::class, "start")) {
+          return true;
+        }
+      }
+      
+    }
+
+    return false;
   }
 }

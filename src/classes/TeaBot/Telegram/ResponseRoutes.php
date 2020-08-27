@@ -46,12 +46,7 @@ trait ResponseRoutes
 
     
 
-    // /* Debug command. */
-    // if (preg_match("/^(\/|\!|\~|\.)debug$/USsi", $this->data["text"])) {
-    //   if ($this->rtExec(Responses\Debug::class, "debug")) {
-    //     return true;
-    //   }
-    // }
+
 
     // /* Promote command. */
     // if (preg_match("/^(\/|\!|\~|\.)promote$/USsi", $this->data["text"])) {

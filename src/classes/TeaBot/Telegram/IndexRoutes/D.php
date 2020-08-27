@@ -20,17 +20,20 @@ class D extends IndexRouteFoundation
    * @param string                    $arg
    * @return bool
    */
-  public static function execMapped(Response $res, string $cmd, string $arg): bool
+  public static function execUnMapped(Response $res, string $cmd, string $arg): bool
   {
-    return self::mapExec(
-      [
-        "debug" => [
-          Responses\Debug::class, "debug", null,
-          /* Only accepts empty arg. */
-          ($arg === "")
-        ],
-      ],
-      $res, $cmd, $arg
-    );
+
+    if ($arg === "") {
+      
+      /* Debug command. */
+      if ($cmd === "debug") {
+        if ($this->rtExec(Responses\Debug::class, "debug")) {
+          return true;
+        }
+      }
+
+    }
+
+    return false;
   }
 }
