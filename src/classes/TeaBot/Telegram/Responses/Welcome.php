@@ -24,10 +24,39 @@ final class Welcome extends ResponseFoundation
       $captchaType  = "ComputerScience\\FloatingPoint";
       $captchaClass = "\\TeaBot\\Telegram\\Responses\\Welcome\\Captcha\\".$captchaType;
 
-      if ($this->captcha(new $captchaClass($this->data))) {
-        // Captcha answered correctly.
-      } else {
+      if (!$this->captcha(new $captchaClass($this->data))) {
         // Failed to answer the captcha.
+        $ret = Exe::kickChatMember(
+          [
+            "chat_id" => $this->data["chat_id"],
+            "user_id" => $this->data["user_id"]
+          ]
+        );
+
+        $ret = json_decode($ret->getBody()->__toString(), true);
+        if (isset($ret["ok"], $ret["result"]) && $ret["ok"] && $ret["result"]) {
+          $uname = isset($this->data["username"]) ? " (@{$this->data["username"]})" : "";
+
+          $text  = "<a href=\"tg://user?id={$this->data["user_id"]}\">"
+            .htmlspecialchars($name, ENT_QUOTES, "UTF-8")."</a>"
+            .$uname
+            ." has been kicked from the group due to failed to answer the captcha.";
+
+          Exe::sendMessage(
+            [
+              "chat_id"    => $this->data["chat_id"],
+              "text"       => $text,
+              "parse_mode" => "HTML",
+            ]
+          );
+        }
+
+        Exe::unbanChatMember(
+          [
+            "chat_id" => $chatId,
+            "user_id" => $userId
+          ]
+        );
       }
     }
 

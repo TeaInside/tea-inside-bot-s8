@@ -36,6 +36,11 @@ abstract class CaptchaFoundation
   protected $answer;
 
   /**
+   * @var bool
+   */
+  protected $dontBuildDir = false;
+
+  /**
    * @param \TeaBot\Telegram\Data $data
    */
   public function __construct(Data $data)
@@ -44,15 +49,79 @@ abstract class CaptchaFoundation
     $fixChatId          = str_replace("-", "_", $data["chat_id"]);
     $this->captchaStDir =
       TELEGRAM_STORAGE_PATH."/captcha/".$fixChatId."/".$data["user_id"];
-    $this->captchaFile  = $this->captchaStDir."/".$data["user_id"];
+    $this->delMsgDir    = $this->captchaStDir."/d";
+    $this->captchaFile  = $this->captchaStDir."/info.json";
 
+    if (!$this->dontBuildDir) {
+      $this->buildDir();
+    }
+  }
 
+  /**
+   * @param int $msgId
+   */
+  public function addDeleteMsg(int $msgId)
+  {
+    touch($this->delMsgDir."/".$msgId);
+  }
+
+  /**
+   * @return void
+   */
+  protected function cleanUpOldCaptcha(): void
+  {
+    if (!$this->isHavingCaptcha()) {
+      return;
+    }
+
+    $json    = json_decode(file_get_contents($this->captchaFile), true);
+    $ccMsgId = null;
+    $chatId  = $this->data["chat_id"];
+
+    if (isset($json["msg_id"])) {
+      $ccMsgId = $json["msg_id"];
+      go(function () use ($chatId, $ccMsgId) {
+        echo "\nDeleting {$chatId}:{$ccMsgId}...";
+        Exe::deleteMessage([
+          "chat_id"    => $chatId,
+          "message_id" => $ccMsgId,
+        ]);
+        echo "\nDelete {$chatId}:{$ccMsgId} OK!";
+      });
+      @unlink($this->delMsgDir."/".$ccMsgId);
+    }
+
+    $messageIds = scandir($this->delMsgDir);
+
+    foreach ($messageIds as $k => $v) {
+      if ($v[0] !== ".") {
+        go(function () use ($chatId, $v) {
+          echo "\nDeleting {$chatId}:{$v}...";
+          Exe::deleteMessage([
+            "chat_id"    => $chatId,
+            "message_id" => $v,
+          ]);
+          echo "\nDelete {$chatId}:{$v} OK!";
+        });
+        @unlink($this->delMsgDir."/".$v);
+      }
+    }
+  }
+
+  /**
+   * @return void
+   */
+  protected function buildDir(): void
+  {
     $dirs        = explode("/", $this->captchaStDir);
     $mkdirTarget = "/";
+
     foreach ($dirs as $k => $v) {
       $mkdirTarget .= ($k ? "/" : "").$v;
       is_dir($mkdirTarget) or mkdir($mkdirTarget);
     }
+
+    is_dir($this->delMsgDir) or mkdir($this->delMsgDir);
   }
 
   /**

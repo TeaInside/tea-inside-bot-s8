@@ -3,6 +3,7 @@
 namespace TeaBot\Telegram\Responses\Welcome\Captcha;
 
 use TeaBot\Telegram\Exe;
+use TeaBot\Telegram\Data;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -12,6 +13,15 @@ use TeaBot\Telegram\Exe;
  */
 class CaptchaRuntime extends CaptchaFoundation
 {
+  /**
+   * @param \TeaBot\Telegram\Data $data
+   */
+  public function __construct(Data $data)
+  {
+    $this->dontBuildDir = true;
+    parent::__construct($data);
+  }
+
   /**
    * @return void
    */
@@ -39,18 +49,42 @@ class CaptchaRuntime extends CaptchaFoundation
         .$uname
         ." has answered the captcha correctly, welcome to the group!";
 
-      Exe::sendMessage(
+      $this->cleanUpOldCaptcha();
+      @unlink($this->captchaFile);
+
+      $msgId  = $this->data["msg_id"];
+      $chatId = $this->data["chat_id"];
+
+      $ret = Exe::sendMessage(
         [
-          "chat_id"    => $this->data["chat_id"],
+          "chat_id"    => $chatId,
           "text"       => $text,
           "parse_mode" => "HTML",
-          "reply_to_message_id" => $this->data["msg_id"]
+          "reply_to_message_id" => $msgId,
         ]
       );
 
+      $json = json_decode($ret->getBody()->__toString(), true);
+
+      sleep(120);
+
+      echo "\nDeleting {$chatId}:{$v}...";
+      Exe::deleteMessage([
+        "chat_id"    => $chatId,
+        "message_id" => $msgId,
+      ]);
+
+      echo "\nDeleting {$chatId}:{$json["result"]["message_id"]}...";
+      Exe::deleteMessage([
+        "chat_id"    => $chatId,
+        "message_id" => $json["result"]["message_id"],
+      ]);
+
     } else {
 
-      Exe::sendMessage(
+      $this->addDeleteMsg($this->data["msg_id"]);
+
+      $ret = Exe::sendMessage(
         [
           "chat_id"    => $this->data["chat_id"],
           "text"       => "Wrong answer!",
@@ -59,6 +93,10 @@ class CaptchaRuntime extends CaptchaFoundation
         ]
       );
 
+      $json = json_decode($ret->getBody()->__toString(), true);
+      if (isset($json["result"]["message_id"])) {
+        $this->addDeleteMsg($json["result"]["message_id"]);
+      }
     }
     fclose($handle);
   }

@@ -60,16 +60,27 @@ class FloatingPoint extends CaptchaFoundation
       .(isset($this->data["username"]) ? " (@{$this->data["username"]})" : "")
       ."\nPlease solve this captcha problem to make sure you are a human, otherwise you will be kicked in 10 minutes!";
 
-    $ret    = $this->sendCaptchaPhoto($text, $latexImgUrl, "html");
 
+    $ret  = $this->sendCaptchaPhoto($text, $latexImgUrl, "html");
+    $this->cleanUpOldCaptcha();
+
+    $json = json_decode($ret->getBody()->__toString(), true);
+    $msg  = null;
+    if (isset($json["result"]["message_id"])) {
+      $msgId = $json["result"]["message_id"];
+    } else {
+      fclose($handle);
+      return true;
+    }
 
     fwrite($handle, json_encode(
       [
+        "msg_id"  => $msgId,
         "chat_id" => $this->data["chat_id"],
         "user_id" => $this->data["user_id"],
         "text"    => $text,
         "photo"   => $latexImgUrl,
-        "correct_answer" => $correctAnswer
+        "correct_answer" => $correctAnswer,
       ],
       JSON_UNESCAPED_SLASHES
     ));
@@ -80,8 +91,18 @@ class FloatingPoint extends CaptchaFoundation
       $curTime = time();
       echo ".";
       usleep(500000);
-    } while (($curTime - $startTime) <= 300);
 
-    return true;
+      if (!file_exists($this->delMsgDir."/".$msgId)) {
+        return false;
+        break;
+      }
+
+      if (!$this->isHavingCaptcha()) {
+        return true;
+        break;
+      }
+    } while (($curTime - $startTime) <= 60);
+
+    return false;
   }
 }
