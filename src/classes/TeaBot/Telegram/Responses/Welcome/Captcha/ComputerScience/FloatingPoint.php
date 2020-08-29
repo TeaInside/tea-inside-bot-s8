@@ -101,7 +101,7 @@ class FloatingPoint extends CaptchaFoundation
         return true;
         break;
       }
-    } while (($curTime - $startTime) <= 60);
+    } while (($curTime - $startTime) <= 30);
 
     return false;
   }

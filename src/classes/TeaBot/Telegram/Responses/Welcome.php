@@ -34,6 +34,9 @@ final class Welcome extends ResponseFoundation
         );
 
         $ret = json_decode($ret->getBody()->__toString(), true);
+
+        $this->cleanUpOldCaptcha();
+
         if (isset($ret["ok"], $ret["result"]) && $ret["ok"] && $ret["result"]) {
           $uname = isset($this->data["username"]) ? " (@{$this->data["username"]})" : "";
 
