@@ -71,16 +71,17 @@ function client_handler($conn): void
   fclose($conn);
 
   /* Send payload to old daemon. */
-  go(function () use ($data) {
-    $saber = \Swlib\Saber::create(
-      [
-        "base_uri" => "https://telegram-bot.teainside.org",
-        "headers"  => ["Content-Type" => \Swlib\Http\ContentType::JSON],
-        "timeout"  => 500,
-      ]
-    )->post("/webhook.php", $data);
-  });
-
+  if (!getmyuid()) {
+    go(function () use ($data) {
+      $saber = \Swlib\Saber::create(
+        [
+          "base_uri" => "https://telegram-bot.teainside.org",
+          "headers"  => ["Content-Type" => \Swlib\Http\ContentType::JSON],
+          "timeout"  => 500,
+        ]
+      )->post("/webhook.php", $data);
+    });
+  }
 
   try {
 

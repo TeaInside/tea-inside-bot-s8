@@ -73,11 +73,15 @@ final class Data implements ArrayAccess
         $this->ct["msg_type"] = "video";
         $this->ct["text"] = $msg["caption"] ?? null;
         $this->ct["text_entities"] = $msg["caption_entities"] ?? null;
+      } else
+      if (isset($msg["new_chat_member"])) {
+        $this->ct["msg_type"] = "new_chat_member";
       } else {
         $this->ct["msg_type"] = "unknown";
       }
 
       $this->buildGeneralMsg($msg, $in);
+    
     }
   }
 
@@ -112,6 +116,14 @@ final class Data implements ArrayAccess
     $this->ct["chat_username"] = $msg["chat"]["username"] ?? null;
     $this->ct["is_forwarded_msg"] = isset($msg["forward_date"], $msg["forward_from"]);
     $this->ct["is_edited_msg"] = isset($in["edited_message"]);
+  }
+
+  /**
+   * @return mixed
+   */
+  public function __get($key)
+  {
+    return $this->{$key} ?? null;
   }
 
   /**

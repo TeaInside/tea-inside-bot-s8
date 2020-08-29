@@ -42,7 +42,7 @@ final class TeaBot
     if (!$this->skipResponse) {
       /* Run response here. */
       $res = new Response($this->data);
-      $res->execRoutes();
+      $res->run();
     }
   }
 }

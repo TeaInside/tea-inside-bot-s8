@@ -3,6 +3,7 @@
 namespace TeaBot\Telegram;
 
 use Exception;
+use TeaBot\Telegram\Responses\Welcome\Captcha\CaptchaRuntime;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -27,6 +28,27 @@ final class Response
   public function __construct(Data $data)
   {
     $this->data = $data;
+  }
+
+  /**
+   *
+   */
+  public function run()
+  {
+    if (isset($this->data["text"])) {
+      $ccRuntime = new CaptchaRuntime($this->data);
+
+      if ($ccRuntime->isHavingCaptcha()) {
+        $ccRuntime->checkAnswer();
+      } else {
+        unset($ccRuntime);
+        $this->execRoutes();
+      }
+
+    } else
+    if ($this->data["msg_type"] === "new_chat_member") {
+      $this->rtExec(Responses\Welcome::class, "welcome");
+    }
   }
 
   /**
