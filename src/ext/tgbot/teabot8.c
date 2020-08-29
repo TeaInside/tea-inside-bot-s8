@@ -7,15 +7,15 @@ ZEND_DECLARE_MODULE_GLOBALS(teabot8);
 ZEND_GET_MODULE(teabot8)
 #endif
 
-extern zend_class_entry *teabot8_daemon_ce;
-extern zend_function_entry teabot8_methods[];
+extern zend_class_entry *ce_TeaBot__FloatingPoint;
+extern zend_function_entry methods_TeaBot__FloatingPoint[];
 
 static PHP_MINIT_FUNCTION(teabot8)
 {
   zend_class_entry ce;
 
-  INIT_CLASS_ENTRY(ce, "TeaBot\\Daemon", teabot8_methods);
-  teabot8_daemon_ce = zend_register_internal_class(&ce TSRMLS_CC);
+  INIT_CLASS_ENTRY(ce, "TeaBot\\FloatingPoint", methods_TeaBot__FloatingPoint);
+  ce_TeaBot__FloatingPoint = zend_register_internal_class(&ce TSRMLS_CC);
 
   REGISTER_INI_ENTRIES();
   return SUCCESS;

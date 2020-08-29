@@ -3,6 +3,8 @@
 // \TeaBot\Telegram\Log::registerLogStream(STDOUT);
 // \TeaBot\Telegram\Log::registerLogStream(fopen(TELEGRAM_DAEMON_LOG_FILE, "a"));
 
+cli_set_process_title("logger");
+
 return function () {
 
   $addr  = "tcp://127.0.0.1:7771";

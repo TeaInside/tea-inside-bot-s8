@@ -20,7 +20,7 @@ final class TeaBot
   /**
    * @var bool
    */
-  private $skipResponse;
+  private bool $skipResponse;
 
   /**
    * @param array $data

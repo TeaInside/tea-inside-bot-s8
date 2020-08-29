@@ -32,4 +32,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/home/ammarfaizi2/project/now/bot-s8/src/ext/modules'
+libdir='/home/ammarfaizi2/project/now/bot-s8/src/ext/tgbot/modules'
