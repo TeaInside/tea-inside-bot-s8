@@ -152,6 +152,8 @@ abstract class CaptchaFoundation
   {
     $this->fastLock();
     $ret = file_exists($this->captchaFile);
+    var_dump("isHavingCaptcha");
+    var_dump($ret);
     $this->fastUnlock();
     return $ret;
   }
