@@ -110,7 +110,7 @@ class CaptchaRuntime extends CaptchaFoundation
     touch($this->captchaFile);
     $this->lock();
     $captchaType = "ComputerScience\\FloatingPoint";
-    $ccClass     = "TeaBot\\Telegram\\Captcha\\Entry\\ComputerScience\\".$captchaType;
+    $ccClass     = "TeaBot\\Telegram\\Captcha\\Entry\\".$captchaType;
     $ccClass     = new $ccClass($this->data);
     $ccClass->run();
     $this->unlock();
