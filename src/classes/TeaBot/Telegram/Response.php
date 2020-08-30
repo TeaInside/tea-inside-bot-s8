@@ -40,7 +40,7 @@ final class Response
       $ccRun = new CaptchaRuntime($this->data);
 
       if ($ccRun->isHavingCaptcha()) {
-        $this->checkAnswer();
+        $ccRun->checkAnswer();
       } else {
         $this->execRoutes();
       }
