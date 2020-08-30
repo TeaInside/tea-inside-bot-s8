@@ -36,6 +36,8 @@ final class Exe
   {
     $tryCounter = 0;
 
+    var_dump("executing {$path}...");
+
     try_ll:
     try {
 
