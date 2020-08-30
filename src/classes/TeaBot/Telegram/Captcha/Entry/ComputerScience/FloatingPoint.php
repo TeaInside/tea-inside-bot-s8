@@ -88,6 +88,7 @@ LATEX);
         "chat_id"         => $d["chat_id"],
         "user_id"         => $d["user_id"],
         "photo"           => $latexImgUrl,
+        "est_time"        => 600,
         "correct_answer"  => (string)$correctAnswer,
       ]
     );
@@ -107,14 +108,10 @@ LATEX);
           break;
         }
 
-      } while (($curTime - $startTime) <= 60);
+      } while (($curTime - $startTime) <= 600);
 
       if (!$success) {
-
-        var_dump("=== scsc ===", $success, ($curTime - $startTime));
         $this->captchaFailKick();
-      } else {
-        var_dump("=== success ===", $success, ($curTime - $startTime));
       }
 
     });

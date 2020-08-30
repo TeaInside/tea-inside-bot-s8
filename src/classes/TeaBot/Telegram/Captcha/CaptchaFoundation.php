@@ -231,12 +231,12 @@ abstract class CaptchaFoundation
 
         /* Delete captcha message. */
         go(function () use ($chatId, $ccMsgId) {
-          echo "\nDeleting {$chatId}:{$ccMsgId}...";
+          // echo "\nDeleting {$chatId}:{$ccMsgId}...";
           Exe::deleteMessage([
             "chat_id"    => $chatId,
             "message_id" => $ccMsgId,
           ]);
-          echo "\nDeleted {$chatId}:{$ccMsgId}!";
+          // echo "\nDeleted {$chatId}:{$ccMsgId}!";
         });
 
         @unlink($this->delMsgDir."/".$ccMsgId);
@@ -249,12 +249,12 @@ abstract class CaptchaFoundation
     foreach ($messageIds as $k => $v) {
       if ($v[0] !== ".") {
         go(function () use ($chatId, $v) {
-          echo "\nDeleting {$chatId}:{$v}...";
+          // echo "\nDeleting {$chatId}:{$v}...";
           Exe::deleteMessage([
             "chat_id"    => $chatId,
             "message_id" => $v,
           ]);
-          echo "\nDeleted {$chatId}:{$v}!";
+          // echo "\nDeleted {$chatId}:{$v}!";
         });
         @unlink($this->delMsgDir."/".$v);
       }
