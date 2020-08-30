@@ -101,6 +101,7 @@ class CaptchaRuntime extends CaptchaFoundation
       [
         -1001338293135, // PCX
         -1001226735471, // Private Cloud
+        -1001120283944, // Tea Inside
       ]
     );
 

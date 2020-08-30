@@ -100,7 +100,6 @@ LATEX);
       $startTime = time();
       do {
         $curTime = time();
-        echo "@";
         usleep(500000);
 
         if (!$this->isHavingCaptcha()) {
