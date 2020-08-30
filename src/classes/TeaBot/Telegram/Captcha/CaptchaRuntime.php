@@ -56,6 +56,7 @@ class CaptchaRuntime extends CaptchaFoundation
       );
       $ret = json_decode($ret->getBody()->__toString(), true);
 
+      var_dump("123123");
       $this->cleanUpMessages();
 
       if (isset($ret["result"]["message_id"])) {
