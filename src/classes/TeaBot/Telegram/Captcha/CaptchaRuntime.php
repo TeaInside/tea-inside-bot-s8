@@ -39,6 +39,10 @@ class CaptchaRuntime extends CaptchaFoundation
     $json = json_decode(file_get_contents($this->captchaFile), true);
     $text = strtolower(trim($d["text"]));
 
+    if (!is_array($json)) {
+      goto ret;
+    }
+
     if ($text === $json["correct_answer"]) {
 
       @unlink($this->captchaFile);
@@ -86,6 +90,7 @@ class CaptchaRuntime extends CaptchaFoundation
       $this->addDeleteMsg($d["msg_id"]);
     }
 
+    ret:
     $this->unlock();
     $this->fastUnlock();
   }
