@@ -107,7 +107,7 @@ class FloatingPoint extends CaptchaEntry
           break;
         }
 
-      } while (($curTime - $startTime) >= 30);
+      } while (($curTime - $startTime) <= 30);
 
       if (!$success) {
         $this->captchaFailKick();
