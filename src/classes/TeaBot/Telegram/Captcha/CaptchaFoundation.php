@@ -80,6 +80,8 @@ abstract class CaptchaFoundation
     $this->fastLockDir  = TELEGRAM_STORAGE_PATH."/captcha_fastlock";
     $this->fastLockFile = $this->fastLockDir."/".bin2hex($data["chat_id"].$data["user_id"]);
 
+    $this->buildFastLockDir();
+
     if (!$this->dontBuildDir) {
       $this->buildDir();
     }
