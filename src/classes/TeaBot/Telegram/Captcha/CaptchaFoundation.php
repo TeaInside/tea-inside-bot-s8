@@ -308,8 +308,11 @@ abstract class CaptchaFoundation
     );
 
     if (isset($kickMsgId)) {
-      sleep(120);
-      Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $msgId]);
+      for ($i=0; $i < 30; $i++) { 
+        echo "$";
+        sleep(1);
+      }
+      Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $kickMsgId]);
       Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $d["msg_id"]]);
     }
   }
