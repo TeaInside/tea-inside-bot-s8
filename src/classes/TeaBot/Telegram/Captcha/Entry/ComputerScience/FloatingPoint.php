@@ -23,11 +23,11 @@ class FloatingPoint extends CaptchaEntry
   {
     switch (rand(0, 0)) {
       case 0:
-        $ret = $this->mantisa();
+        $ret = $this->mantissa();
         break;
 
       default:
-        $ret = $this->mantisa();
+        $ret = $this->mantissa();
         break;
     }
     return $ret;
@@ -36,7 +36,7 @@ class FloatingPoint extends CaptchaEntry
   /**
    * @return bool
    */
-  private function mantisa(): bool
+  private function mantissa(): bool
   {
     $st = new BaseFloatingPoint();
 
@@ -50,7 +50,7 @@ class FloatingPoint extends CaptchaEntry
 \\usepackage[utf8]{inputenc}
 \\thispagestyle{empty}
 \\begin{document}
-\\noindent Calculate the mantisa for the following floating point number, based on IEEE-754 standard with single precision. \\\\
+\\noindent Calculate the mantissa for the following floating point number, based on IEEE-754 standard with single precision. \\\\
 \$\$\\textbf{\\color{red}{$st->str}}\$\$
 Answer in \\textbf{decimal} format!
 \\end{document}
@@ -60,7 +60,7 @@ LATEX);
 
 
     $d             = $this->data;
-    $correctAnswer = sprintf("%d", $st->mantisa);
+    $correctAnswer = sprintf("%d", $st->mantissa);
     $text          = 
       "<a href=\"tg://user?id={$d["user_id"]}\">".e($d["full_name"])."</a>"
       .(isset($d["username"]) ? " (@{$d["username"]})" : "")
