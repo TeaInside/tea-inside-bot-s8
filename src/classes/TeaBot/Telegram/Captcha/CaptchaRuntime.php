@@ -46,7 +46,7 @@ class CaptchaRuntime extends CaptchaFoundation
       $text  =
         "<a href=\"tg://user?id={$d["user_id"]}\">".e($d["full_name"])."</a>"
         .(isset($d["username"]) ? " (@{$d["username"]})" : "")
-        ." has been kicked from the group due to failed to answer the captcha.";
+        ."  has answered the captcha correctly, welcome to the group!";
       $ret = Exe::sendMessage(
         [
           "chat_id"    => $d["chat_id"],

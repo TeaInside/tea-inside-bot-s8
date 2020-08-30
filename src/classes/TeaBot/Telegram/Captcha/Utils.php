@@ -2,6 +2,13 @@
 
 namespace TeaBot\Telegram\Captcha;
 
+use Swlib\Saber;
+use Swlib\Http\Uri;
+use Swlib\Http\ContentType;
+use Swlib\Http\BufferStream;
+use Swlib\Http\Exception\ConnectException;
+use Swlib\Http\Exception\TransferException;
+
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
  * @license MIT
