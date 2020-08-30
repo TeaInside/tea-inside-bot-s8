@@ -106,6 +106,7 @@ class CaptchaRuntime extends CaptchaFoundation
    */
   public function dropCaptcha(): void
   {
+    $this->buildDir();
     touch($this->captchaFile);
     $this->lock();
     $captchaType = "ComputerScience\\FloatingPoint";
