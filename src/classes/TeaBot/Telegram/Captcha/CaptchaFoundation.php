@@ -146,7 +146,7 @@ abstract class CaptchaFoundation
   /**
    * @return bool
    */
-  protected function isHavingCaptcha(): bool
+  public function isHavingCaptcha(): bool
   {
     $this->fastLock();
     $ret = file_exists($this->captchaFile);
