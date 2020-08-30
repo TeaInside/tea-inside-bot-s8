@@ -302,8 +302,8 @@ abstract class CaptchaFoundation
 
     Exe::unbanChatMember(
       [
-        "chat_id" => $chatId,
-        "user_id" => $userId
+        "chat_id" => $d["chat_id"],
+        "user_id" => $d["user_id"]
       ]
     );
 
