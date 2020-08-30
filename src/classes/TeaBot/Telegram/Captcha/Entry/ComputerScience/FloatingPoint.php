@@ -60,7 +60,6 @@ LATEX);
 
 
     $d             = $this->data;
-    var_dump($st);
     $correctAnswer = sprintf("%d", $st->mantisa);
     $text          = 
       "<a href=\"tg://user?id={$d["user_id"]}\">".e($d["full_name"])."</a>"
@@ -89,7 +88,7 @@ LATEX);
         "chat_id"         => $d["chat_id"],
         "user_id"         => $d["user_id"],
         "photo"           => $latexImgUrl,
-        "correct_answer"  => 300,
+        "correct_answer"  => (string)$correctAnswer,
       ]
     );
 
