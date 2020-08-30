@@ -314,7 +314,8 @@ abstract class CaptchaFoundation
         sleep(1);
       }
       Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $kickMsgId]);
-      Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $d["msg_id"]]);
     }
+
+    Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $d["msg_id"]]);
   }
 }

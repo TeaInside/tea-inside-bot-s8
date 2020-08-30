@@ -106,9 +106,13 @@ class CaptchaRuntime extends CaptchaFoundation
    */
   public function dropCaptcha(): void
   {
+    $this->fastLock();
     $this->buildDir();
     touch($this->captchaFile);
+    $this->fastUnlock();
+
     $this->lock();
+    $this->cleanUpMessages();
     $captchaType = "ComputerScience\\FloatingPoint";
     $ccClass     = "TeaBot\\Telegram\\Captcha\\Entry\\".$captchaType;
     $ccClass     = new $ccClass($this->data);
