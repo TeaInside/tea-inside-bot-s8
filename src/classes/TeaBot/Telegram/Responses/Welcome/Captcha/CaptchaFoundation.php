@@ -68,7 +68,7 @@ abstract class CaptchaFoundation
   /**
    * @return void
    */
-  protected function cleanUpOldCaptcha(): void
+  public function cleanUpOldCaptcha(): void
   {
     if (!$this->isHavingCaptcha()) {
       return;

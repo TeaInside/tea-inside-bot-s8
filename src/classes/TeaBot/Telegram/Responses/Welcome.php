@@ -24,7 +24,7 @@ final class Welcome extends ResponseFoundation
       $captchaType  = "ComputerScience\\FloatingPoint";
       $captchaClass = "\\TeaBot\\Telegram\\Responses\\Welcome\\Captcha\\".$captchaType;
 
-      if (!$this->captcha(new $captchaClass($this->data))) {
+      if (!$this->captcha($captcha = new $captchaClass($this->data))) {
         // Failed to answer the captcha.
         $ret = Exe::kickChatMember(
           [
@@ -35,7 +35,7 @@ final class Welcome extends ResponseFoundation
 
         $ret = json_decode($ret->getBody()->__toString(), true);
 
-        $this->cleanUpOldCaptcha();
+        $captcha->cleanUpOldCaptcha();
 
         if (isset($ret["ok"], $ret["result"]) && $ret["ok"] && $ret["result"]) {
           $uname = isset($this->data["username"]) ? " (@{$this->data["username"]})" : "";

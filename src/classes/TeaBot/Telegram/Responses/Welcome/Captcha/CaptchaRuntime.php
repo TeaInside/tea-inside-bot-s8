@@ -94,7 +94,9 @@ class CaptchaRuntime extends CaptchaFoundation
       );
 
       $json = json_decode($ret->getBody()->__toString(), true);
+      echo "\nAdding wrong message response to msg del...";
       if (isset($json["result"]["message_id"])) {
+        echo "OK";
         $this->addDeleteMsg($json["result"]["message_id"]);
       }
     }
