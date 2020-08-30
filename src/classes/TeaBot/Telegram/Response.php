@@ -50,7 +50,7 @@ final class Response
 
       $ccRun = new CaptchaRuntime($this->data);
       if ($ccRun->needCaptcha()) {
-        $cc->dropCaptcha();
+        $ccRun->dropCaptcha();
       }
 
     }
