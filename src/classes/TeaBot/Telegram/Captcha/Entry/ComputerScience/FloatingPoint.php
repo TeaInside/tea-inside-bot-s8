@@ -60,6 +60,7 @@ LATEX);
 
 
     $d             = $this->data;
+    var_dump($st);
     $correctAnswer = sprintf("%d", $st->mantisa);
     $text          = 
       "<a href=\"tg://user?id={$d["user_id"]}\">".e($d["full_name"])."</a>"
