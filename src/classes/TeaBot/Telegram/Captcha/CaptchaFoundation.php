@@ -152,8 +152,6 @@ abstract class CaptchaFoundation
   {
     $this->fastLock();
     $ret = file_exists($this->captchaFile);
-    var_dump("isHavingCaptcha");
-    var_dump($ret);
     $this->fastUnlock();
     return $ret;
   }
@@ -312,6 +310,7 @@ abstract class CaptchaFoundation
     if (isset($kickMsgId)) {
       sleep(120);
       Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $msgId]);
+      Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $d["msg_id"]]);
     }
   }
 }
