@@ -110,6 +110,8 @@ class FloatingPoint extends CaptchaEntry
       } while (($curTime - $startTime) <= 60);
 
       if (!$success) {
+
+        var_dump("=== scsc ===", $success, ($curTime - $startTime));
         $this->captchaFailKick();
       }
 
