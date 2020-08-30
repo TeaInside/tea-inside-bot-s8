@@ -40,13 +40,11 @@ final class TeaBot
   public function run(): void
   {
     if (!$this->skipResponse) {
+
       /* Run response here. */
-      try {
-        $res = new Response($this->data);
-        $res->run(); 
-      } catch (Error $e) {
-        echo $e."\n";
-      }
+      $res = new Response($this->data);
+      $res->run();
+
     }
   }
 }

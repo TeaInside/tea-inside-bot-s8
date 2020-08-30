@@ -32,21 +32,21 @@ class FloatingPoint extends CaptchaFoundation
     flock($handle, LOCK_SH);
 
     $st          = new BaseFloatingPoint();
-//     $latexImgUrl = $this->genLatex(<<<LATEX
-// \\documentclass[12pt]{article}
-// \\usepackage{amsmath}
-// \\usepackage{amssymb}
-// \\usepackage{amsfonts}
-// \\usepackage{color}
-// \\usepackage{xcolor}
-// \\usepackage[utf8]{inputenc}
-// \\thispagestyle{empty}
-// \\begin{document}
-// \\noindent Calculate the mantisa for the following floating point number, based on IEEE-754 standard with single precision. \\\\
-// \$\$\\textbf{\\color{red}{$st->str}}\$\$
-// Answer in \\textbf{decimal} format!
-// \\end{document}
-// LATEX);
+    $latexImgUrl = $this->genLatex(<<<LATEX
+\\documentclass[12pt]{article}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{amsfonts}
+\\usepackage{color}
+\\usepackage{xcolor}
+\\usepackage[utf8]{inputenc}
+\\thispagestyle{empty}
+\\begin{document}
+\\noindent Calculate the mantisa for the following floating point number, based on IEEE-754 standard with single precision. \\\\
+\$\$\\textbf{\\color{red}{$st->str}}\$\$
+Answer in \\textbf{decimal} format!
+\\end{document}
+LATEX);
   
     $latexImgUrl = "https://latex.teainside.org/latex/png/bb9d4d79e793148db69fc52744c09d0841be8501.png";
 

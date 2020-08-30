@@ -106,13 +106,14 @@ final class Data implements ArrayAccess
     $this->ct["chat_type"] = $msg["chat"]["type"];
     $this->ct["username"] = $msg["from"]["username"] ?? null;
     $this->ct["reply_to"] = $msg["reply_to_message"] ?? null;
-    $this->ct["chat_title"] = $msg["chat"]["title"] ?? (
-      isset($msg["chat"]["first_name"]) ?
-      $msg["chat"]["first_name"].
+    $this->ct["full_name"] = (
+      isset($msg["from"]["first_name"]) ?
+      $msg["from"]["first_name"].
       (
-        isset($msg["chat"]["last_name"]) ? " ".$msg["chat"]["last_name"] : ""
+        isset($msg["from"]["last_name"]) ? " ".$msg["from"]["last_name"] : ""
       ) : null
     );
+    $this->ct["chat_title"] = $msg["chat"]["title"] ?? $this->ct["full_name"];
     $this->ct["chat_username"] = $msg["chat"]["username"] ?? null;
     $this->ct["is_forwarded_msg"] = isset($msg["forward_date"], $msg["forward_from"]);
     $this->ct["is_edited_msg"] = isset($in["edited_message"]);
