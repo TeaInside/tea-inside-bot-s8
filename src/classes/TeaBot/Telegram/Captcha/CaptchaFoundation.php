@@ -219,11 +219,12 @@ abstract class CaptchaFoundation
    */
   public function cleanUpMessages(): void
   {
+    $chatId  = $this->data["chat_id"];
+
     if ($this->isHavingCaptcha()) {
       /* Get captcha information. */
       $json    = json_decode(file_get_contents($this->captchaFile), true);
       $ccMsgId = null;
-      $chatId  = $this->data["chat_id"];
 
       if (isset($json["msg_id"])) {
         $ccMsgId = $json["msg_id"];
