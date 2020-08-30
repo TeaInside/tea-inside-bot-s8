@@ -270,6 +270,7 @@ abstract class CaptchaFoundation
     $this->fastLock();
 
     $d   = $this->data;
+    var_dump("==== kicking... ====");
     $ret = Exe::kickChatMember(
       [
         "chat_id" => $d["chat_id"],
