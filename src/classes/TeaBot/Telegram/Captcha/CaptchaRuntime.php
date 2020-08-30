@@ -95,7 +95,12 @@ class CaptchaRuntime extends CaptchaFoundation
   {
     $this->fastLock();
 
-    $ret = ($this->data["chat_id"] === -1001226735471);
+    $ret = in_array($this->data["chat_id"],
+      [
+        -1001338293135, // PCX
+        -1001226735471, // Private Cloud
+      ]
+    );
 
     $this->fastUnlock();
     return $ret;
