@@ -56,8 +56,8 @@ class CaptchaRuntime extends CaptchaFoundation
       );
       $ret = json_decode($ret->getBody()->__toString(), true);
 
-      var_dump("123123");
       $this->cleanUpMessages();
+      Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $json["msg_id"]]);
 
       if (isset($ret["result"]["message_id"])) {
         $msgId = $ret["result"]["message_id"];
@@ -67,9 +67,10 @@ class CaptchaRuntime extends CaptchaFoundation
 
       if (isset($msgId)) {
         sleep(120);
-        Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $d["msg_id"]]);
         Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $msgId]);
       }
+
+      Exe::deleteMessage(["chat_id" => $d["chat_id"], "message_id" => $d["msg_id"]]);
     } else {
       $ret = Exe::sendMessage(
         [

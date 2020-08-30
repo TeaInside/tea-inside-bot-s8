@@ -219,29 +219,27 @@ abstract class CaptchaFoundation
    */
   public function cleanUpMessages(): void
   {
-    if (!$this->isHavingCaptcha()) {
-      return;
-    }
+    if ($this->isHavingCaptcha()) {
+      /* Get captcha information. */
+      $json    = json_decode(file_get_contents($this->captchaFile), true);
+      $ccMsgId = null;
+      $chatId  = $this->data["chat_id"];
 
-    /* Get captcha information. */
-    $json    = json_decode(file_get_contents($this->captchaFile), true);
-    $ccMsgId = null;
-    $chatId  = $this->data["chat_id"];
+      if (isset($json["msg_id"])) {
+        $ccMsgId = $json["msg_id"];
 
-    if (isset($json["msg_id"])) {
-      $ccMsgId = $json["msg_id"];
+        /* Delete captcha message. */
+        go(function () use ($chatId, $ccMsgId) {
+          echo "\nDeleting {$chatId}:{$ccMsgId}...";
+          Exe::deleteMessage([
+            "chat_id"    => $chatId,
+            "message_id" => $ccMsgId,
+          ]);
+          echo "\nDeleted {$chatId}:{$ccMsgId}!";
+        });
 
-      /* Delete captcha message. */
-      go(function () use ($chatId, $ccMsgId) {
-        echo "\nDeleting {$chatId}:{$ccMsgId}...";
-        Exe::deleteMessage([
-          "chat_id"    => $chatId,
-          "message_id" => $ccMsgId,
-        ]);
-        echo "\nDeleted {$chatId}:{$ccMsgId}!";
-      });
-
-      @unlink($this->delMsgDir."/".$ccMsgId);
+        @unlink($this->delMsgDir."/".$ccMsgId);
+      }
     }
 
     $messageIds = scandir($this->delMsgDir);
