@@ -4,6 +4,7 @@ namespace TeaBot\Telegram\Captcha;
 
 use Exception;
 use TeaBot\Telegram\Exe;
+use TeaBot\Telegram\Data;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
