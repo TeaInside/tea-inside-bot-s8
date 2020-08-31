@@ -104,9 +104,9 @@ class CaptchaRuntime extends CaptchaFoundation
 
     $ret = in_array($this->data["chat_id"],
       [
-        -1001338293135, // PCX
-        -1001226735471, // Private Cloud
-        -1001120283944, // Tea Inside
+        // -1001338293135, // PCX
+        // -1001226735471, // Private Cloud
+        // -1001120283944, // Tea Inside
       ]
     );
 

@@ -52,7 +52,7 @@ class FloatingPoint extends CaptchaEntry
 \\begin{document}
 \\noindent Calculate the mantissa for the following floating point number, based on IEEE-754 standard with single precision. \\\\
 \$\$\\textbf{\\color{red}{$st->str}}\$\$
-Answer in \\textbf{decimal} format!
+Answer in \\textbf{hexadecimal} format!
 \\end{document}
 LATEX);
 
