@@ -9,7 +9,7 @@ typedef union {
   unsigned int x;
   float f;
   struct {
-    unsigned int mantisa : 23;
+    unsigned int mantissa : 23;
     unsigned int exponent : 8;
     unsigned int sign : 1;
   } p;
@@ -57,7 +57,7 @@ PHP_METHOD(TeaBot__FloatingPoint, __construct)
 
   ZUP(string, "str",       buffer0);
   ZUP(string, "str_hex",   buffer1);
-  ZUP(long,   "mantisa",   x.p.mantisa);
+  ZUP(long,   "mantissa",  x.p.mantissa);
   ZUP(long,   "exponent",  x.p.exponent);
   ZUP(long,   "sign",      x.p.sign);
 }
