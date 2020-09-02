@@ -41,7 +41,7 @@ if (!file_exists($tgExtLockFile)) {
   file_put_contents($tgExtDir."/Makefile",
     str_replace(" -O0", " -O3", file_get_contents($tgExtDir."/Makefile")));
 
-  shw($tgExtDir, "make -j \$(nproc)");
+  shw($tgExtDir, "make");
   touch($tgExtLockFile);
 }
 
