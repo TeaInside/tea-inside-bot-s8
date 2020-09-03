@@ -26,3 +26,5 @@ php_phpnasm.lo
 phpnasm.la
 run-tests.php
 *.loT
+*.la
+*.lo
