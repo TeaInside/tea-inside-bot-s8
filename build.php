@@ -35,14 +35,14 @@ if (!file_exists($swooleLockFile)) {
 /* Compile custom extension. */
 if (!file_exists($tgExtLockFile)) {
 
-  shw($tgExtDir, "phpize");
-  shw($tgExtDir, "./configure");
+  // shw($tgExtDir, "phpize");
+  // shw($tgExtDir, "./configure");
 
-  file_put_contents($tgExtDir."/Makefile",
-    str_replace(" -O0", " -O3", file_get_contents($tgExtDir."/Makefile")));
+  // file_put_contents($tgExtDir."/Makefile",
+  //   str_replace(" -O0", " -O3", file_get_contents($tgExtDir."/Makefile")));
 
-  shw($tgExtDir, "make");
-  touch($tgExtLockFile);
+  // shw($tgExtDir, "make");
+  // touch($tgExtLockFile);
 }
 
 /**
