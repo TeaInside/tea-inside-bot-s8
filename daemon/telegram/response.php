@@ -44,7 +44,7 @@ while ($conn = stream_socket_accept($sock, -1)) {
  * @param  $conn sock_fd
  * @return void
  */
-function client_handler($conn): void
+function response_handler($conn): void
 {
   stream_set_timeout($conn, 10);
 
@@ -89,37 +89,5 @@ function client_handler($conn): void
 
   } catch (\Error $e) {
     echo $e."\n";
-  }
-}
-
-/**
- * @param array  $data
- * @param string $forwardBaseUrl
- * @param string $forwardPath
- * @return void
- */
-function payload_forwarder(array $data, string $forwardBaseUrl, string $forwardPath): void
-{
-  try {
-
-    \Swlib\Saber::create(
-      [
-        "base_uri" => $forwardBaseUrl,
-        "headers"  => ["Content-Type" => \Swlib\Http\ContentType::JSON],
-        "timeout"  => 600,
-      ]
-    )->post($forwardPath, $data);
-
-  } catch (Throwable $e) {
-    echo $e."\n";
-
-    if (defined("TELEGRAM_ERROR_REPORT_CHAT_ID")) {
-      if (is_array(TELEGRAM_ERROR_REPORT_CHAT_ID)) {
-        foreach (TELEGRAM_ERROR_REPORT_CHAT_ID as $k => $chatId) {
-          \TeaBot\Telegram\Exe::sendMessage();
-        }
-      }
-    }
-
   }
 }
