@@ -1,40 +1,44 @@
 <?php
 
-// \TeaBot\Telegram\Log::registerLogStream(STDOUT);
-// \TeaBot\Telegram\Log::registerLogStream(fopen(TELEGRAM_DAEMON_LOG_FILE, "a"));
+const FLAGS = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
 
-return function () {
+$bindAddr       = getenv("BIND_ADDR");
+$bindPort       = getenv("BIND_PORT");
+$forwardBaseUrl = getenv("FORWARD_BASE_URL");
+$forwardPath    = getenv("FORWARD_PATH");
 
-  $addr  = "tcp://127.0.0.1:7777";
-  $ctx   = stream_context_create(
-    [
-      "socket" => [
-        "so_reuseaddr" => true,
-        "backlog" => 128
-      ]
+if (!$bindAddr) {
+  $bindAddr = "127.0.0.1";
+}
+
+if (!$bindPort) {
+  $bindPort = 7777;
+}
+
+$tcpAddr = "tcp://{$bindAddr}:{$bindPort}";
+
+$ctx = stream_context_create(
+  [
+    "socket" => [
+      "so_reuseaddr" => true,
+      "backlog"      => 128
     ]
-  );
-  $flags = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
+  ]
+);
 
-  /* Run coroutine server. */
-  if (!($sock = stream_socket_server($addr, $errno, $errstr, $flags, $ctx))) {
-    echo "$errstr ($errno)\n";
-    return;
-  }
+if (!($sock = stream_socket_server($tcpAddr, $errno, $errstr, FLAGS, $ctx))) {
+  echo "({$errno}): {$errstr}\n";
+  return;
+}
 
-  echo "client_handler: Listening on {$addr}...\n";
+echo "response_handler: Listening on {$tcpAddr}...\n";
 
-  while ($conn = stream_socket_accept($sock, -1)) {
+/* Accepting client... */
+while ($conn = stream_socket_accept($sock, -1)) {
+  /* Create a new coroutine every time we accept new connection. */
+  go(function () use ($conn) { client_handler($conn); });
+}
 
-    /* Create a new routine every time we accepts new connection. */
-    go(function () use ($conn) {
-      client_handler($conn);
-    });
-
-  }
-
-  fclose($conn);
-};
 
 /** 
  * @param  $conn sock_fd
@@ -70,16 +74,10 @@ function client_handler($conn): void
   fwrite($conn, "ok");
   fclose($conn);
 
-  /* Send payload to old daemon. */
-  if (!getmyuid()) {
-    go(function () use ($data) {
-      $saber = \Swlib\Saber::create(
-        [
-          "base_uri" => "https://telegram-bot.teainside.org",
-          "headers"  => ["Content-Type" => \Swlib\Http\ContentType::JSON],
-          "timeout"  => 500,
-        ]
-      )->post("/webhook.php", $data);
+  /* Send payload to the old daemon. */
+  if ($forwardBaseUrl && $forwardPath) {
+    go(function () use ($data, $forwardBaseUrl, $forwardPath) {
+      payload_forwarder($data, $forwardBaseUrl, $forwardPath);
     });
   }
 
@@ -91,5 +89,37 @@ function client_handler($conn): void
 
   } catch (\Error $e) {
     echo $e."\n";
+  }
+}
+
+/**
+ * @param array  $data
+ * @param string $forwardBaseUrl
+ * @param string $forwardPath
+ * @return void
+ */
+function payload_forwarder(array $data, string $forwardBaseUrl, string $forwardPath): void
+{
+  try {
+
+    \Swlib\Saber::create(
+      [
+        "base_uri" => $forwardBaseUrl,
+        "headers"  => ["Content-Type" => \Swlib\Http\ContentType::JSON],
+        "timeout"  => 600,
+      ]
+    )->post($forwardPath, $data);
+
+  } catch (Throwable $e) {
+    echo $e."\n";
+
+    if (defined("TELEGRAM_ERROR_REPORT_CHAT_ID")) {
+      if (is_array(TELEGRAM_ERROR_REPORT_CHAT_ID)) {
+        foreach (TELEGRAM_ERROR_REPORT_CHAT_ID as $k => $chatId) {
+          \TeaBot\Telegram\Exe::sendMessage();
+        }
+      }
+    }
+
   }
 }

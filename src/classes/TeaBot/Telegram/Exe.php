@@ -43,7 +43,7 @@ final class Exe
       $saber = Saber::create([
         "base_uri" => "https://api.telegram.org",
         "headers"  => ["Content-Type" => ContentType::JSON],
-        "timeout"  => 500,
+        "timeout"  => 600,
       ]);
       $ret = $saber->post("/bot".BOT_TOKEN."/".$path, $body);
 
