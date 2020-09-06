@@ -15,6 +15,14 @@ if (!$bindPort) {
   $bindPort = 7777;
 }
 
+if (!$forwardBaseUrl) {
+  echo "Warning: FORWARD_BASE_URL is not provided!\n";
+}
+
+if (!$forwardPath) {
+  echo "Warning: FORWARD_PATH is not provided!\n";
+}
+
 $tcpAddr = "tcp://{$bindAddr}:{$bindPort}";
 
 $ctx = stream_context_create(
@@ -31,7 +39,8 @@ if (!($sock = stream_socket_server($tcpAddr, $errno, $errstr, FLAGS, $ctx))) {
   return;
 }
 
-echo "response_handler: Listening on {$tcpAddr}...\n";
+echo "response_handler is running...\n";
+echo "Listening on {$tcpAddr}...\n";
 
 /* Accepting client... */
 while ($conn = stream_socket_accept($sock, -1)) {
@@ -88,6 +97,6 @@ function response_handler($conn): void
     $bot->run();
 
   } catch (\Error $e) {
-    echo $e."\n";
+    echo "{$e}\n";
   }
 }
