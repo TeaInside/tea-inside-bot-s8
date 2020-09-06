@@ -1,6 +1,5 @@
 dnl config.m4
-PHP_ARG_ENABLE(teabot8, for teabot8 support,
-[  --enable-teabot8            Include teabot8 support])
+PHP_ARG_ENABLE(teabot8, for teabot8 support, [  --enable-teabot8            Include teabot8 support])
 
 if test "$PHP_PHPNASM" != "no"; then
   PHP_REQUIRE_CXX()
