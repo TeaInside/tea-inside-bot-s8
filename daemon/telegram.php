@@ -15,7 +15,10 @@ if (defined("TELEGRAM_DAEMON_PID_FILE")) {
 
 \Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL);
 
-$workers = [
+const WKR_LOGGER = 0;
+const WKR_SHELL  = 1;
+
+$GLOBALS["workers"] = [
   new \Swoole\Process(function($process){
     cli_set_process_title("logger");
     require __DIR__."/telegram/logger.php";
@@ -26,10 +29,10 @@ $workers = [
   })
 ];
 
-$workers[0]->start();
-$workers[1]->start();
+foreach ($GLOBALS["workers"] as $worker) {
+  $worker->start();
+}
+unset($worker);
 
 echo "Spawning response_handler...\n";
-\Co\run(function () use ($workers) {
-  require __DIR__."/telegram/response.php";
-});
+\Co\run(function () { require __DIR__."/telegram/response.php"; });

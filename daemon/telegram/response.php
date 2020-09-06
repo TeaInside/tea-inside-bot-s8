@@ -2,10 +2,10 @@
 
 const FLAGS = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
 
-$bindAddr       = getenv("BIND_ADDR");
-$bindPort       = getenv("BIND_PORT");
-$forwardBaseUrl = getenv("FORWARD_BASE_URL");
-$forwardPath    = getenv("FORWARD_PATH");
+$bindAddr                  = getenv("BIND_ADDR");
+$bindPort                  = getenv("BIND_PORT");
+$GLOBALS["forwardBaseUrl"] = getenv("FORWARD_BASE_URL");
+$GLOBALS["forwardPath"]    = getenv("FORWARD_PATH");
 
 if (!$bindAddr) {
   $bindAddr = "127.0.0.1";
@@ -15,15 +15,16 @@ if (!$bindPort) {
   $bindPort = 7777;
 }
 
-if (!$forwardBaseUrl) {
+if (!$GLOBALS["forwardBaseUrl"]) {
   echo "Warning: FORWARD_BASE_URL is not provided!\n";
 }
 
-if (!$forwardPath) {
+if (!$GLOBALS["forwardPath"]) {
   echo "Warning: FORWARD_PATH is not provided!\n";
 }
 
 $tcpAddr = "tcp://{$bindAddr}:{$bindPort}";
+unset($bindAddr, $bindPort);
 
 $ctx = stream_context_create(
   [
@@ -38,6 +39,7 @@ if (!($sock = stream_socket_server($tcpAddr, $errno, $errstr, FLAGS, $ctx))) {
   echo "({$errno}): {$errstr}\n";
   return;
 }
+unset($errno, $errstr, $ctx);
 
 echo "response_handler is running...\n";
 echo "Listening on {$tcpAddr}...\n";
@@ -45,7 +47,7 @@ echo "Listening on {$tcpAddr}...\n";
 /* Accepting client... */
 while ($conn = stream_socket_accept($sock, -1)) {
   /* Create a new coroutine every time we accept new connection. */
-  go(function () use ($conn) { client_handler($conn); });
+  go(function () use ($conn) { response_handler($conn); });
 }
 
 
@@ -55,21 +57,23 @@ while ($conn = stream_socket_accept($sock, -1)) {
  */
 function response_handler($conn): void
 {
+  global $forwardBaseUrl, $forwardPath, $workers;
+
   stream_set_timeout($conn, 10);
 
-  $data        = fread($conn, 4096);
-  $dataLen     = unpack("S", substr($data, 0, 2))[1];
-  $receivedLen = strlen($data) - 2;
-  $data        = substr($data, 2);
+  $rawData      = fread($conn, 4096);
+  $dataLen      = unpack("S", substr($rawData, 0, 2))[1];
+  $receivedLen  = strlen($rawData) - 2;
+  $rawData      = substr($rawData, 2);
 
   /* Read more if the payload has not been received completely. */
   while ($dataLen > $receivedLen) {
-    $data        .= fread($conn, 4096);
-    $receivedLen  = strlen($data);
+    $rawData     .= fread($conn, 4096);
+    $receivedLen  = strlen($rawData);
   }
 
   /* The payload must be a valid JSON array/object. */
-  $data = json_decode($data, true);
+  $data = json_decode($rawData, true);
 
   if (!is_array($data)) {
 
@@ -79,6 +83,8 @@ function response_handler($conn): void
     return;
 
   }
+
+  $workers[WKR_LOGGER]->write($rawData);
 
   fwrite($conn, "ok");
   fclose($conn);

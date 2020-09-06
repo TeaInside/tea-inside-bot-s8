@@ -42,7 +42,7 @@ final class Start extends ResponseFoundation
       );
 
       if (isset($v["result"]["message_id"])) {
-        sleep(5);
+        co_sleep(5);
         Exe::deleteMessage(
           [
             "chat_id" => $this->data["chat_id"],

@@ -3,45 +3,33 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345861060,
+    "update_id": 345890870,
     "message": {
-        "message_id": 5129,
+        "message_id": 6113,
         "from": {
-            "id": 639393712,
+            "id": 243692601,
             "is_bot": false,
-            "first_name": "Vasco De",
-            "last_name": "Gamma",
-            "username": "ieralliv"
+            "first_name": "Ammar",
+            "last_name": "Faizi^",
+            "username": "ammarfaizi2",
+            "language_code": "en"
         },
         "chat": {
             "id": -1001226735471,
             "title": "Private Cloud",
-            "type": "supergroup"
+            "type": "supergroup",
+            "username": null
         },
-        "date": 1598521697,
-        "new_chat_participant": {
-            "id": 639393712,
-            "is_bot": false,
-            "first_name": "Vasco De",
-            "last_name": "Gamma",
-            "username": "ieralliv"
-        },
-        "new_chat_member": {
-            "id": 639393712,
-            "is_bot": false,
-            "first_name": "Vasco De",
-            "last_name": "Gamma",
-            "username": "ieralliv"
-        },
-        "new_chat_members": [
+        "date": 1599362325,
+        "text": "/start",
+        "entities": [
             {
-                "id": 639393712,
-                "is_bot": false,
-                "first_name": "Vasco De",
-                "last_name": "Gamma",
-                "username": "ieralliv"
+                "offset": 0,
+                "length": 6,
+                "type": "bot_command"
             }
-        ]
+        ],
+        "reply_to_message": null
     }
 }';
 
