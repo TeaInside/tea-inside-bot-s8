@@ -41,7 +41,7 @@ final class Logger
   public function __get($key)
   {
     if (($key === "pdo") && (!$this->pdo)) {
-      $this->pdo = DB::pdo();
+      return ($this->pdo = DB::pdo());
     }
 
     return $this->{$key};
