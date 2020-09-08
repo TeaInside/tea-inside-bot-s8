@@ -22,10 +22,11 @@ class GroupLogger extends LoggerFoundation
    */
   public function run(): void
   {
-    $data     = $this->data;
-    $user     = new User($this->pdo);
-    $group    = new Group($this->pdo);
+    $data         = $this->data;
+    $user         = new User($this->pdo);
+    $group        = new Group($this->pdo);
     $isInsertUser = $isInsertGroup = false;
+
     $userInfo = [
       "username"   => $data["username"],
       "first_name" => $data["first_name"],
@@ -50,21 +51,8 @@ class GroupLogger extends LoggerFoundation
       self::trackGroupPhoto($data, $groupInfo);
     }
 
-
-    $msgData = [
-      "group_id"            => $groupId,
-      "user_id"             => $userId,
-      "tg_msg_id"           => $data["msg_id"],
-      "reply_to_tg_msg_id"  => $data["reply_to"]["message_id"] ?? null,
-      "msg_type"            => $data["msg_type"],
-      "is_edited_msg"       => $data["is_edited_msg"],
-      "is_edited_msg"       => $data["is_forwarded_msg"],
-      "tg_date"             => $data["date"],
-      "reply_to_msg"        => $data["reply_to"]
-    ];
-
     $groupMsg = new GroupMessage($this->pdo);
-    $groupMsg->resolveMessage($msgData);
+    $groupMsg->resolveMessage($userId, $groupId, $data);
   }
 
 

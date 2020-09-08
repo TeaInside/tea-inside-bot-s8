@@ -259,7 +259,7 @@ class User extends LoggerUtilFoundation
           $info["photo"],
           $info["group_msg_count"],
           $info["private_msg_count"],
-          $info["is_bot"],
+          $info["is_bot"] ? 1 : 0,
           $dateTime
         ]
       );
