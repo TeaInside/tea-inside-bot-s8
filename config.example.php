@@ -16,6 +16,24 @@ define("TELEGRAM_DAEMON_ERROR_LOG", STORAGE_PATH."/logs/telegram_daemon_error.lo
 define("TELEGRAM_DAEMON_LOG_FILE", STORAGE_PATH."/logs/daemon.log");
 define("TELEGRAM_DAEMON_PID_FILE", STORAGE_PATH."/pid/telegram_daemon.pid");
 
+define("TELEGRAM_DAEMON_LOGGER_WORKERS",
+  [
+    "127.0.0.1:7100",
+    "127.0.0.1:7101",
+    "127.0.0.1:7102",
+    "127.0.0.1:7103",
+  ]
+);
+
+define("TELEGRAM_DAEMON_RESPONDER_WORKERS",
+  [
+    "127.0.0.1:7200",
+    "127.0.0.1:7201",
+    "127.0.0.1:7202",
+    "127.0.0.1:7203",
+  ]
+);
+
 define("CALCULUS_API_KEY", "xxxxxxxxx");
 define("SRABATSROBOT_API_KEY", "xxxxxxxxx");
 
