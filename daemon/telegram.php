@@ -18,6 +18,10 @@ if (!defined("TELEGRAM_DAEMON_RESPONDER_WORKERS")) {
   exit(1);
 }
 
+if (defined("TELEGRAM_DAEMON_PID_FILE")) {
+  file_put_contents(TELEGRAM_DAEMON_PID_FILE, getmypid());
+}
+
 \Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL);
 
 pcntl_signal(SIGCHLD, SIG_IGN);
