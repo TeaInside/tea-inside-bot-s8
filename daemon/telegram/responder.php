@@ -1,6 +1,6 @@
 <?php
 
-const FLAGS = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
+cli_set_process_title("responder_worker_{$k}");
 
 $GLOBALS["forwardBaseUrl"] = getenv("FORWARD_BASE_URL");
 $GLOBALS["forwardPath"]    = getenv("FORWARD_PATH");
@@ -13,41 +13,36 @@ if (!$GLOBALS["forwardPath"]) {
   echo "Warning: FORWARD_PATH is not provided!\n";
 }
 
-$tcpAddr = "tcp://{$bindAddr}:{$bindPort}";
-unset($bindAddr, $bindPort);
+$tcpAddr = "tcp://{$bindAddr}";
+unset($bindAddr);
+$ctx  = stream_context_create(["socket" => ["so_reuseaddr" => false, "backlog" => 500]]);
+$sock = stream_socket_server($tcpAddr, $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $ctx);
 
-$ctx = stream_context_create(
-  [
-    "socket" => [
-      "so_reuseaddr" => true,
-      "backlog"      => 128
-    ]
-  ]
-);
-
-if (!($sock = stream_socket_server($tcpAddr, $errno, $errstr, FLAGS, $ctx))) {
+if (!$sock) {
   echo "({$errno}): {$errstr}\n";
   return;
 }
 unset($errno, $errstr, $ctx);
 
-echo "response_handler is running...\n";
-echo "Listening on {$tcpAddr}...\n";
+echo "responder_worker_{$k} is listening on {$tcpAddr}...\n";
 
 /* Accepting client... */
 while ($conn = stream_socket_accept($sock, -1)) {
   /* Create a new coroutine every time we accept new connection. */
-  go(function () use ($conn) { response_handler($conn); });
+  go(function () use ($conn, $k) { response_handler($conn, $k); });
 }
 
 
 /** 
- * @param  $conn sock_fd
+ * @param  sock_fd $conn
+ * @param  int     $k
  * @return void
  */
-function response_handler($conn): void
+function response_handler($conn, int $k): void
 {
   global $forwardBaseUrl, $forwardPath, $workers;
+
+  echo "responder_worker_{$k} is accepting connection...\n";
 
   stream_set_timeout($conn, 10);
 
@@ -74,17 +69,15 @@ function response_handler($conn): void
 
   }
 
-  $workers[WKR_LOGGER]->write($rawData);
-
   fwrite($conn, "ok");
   fclose($conn);
 
   /* Send payload to the old daemon. */
-  if ($forwardBaseUrl && $forwardPath) {
-    go(function () use ($data, $forwardBaseUrl, $forwardPath) {
-      payload_forwarder($data, $forwardBaseUrl, $forwardPath);
-    });
-  }
+  // if ($forwardBaseUrl && $forwardPath) {
+  //   go(function () use ($data, $forwardBaseUrl, $forwardPath) {
+  //     payload_forwarder($data, $forwardBaseUrl, $forwardPath);
+  //   });
+  // }
 
   try {
 

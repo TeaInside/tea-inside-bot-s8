@@ -107,14 +107,12 @@ loadConfig("telegram/telegram_bot");
 go(function () use ($json) {
   $saber = \Swlib\Saber::create(
    [
-    //"base_uri" => "http://127.0.0.1:8000",
-    "base_uri" => "https://telegram-bot.teainside.org",
+    "base_uri" => "http://127.0.0.1:8000",
     "headers" => ["Content-Type" => \Swlib\Http\ContentType::JSON]
    ]
   );
   $ret = $saber->post(
-    // "/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY,
-    "/webhook.php",
+    "/webhook/telegram/r1.php?key=".TELEGRAM_WEBHOOK_KEY,
     json_decode($json, true)
   );
   echo $ret->getBody()->__toString()."\n";
