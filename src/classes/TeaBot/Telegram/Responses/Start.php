@@ -29,7 +29,6 @@ final class Start extends ResponseFoundation
       );
 
     } else {
-
       $v = json_decode(
         Exe::sendMessage(
           [

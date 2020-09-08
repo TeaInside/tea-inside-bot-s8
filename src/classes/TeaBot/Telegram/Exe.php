@@ -39,20 +39,24 @@ final class Exe
     try_ll:
     try {
 
+      var_dump("trying...");
       $tryCounter++;
       $saber = Saber::create([
         "base_uri" => "https://api.telegram.org",
         "headers"  => ["Content-Type" => ContentType::JSON],
-        "timeout"  => 600,
+        "timeout"  => 10,
       ]);
       $ret = $saber->post("/bot".BOT_TOKEN."/".$path, $body);
+      var_dump("dropped");
 
     } catch (TransferException $e) {
 
+      var_dump("dropped");
       $ret = $e->getResponse();
       if (is_null($ret) && ($tryCounter <= 5)) goto try_ll;
 
     } catch (ConnectException $e) {
+      var_dump("dropped");
       if ($tryCounter <= 5) goto try_ll;
     }
     return $ret;
