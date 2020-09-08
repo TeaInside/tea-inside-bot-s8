@@ -17,12 +17,36 @@ use TeaBot\Telegram\LoggerUtilFoundation;
 class Group extends LoggerUtilFoundation
 {
   /**
+   * @var bool
+   */
+  private $allowTrackUpdate = true;
+
+
+  /**
+   * @return void
+   */
+  public function dontTrackUpdate(): void
+  {
+    $this->allowTrackUpdate = false;
+  }
+
+
+  /**
+   * @return void
+   */
+  public function trackUpdate(): void
+  {
+    $this->allowTrackUpdate = true;
+  }
+
+
+  /**
    * @param  int    $tgGroupId
-   * @param  ?array info
+   * @param  ?array &$info
    * @param  ?bool  &$isInsert
    * @return ?int
    */
-  public function resolveGroup(int $tgGroupId, ?array $info = null, ?bool &$isInsert = null): ?int
+  public function resolveGroup(int $tgGroupId, ?array &$info = null, ?bool &$isInsert = null): ?int
   {
     $e    = null;
     $lock = new Mutex("tg_groups", "{$tgGroupId}");
@@ -74,14 +98,13 @@ class Group extends LoggerUtilFoundation
 
   /**
    * @param  int    $tgGroupId
-   * @param  array  info
+   * @param  array  &$info
    * @param  ?bool  &$isInsert
    * @return int
    */
-  private function fullResolveGroup(int $tgGroupId, array $info, ?bool &$isInsert = null): int
+  private function fullResolveGroup(int $tgGroupId, array &$info, ?bool &$isInsert = null): int
   {
-    $pdo = $this->pdo;
-    $st  = $pdo->prepare("SELECT id, username, name, link, photo, msg_count FROM tg_groups WHERE tg_group_id = ?");
+    $st  = $this->pdo->prepare("SELECT id, username, name, link, photo, msg_count FROM tg_groups WHERE tg_group_id = ?");
     $st->execute([$tgGroupId]);
 
     $dateTime     = date("Y-m-d H:i:s");
@@ -89,21 +112,21 @@ class Group extends LoggerUtilFoundation
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
       /* Group has already been stored in database. */
-      $trackHistory = self::updateGroup($pdo, $u, $info, $dateTime);
+      $trackHistory = $this->updateGroup($u, $info, $dateTime);
       $id = (int)$u["id"];
 
       if (!is_null($isInsert)) $isInsert = false;
 
     } else {
-      $id = self::insertGroup($pdo, $tgGroupId, $info, $dateTime);
+      $id = $this->insertGroup($tgGroupId, $info, $dateTime);
       $trackHistory = true;
 
       if (!is_null($isInsert)) $isInsert = true;
 
     }
 
-    if ($trackHistory) {
-      self::createHistory($pdo, $id, $info, $dateTime);
+    if ($trackHistory && $this->allowTrackUpdate) {
+      self::createHistory($id, $info, $dateTime);
     }
 
     return $id;
@@ -111,13 +134,29 @@ class Group extends LoggerUtilFoundation
 
 
   /**
-   * @param \PDO   $pdo
+   * @param int $tgGroupId
+   * @return int
+   */
+  private function directResolveGroup(int $tgGroupId): ?int
+  {
+    $st  = $this->pdo->prepare("SELECT id FROM tg_groups WHERE tg_group_id = ?");
+    $st->execute([$tgGroupId]);
+
+    if ($u = $st->fetch(PDO::FETCH_NUM)) {
+      return (int)$u[0];
+    } else {
+      return null;
+    }
+  }
+
+
+  /**
    * @param array  $u
    * @param array  &$info
    * @param string $dateTime
    * @return bool
    */
-  private static function updateGroup(PDO $pdo, array $u, array &$info, string $dateTime): bool
+  public function updateGroup(array $u, array &$info, string $dateTime): bool
   {
     $doUpdate    = false;
     $updateQuery = "UPDATE tg_groups SET ";
@@ -144,9 +183,7 @@ class Group extends LoggerUtilFoundation
         $doUpdate = true;
       }
     } else {
-      if ($u["link"] !== null) {
-        $info["link"] = $u["link"];
-      }
+      $info["link"] = $u["link"] ?? null;
     }
 
     if (array_key_exists("photo", $info)) {
@@ -156,33 +193,50 @@ class Group extends LoggerUtilFoundation
         $doUpdate = true;
       }
     } else {
-      if ($u["photo"] !== null) {
-        $info["photo"] = $u["photo"];
-      }
+      $info["photo"] = $u["photo"] ?? null;
     }
 
+    /* Fill info fields reference. */
+    if (!isset($info["msg_count"])) {
+      $info["msg_count"] = 0;
+    }
+
+
     if ($doUpdate) {
-      $updateQuery .= ",updated_at = ? WHERE id = ?";
-      $updateData[] = $dateTime;
-      $updateData[] = $u["id"];
-      $pdo->prepare($updateQuery)->execute($updateData);
+      if ($this->allowTrackUpdate) {
+        $updateQuery .= ",updated_at = ? WHERE id = ?";
+        $updateData[] = $dateTime;
+        $updateData[] = $u["id"];
+      }
+      $this->pdo->prepare($updateQuery)->execute($updateData);
       return true;
     }
-    
+
     return false;
   }
 
 
   /**
-   * @param \PDO   $pdo
    * @param int    $tgGroupId
    * @param array  &$info
    * @param string $dateTime
    * @return int
    */
-  private static function insertGroup(PDO $pdo, int $tgGroupId, array &$info, string $dateTime): int
+  public function insertGroup(int $tgGroupId, array &$info, string $dateTime): int
   {
-    /* TODO: track group photo before insert. */
+    $pdo = $this->pdo;
+
+    if (!array_key_exists("link", $info)) {
+      $info["link"] = null;
+    }
+
+    if (!array_key_exists("photo", $info)) {
+      $info["photo"] = null;
+    }
+
+    if (!isset($info["msg_count"])) {
+      $info["msg_count"] = 0;
+    }
 
     $pdo
       ->prepare("INSERT INTO tg_groups (tg_group_id, username, name, link, photo, msg_count, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
@@ -191,10 +245,10 @@ class Group extends LoggerUtilFoundation
           $tgGroupId,
           $info["username"],
           $info["name"],
-          $info["link"] ?? null,
-          $info["photo"] ?? null,
-          $info["msg_count"] ?? 0,
-          $dateTime
+          $info["link"],
+          $info["photo"],
+          $info["msg_count"],
+          $dateTime,
         ]
       );
 
@@ -203,15 +257,15 @@ class Group extends LoggerUtilFoundation
 
 
   /**
-   * @param \PDO   $pdo
    * @param int    $userId
    * @param array  $info
    * @param string $dateTime
    * @return void
    */
-  private function createHistory(PDO $pdo, int $groupId, array $info, string $dateTime): void
+  public function createHistory(int $groupId, array $info, string $dateTime): void
   {
-    $pdo
+    $this
+      ->pdo
       ->prepare("INSERT INTO tg_group_history (group_id, username, name, link, photo, created_at) VALUES (?, ?, ?, ?, ?, ?)")
       ->execute(
         [

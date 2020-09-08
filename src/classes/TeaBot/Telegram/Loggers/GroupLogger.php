@@ -2,6 +2,7 @@
 
 namespace TeaBot\Telegram\Loggers;
 
+use DB;
 use TeaBot\Telegram\LoggerFoundation;
 use TeaBot\Telegram\LoggerUtils\User;
 use TeaBot\Telegram\LoggerUtils\Group;
@@ -22,30 +23,70 @@ class GroupLogger extends LoggerFoundation
     $data     = $this->data;
     $user     = new User($this->pdo);
     $group    = new Group($this->pdo);
-
     $isInsertUser = $isInsertGroup = false;
+    $userInfo = [
+      "username"   => $data["username"],
+      "first_name" => $data["first_name"],
+      "last_name"  => $data["last_name"],
+      "is_bot"     => $data["is_bot"],
+    ];
+    $groupInfo = [
+      "username" => $data["chat_username"],
+      "name"     => $data["chat_title"],
+    ];
 
-    $userId = $user->resolveUser(
-      $data["user_id"],
-      [
-        "username"        => $data["username"],
-        "first_name"      => $data["first_name"],
-        "last_name"       => $data["last_name"],
-        "is_bot"          => $data["is_bot"],
-      ],
-      $isInsertUser
-    );
+    $userId  = $user->resolveUser($data["user_id"], $userInfo, $isInsertUser);
+    $groupId = $group->resolveGroup($data["chat_id"], $groupInfo, $isInsertGroup);
 
-    $groupId = $group->resolveGroup(
-      $data["chat_id"],
-      [
-        "username" => $data["chat_username"],
-        "name"     => $data["chat_title"],
-      ],
-      $isInsertGroup
-    );
+    if ($isInsertUser || (!($userInfo["group_msg_count"] % 10))) {
+      /* Track user photo. */
+      go(function () use ($data, $userInfo) {
 
-    var_dump($userId, $isInsertUser);
-    var_dump($groupId, $isInsertGroup);
+        $f = [
+          "username"   => true,
+          "first_name" => true,
+          "last_name"  => true,
+          "is_bot"     => true
+        ];
+
+        $userInfo2 = array_filter(
+          $userInfo,
+          fn($k) => isset($f[$k]),
+          ARRAY_FILTER_USE_KEY
+        );
+
+        /* TODO: Retrieve the user photo. */
+        $userInfo2["photo"] = 10;
+
+        $user = new User(DB::pdo());
+        $user->dontTrackUpdate();
+        $user->updateUser($userInfo, $userInfo2, "");
+      });
+    }
+
+
+    if ($isInsertGroup || (!($groupInfo["msg_count"] % 10))) {
+      /* Track group photo. */
+      go(function () use ($data, $groupInfo) {
+
+        $f = [
+          "username" => true,
+          "name"     => true,
+        ];
+
+        $groupInfo2 = array_filter(
+          $groupInfo,
+          fn($k) => isset($f[$k]),
+          ARRAY_FILTER_USE_KEY
+        );
+
+        /* TODO: Retrieve the group photo. */
+        $groupInfo2["photo"] = 1;
+
+        $group = new Group(DB::pdo());
+        $group->dontTrackUpdate();
+        $group->updateGroup($groupInfo, $groupInfo2, "");
+      });
+    }
   }
 }

@@ -17,12 +17,36 @@ use TeaBot\Telegram\LoggerUtilFoundation;
 class User extends LoggerUtilFoundation
 {
   /**
+   * @var bool
+   */
+  private $allowTrackUpdate = true;
+
+
+  /**
+   * @return void
+   */
+  public function dontTrackUpdate(): void
+  {
+    $this->allowTrackUpdate = false;
+  }
+
+
+  /**
+   * @return void
+   */
+  public function trackUpdate(): void
+  {
+    $this->allowTrackUpdate = true;
+  }
+
+
+  /**
    * @param  int    $tgUserId
-   * @param  ?array info
+   * @param  ?array &$info
    * @param  ?bool  &$isInsert
    * @return ?int
    */
-  public function resolveUser(int $tgUserId, ?array $info = null, ?bool &$isInsert = null): ?int
+  public function resolveUser(int $tgUserId, ?array &$info = null, ?bool &$isInsert = null): ?int
   {
     $e    = null;
     $lock = new Mutex("tg_users", "{$tgUserId}");
@@ -76,11 +100,11 @@ class User extends LoggerUtilFoundation
 
   /**
    * @param  int    $tgUserId
-   * @param  array  info
+   * @param  array  &$info
    * @param  ?bool  &$isInsert
    * @return int
    */
-  private function fullResolveUser(int $tgUserId, array $info, ?bool &$isInsert): int
+  private function fullResolveUser(int $tgUserId, array &$info, ?bool &$isInsert): int
   {
     $pdo = $this->pdo;
     $st  = $pdo->prepare("SELECT id, group_msg_count, private_msg_count, username, first_name, last_name, photo FROM tg_users WHERE tg_user_id = ?");
@@ -91,20 +115,22 @@ class User extends LoggerUtilFoundation
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
       /* User has already been stored in database. */
-      $trackHistory = self::updateUser($pdo, $u, $info, $dateTime);
+      $trackHistory = self::updateUser($u, $info, $dateTime);
       $id = (int)$u["id"];
 
       if (!is_null($isInsert)) $isInsert = false;
 
     } else {
-      $id = self::insertUser($pdo, $tgUserId, $info, $dateTime);
+      /* Insert user into database. */
+
+      $id = self::insertUser($tgUserId, $info, $dateTime);
       $trackHistory = true;
 
       if (!is_null($isInsert)) $isInsert = true;
     }
 
     if ($trackHistory) {
-      self::createHistory($pdo, $id, $info, $dateTime);
+      self::createHistory($id, $info, $dateTime);
     }
 
     return $id;
@@ -117,8 +143,7 @@ class User extends LoggerUtilFoundation
    */
   private function directResolveUser(int $tgUserId): ?int
   {
-    $pdo = $this->pdo;
-    $st  = $pdo->prepare("SELECT id FROM tg_users WHERE tg_user_id = ?");
+    $st  = $this->pdo->prepare("SELECT id FROM tg_users WHERE tg_user_id = ?");
     $st->execute([$tgUserId]);
 
     if ($u = $st->fetch(PDO::FETCH_NUM)) {
@@ -130,13 +155,12 @@ class User extends LoggerUtilFoundation
 
 
   /**
-   * @param \PDO   $pdo
    * @param array  $u
    * @param array  &$info
    * @param string $dateTime
    * @return bool
    */
-  private static function updateUser(PDO $pdo, array $u, array &$info, string $dateTime): bool
+  public function updateUser(array $u, array &$info, string $dateTime): bool
   {
     $doUpdate    = false;
     $updateQuery = "UPDATE tg_users SET ";
@@ -170,14 +194,29 @@ class User extends LoggerUtilFoundation
     } else {
       if ($u["photo"] !== null) {
         $info["photo"] = $u["photo"];
+      } else {
+        $info["photo"] = null;
       }
     }
 
+    /* Fill info fields reference. */
+    if (!isset($info["group_msg_count"])) {
+      $info["group_msg_count"] = $u["group_msg_count"];
+    }
+
+    if (!isset($info["private_msg_count"])) {
+      $info["private_msg_count"] = $u["private_msg_count"];
+    }
+
+
+
     if ($doUpdate) {
-      $updateQuery .= ",updated_at = ? WHERE id = ?";
-      $updateData[] = $dateTime;
-      $updateData[] = $u["id"];
-      $pdo->prepare($updateQuery)->execute($updateData);
+      if ($this->allowTrackUpdate) {
+        $updateQuery .= ",updated_at = ? WHERE id = ?";
+        $updateData[] = $dateTime;
+        $updateData[] = $u["id"];
+      }
+      $this->pdo->prepare($updateQuery)->execute($updateData);
       return true;
     }
     
@@ -192,9 +231,21 @@ class User extends LoggerUtilFoundation
    * @param string $dateTime
    * @return int
    */
-  private static function insertUser(PDO $pdo, int $tgUserId, array &$info, string $dateTime): int
+  public function insertUser(int $tgUserId, array &$info, string $dateTime): int
   {
-    /* TODO: track user photo before insert. */
+    $pdo = $this->pdo;
+
+    if (!array_key_exists("photo", $info)) {
+      $info["photo"] = null;
+    }
+
+    if (!isset($info["group_msg_count"])) {
+      $info["group_msg_count"] = 0;
+    }
+
+    if (!isset($info["private_msg_count"])) {
+      $info["private_msg_count"] = 0;
+    }
 
     $pdo
       ->prepare("INSERT INTO tg_users (tg_user_id, username, first_name, last_name, photo, group_msg_count, private_msg_count, is_bot, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
@@ -204,9 +255,9 @@ class User extends LoggerUtilFoundation
           $info["username"],
           $info["first_name"],
           $info["last_name"],
-          $info["photo"] ?? null,
-          $info["group_msg_count"] ?? 0,
-          $info["private_msg_count"] ?? 0,
+          $info["photo"],
+          $info["group_msg_count"],
+          $info["private_msg_count"],
           $info["is_bot"],
           $dateTime
         ]
@@ -217,15 +268,15 @@ class User extends LoggerUtilFoundation
 
 
   /**
-   * @param \PDO   $pdo
    * @param int    $userId
    * @param array  $info
    * @param string $dateTime
    * @return void
    */
-  private function createHistory(PDO $pdo, int $userId, array $info, string $dateTime): void
+  public function createHistory(int $userId, array $info, string $dateTime): void
   {
-    $pdo
+    $this
+      ->pdo
       ->prepare("INSERT INTO tg_user_history (user_id, username, first_name, last_name, photo, created_at) VALUES (?, ?, ?, ?, ?, ?)")
       ->execute(
         [
