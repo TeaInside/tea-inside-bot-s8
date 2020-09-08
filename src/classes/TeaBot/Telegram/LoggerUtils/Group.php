@@ -253,7 +253,7 @@ class Group extends LoggerUtilFoundation
         ]
       );
 
-    return $pdo->lastInsertId();
+    return (int)$pdo->lastInsertId();
   }
 
 

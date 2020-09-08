@@ -264,7 +264,7 @@ class User extends LoggerUtilFoundation
         ]
       );
 
-    return $pdo->lastInsertId();
+    return (int)$pdo->lastInsertId();
   }
 
 
