@@ -64,8 +64,8 @@ function logger_handler($conn, int $k): void
   try {
 
     /* Run the bot handler. */
-    $bot = new \TeaBot\Telegram\Logger($data);
-    $bot->run();
+    $logger = new \TeaBot\Telegram\Logger($data);
+    $logger->run();
 
   } catch (\Error $e) {
     echo "{$e}\n";

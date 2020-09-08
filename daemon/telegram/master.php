@@ -46,12 +46,12 @@ function conn_handler($conn)
     $receivedLen  = strlen($rawData);
   }
 
-  go(function () use ($conn, $rawData, $receivedLen) {
-    send_to_responder($conn, $rawData, $receivedLen);
-  });
   // go(function () use ($conn, $rawData, $receivedLen) {
-  //   send_to_logger($conn, $rawData, $receivedLen);
+  //   send_to_responder($conn, $rawData, $receivedLen);
   // });
+  go(function () use ($conn, $rawData, $receivedLen) {
+    send_to_logger($conn, $rawData, $receivedLen);
+  });
 
   fwrite($conn, "ok");
   fclose($conn);
@@ -61,7 +61,7 @@ function conn_handler($conn)
 /**
  * @param mixed $conn
  */
-function send_to_responder($conn, $rawData, $receivedLen)
+function send_to_responder($conn, $rawData, $receivedLen): void
 {
   global $nresponder, $table;
 
@@ -75,8 +75,33 @@ function send_to_responder($conn, $rawData, $receivedLen)
   $fp = stream_socket_client($ct, $errno, $errstr, 1);
   if (!$fp) {
     echo "Cannot init socket to {$ct}: ($errno): {$errstr}\n";
-    echo "Recovering to another worker...\n";
-    $i++;
+    echo "Recovering to another responder worker...\n";
+    goto send_data;
+  }
+
+  fwrite($fp, $rawData);
+  fclose($fp);
+}
+
+/**
+ * @param mixed $conn
+ * @return void
+ */
+function send_to_logger($conn, $rawData, $receivedLen): void
+{
+  global $nlogger, $table;
+
+  send_data:
+  if (($i = $table["logger"]["i"]) >= $nlogger) {
+    $i = 0;
+  }
+  $table["logger"]["i"] = $i + 1;
+
+  $ct = TELEGRAM_DAEMON_LOGGER_WORKERS[$i];
+  $fp = stream_socket_client($ct, $errno, $errstr, 1);
+  if (!$fp) {
+    echo "Cannot init socket to {$ct}: ($errno): {$errstr}\n";
+    echo "Recovering to another logger worker...\n";
     goto send_data;
   }
 

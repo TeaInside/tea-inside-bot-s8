@@ -26,30 +26,28 @@ if (defined("TELEGRAM_DAEMON_PID_FILE")) {
 
 pcntl_signal(SIGCHLD, SIG_IGN);
 
-require __DIR__."/telegram/mutexes.php";
-
 $GLOBALS["loggersPid"] = [];
-// foreach (TELEGRAM_DAEMON_LOGGER_WORKERS as $k => $bindAddr) {
-//   if (!($GLOBALS["loggersPid"][$k] = pcntl_fork())) {
-//     unset($GLOBALS["loggersPid"]);
-//     require __DIR__."/telegram/logger.php";
-//     exit;
-//   }
-// }
-
-$GLOBALS["respondersPid"] = [];
-foreach (TELEGRAM_DAEMON_RESPONDER_WORKERS as $k => $bindAddr) {
-  if (!($GLOBALS["respondersPid"][$k] = pcntl_fork())) {
-    unset($GLOBALS["respondersPid"]);
-    $k = count(TELEGRAM_DAEMON_RESPONDER_WORKERS) - $k;
-    \Co\run(function () use ($bindAddr, $k) {
-      go(function () use ($bindAddr, $k) {
-        require __DIR__."/telegram/responder.php";
-      });
-    });
+foreach (TELEGRAM_DAEMON_LOGGER_WORKERS as $k => $bindAddr) {
+  if (!($GLOBALS["loggersPid"][$k] = pcntl_fork())) {
+    unset($GLOBALS["loggersPid"]);
+    require __DIR__."/telegram/logger.php";
     exit;
   }
 }
+
+$GLOBALS["respondersPid"] = [];
+// foreach (TELEGRAM_DAEMON_RESPONDER_WORKERS as $k => $bindAddr) {
+//   if (!($GLOBALS["respondersPid"][$k] = pcntl_fork())) {
+//     unset($GLOBALS["respondersPid"]);
+//     $k = count(TELEGRAM_DAEMON_RESPONDER_WORKERS) - $k;
+//     \Co\run(function () use ($bindAddr, $k) {
+//       go(function () use ($bindAddr, $k) {
+//         require __DIR__."/telegram/responder.php";
+//       });
+//     });
+//     exit;
+//   }
+// }
 
 unset($k, $bindAddr);
 sleep(1);
