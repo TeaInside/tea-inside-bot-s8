@@ -106,13 +106,17 @@ final class Data implements ArrayAccess
     $this->ct["chat_type"] = $msg["chat"]["type"];
     $this->ct["username"] = $msg["from"]["username"] ?? null;
     $this->ct["reply_to"] = $msg["reply_to_message"] ?? null;
-    $this->ct["full_name"] = (
-      isset($msg["from"]["first_name"]) ?
-      $msg["from"]["first_name"].
-      (
-        isset($msg["from"]["last_name"]) ? " ".$msg["from"]["last_name"] : ""
-      ) : null
-    );
+
+    if (isset($msg["from"]["first_name"])) {
+      $this->ct["full_name"] = $msg["from"]["first_name"];
+
+      if (isset($msg["from"]["last_name"]) {
+        $this->ct["full_name"] .= " ".$msg["from"]["last_name"]
+      }
+    } else {
+      $this->ct["full_name"] = null;
+    }
+
     $this->ct["chat_title"] = $msg["chat"]["title"] ?? $this->ct["full_name"];
     $this->ct["chat_username"] = $msg["chat"]["username"] ?? null;
     $this->ct["is_forwarded_msg"] = isset($msg["forward_date"], $msg["forward_from"]);
@@ -125,22 +129,6 @@ final class Data implements ArrayAccess
   public function __get($key)
   {
     return $this->{$key} ?? null;
-  }
-
-  /**
-   * @param mixed $idt
-   * @param int   $updateId
-   * @return \TeaBot\Telegram\Data
-   */
-  public static function buildMsg($idt, $updateId = -1): Data
-  {
-    return new self(
-      [
-        "update_id" => $updateId,
-        "message" => $idt,
-        "handle_replied_msg" => true
-      ]
-    );
   }
 
   /**

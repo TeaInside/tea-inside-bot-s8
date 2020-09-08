@@ -47,6 +47,10 @@ final class Logger
     // "video"     => true,
   ];
 
+  const GROUP_CHAT_MAP = [
+    "supergroup" => true,
+  ];
+
   /**
    * @return void
    */
@@ -59,7 +63,18 @@ final class Logger
       return;
     }
 
-    
+    if ($data["chat_type"] === "private") {
+      $logger = new PrivateLogger($data);
+    } else
+    if (isset(self::GROUP_CHAT_MAP[$data["chat_type"]])) {
+      $logger = new GroupLogger($data);
+    } else {
+      $logger = null;
+    }
+
+    if ($logger) {
+      $logger->run();
+    }
 
   }
 }
