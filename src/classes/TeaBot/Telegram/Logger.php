@@ -21,11 +21,6 @@ final class Logger
   private Data $data;
 
   /**
-   * @var \PDO
-   */
-  private PDO $pdo;
-
-  /**
    * @param array $data
    *
    * Constructor.
@@ -40,18 +35,31 @@ final class Logger
    */
   public function __get($key)
   {
-    if (($key === "pdo") && (!$this->pdo)) {
-      return ($this->pdo = DB::pdo());
-    }
-
     return $this->{$key};
   }
+
+  const MSG_TYPE_MAP = [
+    "text"      => true,
+    // "photo"     => true,
+    // "sticker"   => true,
+    // "animation" => true,
+    // "voice"     => true,
+    // "video"     => true,
+  ];
 
   /**
    * @return void
    */
   public function run(): void
   {
+    $data = $this->data;
+
+    /* Skip if msg_type is not mapped. */
+    if (!isset(self::MSG_TYPE_MAP[$data["msg_type"]])) {
+      return;
+    }
+
+    
 
   }
 }

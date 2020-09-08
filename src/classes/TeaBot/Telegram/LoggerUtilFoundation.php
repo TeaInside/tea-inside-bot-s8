@@ -10,7 +10,7 @@ use PDO;
  * @package \TeaBot\Telegram
  * @version 8.0.0
  */
-abstract class LoggerFoundation
+abstract class LoggerUtilFoundation
 {
 
   /** 
@@ -19,19 +19,12 @@ abstract class LoggerFoundation
   protected PDO $logger;
 
   /**
-   * @var \TeaBot\Telegram\Data
-   */
-  protected Data $data;
-
-  /**
-   * @param \PDO                   $pdo
-   * @param \TeaBot\Telegram\Data  $data
+   * @param \PDO $pdo
    *
    * Constructor.
    */
-  public function __construct(PDO $pdo, Data $data)
+  public function __construct(PDO $pdo)
   {
-    $this->pdo  = $pdo;
-    $this->data = $data;
+    $this->pdo = $pdo;
   }
 }

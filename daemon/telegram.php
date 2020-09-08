@@ -26,6 +26,8 @@ if (defined("TELEGRAM_DAEMON_PID_FILE")) {
 
 pcntl_signal(SIGCHLD, SIG_IGN);
 
+require __DIR__."/telegram/mutexes.php";
+
 $GLOBALS["loggersPid"] = [];
 // foreach (TELEGRAM_DAEMON_LOGGER_WORKERS as $k => $bindAddr) {
 //   if (!($GLOBALS["loggersPid"][$k] = pcntl_fork())) {
