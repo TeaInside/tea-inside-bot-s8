@@ -110,8 +110,8 @@ final class Data implements ArrayAccess
     if (isset($msg["from"]["first_name"])) {
       $this->ct["full_name"] = $msg["from"]["first_name"];
 
-      if (isset($msg["from"]["last_name"]) {
-        $this->ct["full_name"] .= " ".$msg["from"]["last_name"]
+      if (isset($msg["from"]["last_name"])) {
+        $this->ct["full_name"] .= " ".$msg["from"]["last_name"];
       }
     } else {
       $this->ct["full_name"] = null;

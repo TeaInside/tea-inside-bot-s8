@@ -2,6 +2,7 @@
 
 namespace TeaBot\Telegram;
 
+use DB;
 use PDO;
 
 /**
@@ -24,14 +25,18 @@ abstract class LoggerFoundation
   protected Data $data;
 
   /**
-   * @param \PDO                   $pdo
    * @param \TeaBot\Telegram\Data  $data
    *
    * Constructor.
    */
-  public function __construct(PDO $pdo, Data $data)
+  public function __construct(Data $data)
   {
-    $this->pdo  = $pdo;
+    $this->pdo  = DB::pdo();
     $this->data = $data;
   }
+
+  /**
+   * @return void
+   */
+  abstract public function run(): void;
 }
