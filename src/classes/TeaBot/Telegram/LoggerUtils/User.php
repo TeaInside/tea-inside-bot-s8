@@ -97,7 +97,7 @@ class User extends LoggerUtilFoundation
     }
 
     if ($trackHistory) {
-      self::trackHistory($pdo, $id, $info, $dateTime);
+      self::createHistory($pdo, $id, $info, $dateTime);
     }
 
     return $id;
