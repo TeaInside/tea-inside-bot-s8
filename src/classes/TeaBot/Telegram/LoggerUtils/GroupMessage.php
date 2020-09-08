@@ -84,6 +84,7 @@ class GroupMessage extends LoggerUtilFoundation
     $trackMsgData  = false;
 
     if ($r = $st->fetch(PDO::FETCH_NUM)) {
+
       /* 
        * Message has already been stored in database,
        * it is probably an edited message.
