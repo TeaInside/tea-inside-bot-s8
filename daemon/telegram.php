@@ -13,26 +13,58 @@ if (defined("TELEGRAM_DAEMON_PID_FILE")) {
   file_put_contents(TELEGRAM_DAEMON_PID_FILE, getmypid());
 }
 
-\Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL);
+const C = [
+  // Array index.
+  "k" => [
+    "logger"    => 0,
+    "responder" => 1,
+  ],
 
-const WKR_LOGGER = 0;
-const WKR_SHELL  = 1;
+  // Number of workers.
+  "n" => [
+    "logger"    => 3,
+    "responder" => 3,
+  ],
 
-$GLOBALS["workers"] = [
-  new \Swoole\Process(function($process){
-    cli_set_process_title("logger");
-    require __DIR__."/telegram/logger.php";
-  }),
-  new \Swoole\Process(function($process){
-    cli_set_process_title("shell");
-    require __DIR__."/telegram/shell.php";
-  })
+  "responder_bind_addr"  => "127.0.0.1",
+  "responder_start_port" => 7000,
 ];
 
-foreach ($GLOBALS["workers"] as $worker) {
-  $worker->start();
+echo "Spawning logger_handler...\n";
+$k = C["k"]["logger"];
+$n = C["n"]["logger"];
+for ($i = 0; $i < $n; $i++) {
+  $l = new \Swoole\Process(function($process) use ($i) {
+    $i = N_LOGGER - $i;
+    cli_set_process_title("logger_{$i}");
+    require __DIR__."/telegram/logger.php";
+    exit;
+  });
+  $l->start();
+  $GLOBALS["workers"][$k][] = $l;
 }
-unset($worker);
+
 
 echo "Spawning response_handler...\n";
-\Co\run(function () { require __DIR__."/telegram/response.php"; });
+$k = C["k"]["logger"];
+$n = C["n"]["logger"];
+for ($i = 0; $i < $n; $i++) {
+  $l = new \Swoole\Process(function($process) use ($i) {
+    $i = N_LOGGER - $i;
+    cli_set_process_title("logger_{$i}");
+    require __DIR__."/telegram/logger.php";
+    exit;
+  });
+  $l->start();
+  $GLOBALS["workers"][$k][] = $l;
+}
+
+echo "Spawning response_handler...\n";
+$port = N_RESPONDER_START_PORT;
+for ($i = 0; $i < N_RESPONDER; $i++) {
+
+  $GLOBALS["workers"][N_RESPONDER];
+
+  \Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL);
+  \Co\run(function () { require __DIR__."/telegram/response.php"; });
+}

@@ -2,18 +2,8 @@
 
 const FLAGS = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
 
-$bindAddr                  = getenv("BIND_ADDR");
-$bindPort                  = getenv("BIND_PORT");
 $GLOBALS["forwardBaseUrl"] = getenv("FORWARD_BASE_URL");
 $GLOBALS["forwardPath"]    = getenv("FORWARD_PATH");
-
-if (!$bindAddr) {
-  $bindAddr = "127.0.0.1";
-}
-
-if (!$bindPort) {
-  $bindPort = 7777;
-}
 
 if (!$GLOBALS["forwardBaseUrl"]) {
   echo "Warning: FORWARD_BASE_URL is not provided!\n";

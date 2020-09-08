@@ -1,23 +1,23 @@
 <?php
 
-\Co\run(function () use ($process) {
-  go(function () use ($process) { logger_handler($process); });
+\Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL);
+\Co\run(function () use ($process, $i) {
+  go(function () use ($process, $i) { logger_handler($process, $i); });
 });
 
 /**
  * @param \Swoole\Process $process
+ * @param int             $i
  * @return void
  */
-function logger_handler(\Swoole\Process $process): void
+function logger_handler(\Swoole\Process $process, int $i): void
 {
-  echo "logger_handler is running...\n";
+  echo "logger_handler ({$i}) is running...\n";
+
   _start:
   $data = $process->read();
 
-
-  var_dump($data);
-
-
+  
 
   goto _start;
 }
