@@ -10,7 +10,7 @@ $json = '{
             "id": 243692601,
             "is_bot": false,
             "first_name": "Ammar",
-            "last_name": "Faizi^",
+            "last_name": "Faizi~",
             "username": "ammarfaizi2",
             "language_code": "en"
         },

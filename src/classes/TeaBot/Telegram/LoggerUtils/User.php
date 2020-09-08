@@ -19,9 +19,10 @@ class User extends LoggerUtilFoundation
   /**
    * @param  int    $tgUserId
    * @param  ?array info
+   * @param  ?bool  &$isInsert
    * @return ?int
    */
-  public function resolveUser(int $tgUserId, ?array $info = null): ?int
+  public function resolveUser(int $tgUserId, ?array $info = null, ?bool &$isInsert = null): ?int
   {
     $e    = null;
     $lock = new Mutex("tg_users", "{$tgUserId}");
@@ -53,7 +54,7 @@ class User extends LoggerUtilFoundation
     try {
 
       if (is_array($info)) {
-        $ret = $this->fullResolveUser($tgUserId, $info);
+        $ret = $this->fullResolveUser($tgUserId, $info, $isInsert);
       } else {
         $ret = $this->directResolveUser($tgUserId);
       }
@@ -76,9 +77,10 @@ class User extends LoggerUtilFoundation
   /**
    * @param  int    $tgUserId
    * @param  array  info
+   * @param  ?bool  &$isInsert
    * @return int
    */
-  private function fullResolveUser(int $tgUserId, array $info): int
+  private function fullResolveUser(int $tgUserId, array $info, ?bool &$isInsert): int
   {
     $pdo = $this->pdo;
     $st  = $pdo->prepare("SELECT id, group_msg_count, private_msg_count, username, first_name, last_name, photo FROM tg_users WHERE tg_user_id = ?");
@@ -91,9 +93,14 @@ class User extends LoggerUtilFoundation
       /* User has already been stored in database. */
       $trackHistory = self::updateUser($pdo, $u, $info, $dateTime);
       $id = (int)$u["id"];
+
+      if (!is_null($isInsert)) $isInsert = false;
+
     } else {
       $id = self::insertUser($pdo, $tgUserId, $info, $dateTime);
       $trackHistory = true;
+
+      if (!is_null($isInsert)) $isInsert = true;
     }
 
     if ($trackHistory) {

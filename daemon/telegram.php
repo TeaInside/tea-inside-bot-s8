@@ -8,6 +8,8 @@ ini_set("display_errors", true);
 /* Load config. */
 loadConfig("telegram/telegram_bot");
 
+date_default_timezone_set("etc/UTC");
+
 if (!defined("TELEGRAM_DAEMON_LOGGER_WORKERS")) {
   echo "TELEGRAM_DAEMON_LOGGER_WORKERS is not defined!\n";
   exit(1);
