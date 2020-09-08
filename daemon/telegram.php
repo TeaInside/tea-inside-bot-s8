@@ -18,7 +18,7 @@ if (!defined("TELEGRAM_DAEMON_RESPONDER_WORKERS")) {
   exit(1);
 }
 
-// \Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL);
+\Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL);
 
 pcntl_signal(SIGCHLD, SIG_IGN);
 
