@@ -73,9 +73,10 @@ class User extends LoggerUtilFoundation
     /*enddebug*/
 
     $pdo = $this->pdo;
-    $pdo->beginTransaction();
 
     try {
+
+      $pdo->beginTransaction();
 
       if (is_array($info)) {
         $ret = $this->fullResolveUser($tgUserId, $info, $isInsert);

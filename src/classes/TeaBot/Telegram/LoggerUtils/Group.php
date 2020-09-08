@@ -49,8 +49,8 @@ class Group extends LoggerUtilFoundation
   public function resolveGroup(int $tgGroupId, ?array &$info = null, ?bool &$isInsert = null): ?int
   {
     $e    = null;
-    $lock = new Mutex("tg_groups", "{$tgGroupId}");
-    $lock->lock();
+    $mutex = new Mutex("tg_groups", "{$tgGroupId}");
+    $mutex->lock();
 
     /*debug:5*/
     if (is_array($info)) {
@@ -71,9 +71,10 @@ class Group extends LoggerUtilFoundation
     /*enddebug*/
 
     $pdo = $this->pdo;
-    $pdo->beginTransaction();
 
     try {
+
+      $pdo->beginTransaction();
 
       if (is_array($info)) {
         $ret = $this->fullResolveGroup($tgGroupId, $info, $isInsert);
@@ -86,7 +87,7 @@ class Group extends LoggerUtilFoundation
       $pdo->rollback();
     }
 
-    $lock->unlock();
+    $mutex->unlock();
 
     if ($e) {
       throw new $e;
