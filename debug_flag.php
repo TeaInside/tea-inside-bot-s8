@@ -30,13 +30,14 @@ if ($argv[1] === "off") {
     $content    = file_get_contents($targetFile);
     $r1 = $r2 = [];
     if (preg_match_all($rxp, $content, $m)) {
+      echo "Turning off ".count($m[0])." debug code in {$targetFile}...";
       foreach ($m[0] as $k => $v) {
         $comp = base64_encode(gzencode($m[2][$k], 9));
         $r1[] = $v;
-        $r2[] = "/*__debug_flag({$m[1][$k]}):b64:gz:{$comp}*/";
+        $r2[] = "/*__debug_code({$m[1][$k]}):b64:gz:{$comp}*/";
       }
-      echo str_replace($r1, $r2, $content);
-      die;
+      file_put_contents($targetFile, str_replace($r1, $r2, $content));
+      echo "OK!\n";
     }
   };
 
