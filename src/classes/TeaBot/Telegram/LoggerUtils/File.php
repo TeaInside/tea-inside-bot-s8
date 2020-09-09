@@ -180,6 +180,7 @@ class File extends LoggerUtilFoundation
       "fix_file"  => $fixFile,
       "md5"       => $md5Hash,
       "sha1"      => $sha1Hash,
+      "ext"       => $ext,
       "j"         => $j,
     ];
 
