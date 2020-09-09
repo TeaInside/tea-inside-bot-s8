@@ -48,9 +48,9 @@ class User extends LoggerUtilFoundation
    */
   public function resolveUser(int $tgUserId, ?array &$info = null, ?bool &$isInsert = null): ?int
   {
-    $e    = null;
-    $lock = new Mutex("tg_users", "{$tgUserId}");
-    $lock->lock();
+    $e     = null;
+    $mutex = new Mutex("tg_users", "{$tgUserId}");
+    $mutex->lock();
 
     /*debug:5*/
     if (is_array($info)) {
@@ -89,7 +89,7 @@ class User extends LoggerUtilFoundation
       $pdo->rollback();
     }
 
-    $lock->unlock();
+    $mutex->unlock();
 
     if ($e) {
       echo $e->getMessage(), "\n";

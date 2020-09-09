@@ -24,6 +24,13 @@ if (defined("TELEGRAM_DAEMON_PID_FILE")) {
   file_put_contents(TELEGRAM_DAEMON_PID_FILE, getmypid());
 }
 
+if (defined("TELEGRAM_DAEMON_LOG_FILE")) {
+  $logHandle = fopen(TELEGRAM_DAEMON_LOG_FILE, "a+");
+  \TeaBot\Telegram\Dlog::registerErrHandler($logHandle);
+  \TeaBot\Telegram\Dlog::registerOutHandler($logHandle);
+  unset($logHandle);  
+}
+
 \Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL);
 
 pcntl_signal(SIGCHLD, SIG_IGN);
@@ -56,7 +63,7 @@ foreach (TELEGRAM_DAEMON_RESPONDER_WORKERS as $k => $bindAddr) {
 }
 
 unset($k, $bindAddr);
-sleep(1);
+usleep(50000);
 \Co\run(function () {
   go(function () { require __DIR__."/telegram/master.php"; });
 });

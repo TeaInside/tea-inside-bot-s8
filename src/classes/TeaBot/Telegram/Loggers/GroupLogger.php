@@ -3,8 +3,10 @@
 namespace TeaBot\Telegram\Loggers;
 
 use DB;
+use TeaBot\Telegram\Exe;
 use TeaBot\Telegram\Data;
 use TeaBot\Telegram\LoggerFoundation;
+use TeaBot\Telegram\LoggerUtils\File;
 use TeaBot\Telegram\LoggerUtils\User;
 use TeaBot\Telegram\LoggerUtils\Group;
 use TeaBot\Telegram\LoggerUtils\GroupMessage;
@@ -88,9 +90,47 @@ class GroupLogger extends LoggerFoundation
       /* TODO: Retrieve the user photo. */
       $userInfo2["photo"] = 10;
 
-      $user = new User(DB::pdo());
-      $user->dontTrackUpdate();
-      $user->updateUser($userInfo, $userInfo2, "");
+
+      /*debug:1*/
+      echo "Getting user profile photo...\n";
+      /*enddebug*/
+
+
+      $ret  = Exe::getUserProfilePhotos([
+        "user_id" => $data["user_id"],
+        "offset"  => 0,
+        "limit"   => 1,
+      ]);
+
+      $j = json_decode($ret->getBody()->__toString(), true);
+
+      if (!isset($j["result"]["photos"][0])) {
+        /* Cannot get the photo or the user may not have. */
+        return;
+      }
+      
+      $photo = $j["result"]["photos"][0];
+      usort($photo, function ($p1, $p2) {
+        return
+          ($p2["width"] * $p2["height"]) <=>
+          ($p1["width"] * $p1["height"]);
+      });
+      $photo = $photo[0];
+
+      if (!isset($photo["file_id"])) {
+        /* Cannot get the photo or the user may not have. */
+        return;
+      }
+
+      $pdo  = DB::pdo();
+
+      $file = new File($pdo);
+      $userInfo2["photo"] = $file->resolveFile($photo["file_id"]);
+      unset($file);
+
+      // $user = new User($pdo);
+      // $user->dontTrackUpdate();
+      // $user->updateUser($userInfo, $userInfo2, "");
     });
   }
 
