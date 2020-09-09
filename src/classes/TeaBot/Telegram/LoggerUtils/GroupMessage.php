@@ -91,8 +91,26 @@ class GroupMessage extends LoggerUtilFoundation
         $this->saveForwardMsgState($msgId, $data);
       }
 
+      $this->incrementMsgCounter($userId, $groupId);
       $this->insertMessageData($msgId, $data, $dateTime);
     }
+  }
+
+
+  /**
+   * @param int $userId
+   * @param int $groupId
+   * @return void
+   */
+  private function incrementMsgCounter(int $userId, int $groupId): void
+  {
+    $pdo = $this->pdo;
+    $pdo
+      ->prepare("UPDATE tg_users SET group_msg_count = group_msg_count + 1 WHERE id = ?")
+      ->execute([$userId]);
+    $pdo
+      ->prepare("UPDATE tg_groups SET msg_count = msg_count + 1 WHERE id = ?")
+      ->execute([$groupId]);
   }
 
 

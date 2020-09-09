@@ -92,6 +92,7 @@ class User extends LoggerUtilFoundation
     $lock->unlock();
 
     if ($e) {
+      echo $e->getMessage(), "\n";
       throw new $e;
     }
 
