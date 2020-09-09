@@ -101,7 +101,7 @@ class User extends LoggerUtilFoundation
       $pdo->commit();
     } catch (Exception $e) {
       /* debug:warning */
-      Dlog::err("We rollback the transaction at %s::%s", self::class, __METHOD__);
+      Dlog::err("We rollback the transaction at %s", __METHOD__);
       /* end_debug */
       $pdo->rollback();
       $mutex->unlock();
@@ -120,7 +120,7 @@ class User extends LoggerUtilFoundation
   {
     $pdo      = $this->pdo;
     $tgUserId = $this->data["user_id"];
-    $st       = $pdo->prepare("xSELECT id, username, first_name, last_name, photo, group_msg_count, private_msg_count FROM tg_users WHERE tg_user_id = ?");
+    $st       = $pdo->prepare("SELECT id, username, first_name, last_name, photo, group_msg_count, private_msg_count FROM tg_users WHERE tg_user_id = ?");
     $st->execute([$tgUserId]);
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
@@ -312,10 +312,10 @@ class User extends LoggerUtilFoundation
     if ($this->u["photo"] !== $fileId) {
       if (is_null($this->historyId)) {
         /* Create new history. */
-        $this->createUserHistory($this->u["id"]);
         $pdo
           ->prepare("UPDATE tg_users SET photo = ? WHERE id = ?")
           ->execute([$fileId, $this->u["id"]]);
+        $this->createUserHistory($this->u["id"]);
       } else {
         /* Amend current history. */
         $pdo
