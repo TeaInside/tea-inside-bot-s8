@@ -43,7 +43,7 @@ final class Mutex
       $this->lockFile .= ".lock";
     }
 
-    $this->handle = fopen($this->lockFile, "w");
+    $this->handle = fopen($this->lockFile, "a");
   }
 
 

@@ -42,7 +42,8 @@ class GroupLogger extends LoggerFoundation
     parent::__construct($data);
     $this->user = new User($this->pdo);
     $this->user->setData($data);
-    // $this->group = new Group($this->pdo);
+    $this->group = new Group($this->pdo);
+    $this->group->setData($data);
   }
 
 
@@ -66,7 +67,10 @@ class GroupLogger extends LoggerFoundation
     if (!($groupII["msg_count"] % 10)) {
       /* Track group photo. */
       $group->setPDO(DB::pdo());
-      go(fn() => $group->trackPhoto());
+      go(function () use ($group) {
+        $group->trackPhoto();
+        $group->trackAdmins();
+      });
     }
   }
 }

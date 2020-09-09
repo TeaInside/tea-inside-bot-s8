@@ -248,8 +248,6 @@ class User extends LoggerUtilFoundation
   public function trackPhoto(): void
   {
     $data = $this->data;
-    $mutex = new Mutex("tg_users", "{$this->data["user_id"]}");
-    $mutex->lock();
 
     /* debug:assert */
     if (!$this->u) {
@@ -308,10 +306,12 @@ class User extends LoggerUtilFoundation
     unset($file);
 
     if (is_null($fileId)) {
-      goto ret;
+      return;
     }
 
     if ($this->u["photo"] !== $fileId) {
+      $mutex = new Mutex("tg_users", "{$this->data["user_id"]}");
+      $mutex->lock();
       if (is_null($this->historyId)) {
         /* Create new history. */
         $pdo
@@ -324,9 +324,7 @@ class User extends LoggerUtilFoundation
           ->prepare("UPDATE tg_users AS a INNER JOIN tg_user_history AS b ON a.id = b.user_id SET a.photo = ?, b.photo = ? WHERE b.id = ?")
           ->execute([$fileId, $fileId, $this->historyId]);
       }
+      $mutex->unlock();
     }
-
-    ret:
-    $mutex->unlock();
   }
 }

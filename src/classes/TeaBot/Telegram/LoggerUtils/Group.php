@@ -11,6 +11,7 @@ use TeaBot\Telegram\Dlog;
 use TeaBot\Telegram\Mutex;
 use TeaBot\Telegram\LoggerUtils\File;
 use TeaBot\Telegram\LoggerUtilFoundation;
+use Swoole\Coroutine\Channel;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -221,8 +222,8 @@ class Group extends LoggerUtilFoundation
       ->execute(
         [
           $groupId,
-          $data["username"],
-          $data["name"],
+          $data["chat_username"],
+          $data["chat_title"],
           $this->u["link"] ?? null,
           $this->u["photo"] ?? null,
           $this->dateTime
@@ -239,8 +240,6 @@ class Group extends LoggerUtilFoundation
   public function trackPhoto(): void
   {
     $data = $this->data;
-    $mutex = new Mutex("tg_groups", "{$this->data["chat_id"]}");
-    $mutex->lock();
 
     /* debug:assert */
     if (!$this->u) {
@@ -261,63 +260,123 @@ class Group extends LoggerUtilFoundation
     Dlog::out("Getting group photo: %s", $__jd);
     /* end_debug */
 
-    $ret = Exe::getUserProfilePhotos([
-      "user_id" => $data["user_id"],
-      "offset"  => 0,
-      "limit"   => 1,
-    ]);
+    $ret = Exe::getChat(["chat_id" => $data["chat_id"]]);
     $j = json_decode($ret->getBody()->__toString(), true);
 
 
-    if (!isset($j["result"]["photos"][0])) {
+    $tgFileId = $j["result"]["photo"]["big_file_id"] ?? null; 
+    if (!isset($tgFileId)) {
       /* Cannot get the photo or the user may not have. */
       /* debug:warning */
-      Dlog::err("Cannot retrieve photo from getUserProfilePhotos: %s", $__jd);
-      /* end_debug */
-      return;
-    }
-
-    /* Get the highest resolution. */
-    $photo = $j["result"]["photos"][0];
-    usort($photo, fn($p1, $p2) =>
-      $p2["width"] * $p2["height"] <=>
-      $p1["width"] * $p1["height"]
-    );
-    $photo = $photo[0];
-
-    if (!isset($photo["file_id"])) {
-      /* Cannot get the photo or the user may not have. */
-      /* debug:warning */
-      Dlog::err("Cannot retrieve photo (file_id is not found): %s", $__jd);
+      Dlog::err("Cannot retrieve photo from getChat: %s", $__jd);
       /* end_debug */
       return;
     }
 
     $pdo    = $this->pdo;
     $file   = new File($pdo);
-    $fileId = $file->resolveFile($photo["file_id"]);
+    $fileId = $file->resolveFile($tgFileId);
     unset($file);
 
     if (is_null($fileId)) {
-      goto ret;
+      return;
     }
 
     if ($this->u["photo"] !== $fileId) {
+      $mutex = new Mutex("tg_groups", "{$this->data["chat_id"]}");
+      $mutex->lock();
       if (is_null($this->historyId)) {
         /* Create new history. */
         $pdo
-          ->prepare("UPDATE tg_users SET photo = ? WHERE id = ?")
+          ->prepare("UPDATE tg_groups SET photo = ? WHERE id = ?")
           ->execute([$fileId, $this->u["id"]]);
-        $this->createUserHistory($this->u["id"]);
+        $this->createGroupHistory($this->u["id"]);
       } else {
         /* Amend current history. */
         $pdo
-          ->prepare("UPDATE tg_users AS a INNER JOIN tg_user_history AS b ON a.id = b.user_id SET a.photo = ?, b.photo = ? WHERE b.id = ?")
+          ->prepare("UPDATE tg_groups AS a INNER JOIN tg_group_history AS b ON a.id = b.group_id SET a.photo = ?, b.photo = ? WHERE b.id = ?")
           ->execute([$fileId, $fileId, $this->historyId]);
       }
+      $mutex->unlock();
+    }
+  }
+
+  /**
+   * @return void
+   */
+  public function trackAdmins(): void
+  {
+    $data = $this->data;
+    $mutex = new Mutex("tg_group_admins", "{$this->data["chat_id"]}");
+    $mutex->lock();
+
+    /* debug:global */
+    $__jd = json_encode(
+      [
+        "user_id" => $data["user_id"],
+        "chat_id" => $data["chat_id"]
+      ]
+    );
+    /* end_debug */
+
+    /* debug:p3 */
+    Dlog::out("Getting group admins: %s", $__jd);
+    /* end_debug */
+
+    $ret = Exe::getChatAdministrators(["chat_id" => $data["chat_id"]]);
+    $j = json_decode($ret->getBody()->__toString(), true);
+
+    if (isset($j["result"]) && is_array($j["result"])) {
+
+      $uc   = count($j["result"]);
+      $chan = new Channel($uc);
+      foreach ($j["result"] as $k => $v) {
+        go(function () use ($k, $v, $chan) {
+          $user   = new User(DB::pdo());
+          $user->setData(new Data($v["user"], Data::USER_DATA));
+          $userII = $user->resolveUser();
+          $info   = $v;
+          unset($info["status"], $info["user"]);
+          $chan->push([
+            "(:user_id_{$k}, :group_id, :role_{$k}, :info_{$k}, :created_at)",
+            [
+              ":user_id_{$k}" => $userII["id"],
+              ":role_{$k}"    => $v["status"],
+              ":info_{$k}"    => $info ? json_encode($info) : null
+            ]
+          ]);
+          $user->trackPhoto();
+          unset($user);
+        });
+      }
+
+      $insertQuery = "INSERT INTO tg_group_admins (user_id, group_id, role, info, created_at) VALUES ";
+      $insertData  = [];
+
+      for ($k = $i = 0; $i < $uc; $i++) {
+        if ($popData = $chan->pop()) {
+          $insertQuery .= ($k++ ? "," : "").$popData[0];
+          $insertData   = array_merge($insertData, $popData[1]);
+        }
+      }
+
+      $pdo  = $this->pdo;
+      $pdo
+        ->prepare("DELETE FROM tg_group_admins WHERE group_id = ?")
+        ->execute([$this->u["id"]]);
+
+      if (count($insertData)) {
+        $insertData = array_merge($insertData,
+          [
+            ":group_id"   => $this->u["id"],
+            ":created_at" => date("Y-m-d H:i:s")
+          ]
+        );
+        $pdo->prepare($insertQuery)->execute($insertData);
+      }
+      unset($chan);
     }
 
-    ret:
     $mutex->unlock();
   }
 }
