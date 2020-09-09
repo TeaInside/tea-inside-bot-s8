@@ -2,6 +2,17 @@
 
 cli_set_process_title("logger_worker_{$k}");
 
+$GLOBALS["forwardBaseUrl"] = getenv("FORWARD_BASE_URL");
+$GLOBALS["forwardPath"]    = getenv("FORWARD_PATH");
+
+if (!$GLOBALS["forwardBaseUrl"]) {
+  echo "Warning: FORWARD_BASE_URL is not provided!\n";
+}
+
+if (!$GLOBALS["forwardPath"]) {
+  echo "Warning: FORWARD_PATH is not provided!\n";
+}
+
 $tcpAddr = "tcp://{$bindAddr}";
 unset($bindAddr);
 $ctx  = stream_context_create(["socket" => ["so_reuseaddr" => false, "backlog" => 500]]);
@@ -61,13 +72,18 @@ function logger_handler($conn, int $k): void
   fwrite($conn, "ok");
   fclose($conn);
 
-  try {
+  /* Send payload to the old daemon. */
+  if ($forwardBaseUrl && $forwardPath) {
+    go(function () use ($data, $forwardBaseUrl, $forwardPath) {
+      payload_forwarder($data, $forwardBaseUrl, $forwardPath);
+    });
+  }
 
-    /* Run the bot handler. */
+  try {
     $logger = new \TeaBot\Telegram\Logger($data);
     $logger->run();
-
   } catch (\Error $e) {
     echo "{$e}\n";
+    telegram_daemon_error_report($e, json_encode($data, JSON_UNESCAPED_SLASHES));
   }
 }

@@ -14,7 +14,7 @@ use TeaBot\Telegram\Loggers\PrivateLogger;
  * @package \TeaBot\Telegram
  * @version 8.0.0
  */
-final class Logger
+final class Logger x
 {
   /** 
    * @var \TeaBot\Telegram\Data

@@ -8,6 +8,9 @@ ini_set("display_errors", true);
 /* Load config. */
 loadConfig("telegram/telegram_bot");
 
+/* Load helpers. */
+require BASEPATH."/src/helpers/telegram_daemon.php";
+
 date_default_timezone_set("etc/UTC");
 
 if (!defined("TELEGRAM_DAEMON_LOGGER_WORKERS")) {

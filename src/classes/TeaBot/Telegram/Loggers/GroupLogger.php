@@ -47,7 +47,7 @@ class GroupLogger extends LoggerFoundation
 
     if ($isInsertUser || (!($userInfo["group_msg_count"] % 10))) {
       $userInfo["id"] = $userId;
-      self::trackUserPhoto($data, $userInfo);
+      $user->trackPhoto();
     }
 
 
