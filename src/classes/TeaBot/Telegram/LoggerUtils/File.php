@@ -42,8 +42,23 @@ class File extends LoggerUtilFoundation
       goto ret;
     }
 
-    if ($hashes = self::downloadFile($tgFileId, $uniqId)) {
-      var_dump($hashes);
+    if ($u = self::downloadFile($tgFileId, $uniqId)) {
+      $j = $u["j"];
+      $pdo
+        ->prepare("INSERT INTO tg_files (tg_file_id, tg_uniq_id, md5_sum, sha1_sum, file_type, ext, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        ->execute(
+          [
+            $j["file_id"],
+            $j["file_unique_id"],
+            hex2bin($u["md5"]),
+            hex2bin($u["sha1"]),
+            mime_content_type($u["fix_file"]),
+            $u["ext"],
+            $j["file_size"],
+            date("Y-m-d H:i:s")
+          ]
+        );
+      $fileId = (int)$pdo->lastInsertId();
     } else {
       /* Cannot download the file. */
     }
@@ -162,9 +177,10 @@ class File extends LoggerUtilFoundation
     /* end_debug */
 
     $retVal = [
-      "md5"   => $md5Hash,
-      "sha1"  => $sha1Hash,
-      "j"     => $j,
+      "fix_file"  => $fixFile,
+      "md5"       => $md5Hash,
+      "sha1"      => $sha1Hash,
+      "j"         => $j,
     ];
 
     if (rename($tmpFile, $fixFile)) {
