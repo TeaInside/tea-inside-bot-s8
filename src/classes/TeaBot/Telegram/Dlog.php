@@ -89,7 +89,7 @@ final class Dlog
   {
     foreach (self::$err as $handle) {
       @flock($handle, LOCK_EX);
-      @fprintf($handle, "[%s][warning]: %s\n", date("c"), vsprintf($format, $args));
+      @fprintf($handle, "[%s][err]: %s\n", date("c"), vsprintf($format, $args));
       @flock($handle, LOCK_UN);
     }
   }
