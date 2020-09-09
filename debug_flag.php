@@ -26,6 +26,12 @@ if ($argv[1] === "off") {
   }
 
   $callback = function (string $dir, string $file) use ($rxp) {
+
+    $ext = explode(".", $file);
+    if (end($ext) !== "php") {
+      return;
+    }
+
     $targetFile = "{$dir}/{$file}";
     $content    = file_get_contents($targetFile);
     $r1 = $r2 = [];
@@ -44,6 +50,35 @@ if ($argv[1] === "off") {
 } else
 if ($argv[1] === "on") {
 
+  if (is_string($code)) {
+    $rxp = "/\/\*__debug_code\(({$code})\):b64:gz:(.*?)\*\//Ssi";
+  } else {
+    $rxp = "/\/\*__debug_code\(([\w\d]+)\):b64:gz:(.*?)\*\//Ssi";
+  }
+
+  $callback = function (string $dir, string $file) use ($rxp) {
+
+    $ext = explode(".", $file);
+    if (end($ext) !== "php") {
+      return;
+    }
+
+    $targetFile = "{$dir}/{$file}";
+    $content    = file_get_contents($targetFile);
+    $r1 = $r2 = [];
+    if (preg_match_all($rxp, $content, $m)) {
+
+      echo "Turning on ".count($m[0])." debug code in {$targetFile}...";
+      foreach ($m[0] as $k => $v) {
+        $code = gzdecode(base64_decode($m[2][$k]));
+        $r1[] = $v;
+        $r2[] = "/* debug:{$m[1][$k]} */{$code}/* end_debug */";
+      }
+      file_put_contents($targetFile, str_replace($r1, $r2, $content));
+      echo "OK!\n";
+    }
+  };
+
 } else {
   usage();
   exit(1);
@@ -53,3 +88,4 @@ foreach (TARGET_DIR as $dir) {
   recursiveCallbackScanDir($dir, $callback);
 }
 
+echo "Finished!\n";
