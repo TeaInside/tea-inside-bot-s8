@@ -205,10 +205,11 @@ class Group extends LoggerUtilFoundation
 
     if ($doUpdate) {
       if ($this->allowTrackUpdate) {
-        $updateQuery .= ",updated_at = ? WHERE id = ?";
+        $updateQuery .= ",updated_at = ? ";
         $updateData[] = $dateTime;
-        $updateData[] = $u["id"];
       }
+      $updateQuery .= "WHERE id = ?";
+      $updateData[] = $u["id"];
       $this->pdo->prepare($updateQuery)->execute($updateData);
       return true;
     }

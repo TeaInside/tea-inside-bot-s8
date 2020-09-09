@@ -43,11 +43,13 @@ class GroupLogger extends LoggerFoundation
 
 
     if ($isInsertUser || (!($userInfo["group_msg_count"] % 10))) {
+      $userInfo["id"] = $userId;
       self::trackUserPhoto($data, $userInfo);
     }
 
 
     if ($isInsertGroup || (!($groupInfo["msg_count"] % 10))) {
+      $groupInfo["id"] = $groupId;
       self::trackGroupPhoto($data, $groupInfo);
     }
 
@@ -63,6 +65,11 @@ class GroupLogger extends LoggerFoundation
    */
   private static function trackUserPhoto(Data $data, array $userInfo): void
   {
+    /*debug:5*/
+    if (!isset($userInfo["id"])) {
+      throw new \Error("Missing field: [\"id\"]");
+    }
+    /*enddebug*/
     go(function () use ($data, $userInfo) {
 
       $f = [
@@ -95,6 +102,11 @@ class GroupLogger extends LoggerFoundation
    */
   private static function trackGroupPhoto(Data $data, array $groupInfo): void
   {
+    /*debug:5*/
+    if (!isset($groupInfo["id"])) {
+      throw new \Error("Missing field: [\"id\"]");
+    }
+    /*enddebug*/
     go(function () use ($data, $groupInfo) {
 
       $f = [
