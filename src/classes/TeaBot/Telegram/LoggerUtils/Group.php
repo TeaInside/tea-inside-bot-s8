@@ -5,7 +5,11 @@ namespace TeaBot\Telegram\LoggerUtils;
 use DB;
 use PDO;
 use Exception;
+use TeaBot\Telegram\Exe;
+use TeaBot\Telegram\Data;
+use TeaBot\Telegram\Dlog;
 use TeaBot\Telegram\Mutex;
+use TeaBot\Telegram\LoggerUtils\File;
 use TeaBot\Telegram\LoggerUtilFoundation;
 
 /**
@@ -16,268 +20,304 @@ use TeaBot\Telegram\LoggerUtilFoundation;
  */
 class Group extends LoggerUtilFoundation
 {
+
+  /**
+   * @var \TeaBot\Telegram\Data
+   */
+  private Data $data;
+
+
   /**
    * @var bool
    */
-  private $allowTrackUpdate = true;
+  private bool $needHistory = false;
 
 
   /**
-   * @return void
+   * @var ?int
    */
-  public function dontTrackUpdate(): void
+  private ?int $historyId = null;
+
+
+  /**
+   * @var bool
+   */
+  private bool $hasInsertAct = false;
+
+
+  /**
+   * @var string
+   */
+  private string $dateTime;
+
+
+  /**
+   * @var ?array
+   */
+  private ?array $u;
+
+
+  /**
+   * @param mixed $key
+   * @return mixed
+   */
+  public function __get($key)
   {
-    $this->allowTrackUpdate = false;
+    return $this->{$key} ?? null;
   }
 
 
   /**
+   * @param \TeaBot\Telegram\Data $data
    * @return void
    */
-  public function trackUpdate(): void
+  public function setData(Data $data): void
   {
-    $this->allowTrackUpdate = true;
+    $this->data = $data;
   }
 
 
   /**
-   * @param  int    $tgGroupId
-   * @param  ?array &$info
-   * @param  ?bool  &$isInsert
-   * @return ?int
+   * @return array
    */
-  public function resolveGroup(int $tgGroupId, ?array &$info = null, ?bool &$isInsert = null): ?int
+  public function resolveGroup(): array
   {
-    $e    = null;
-    $mutex = new Mutex("tg_groups", "{$tgGroupId}");
+    /* debug:assert */
+    if (!$this->data) {
+      throw new \Error("Data has not been set");
+    }
+    /* end_debug */
+
+    $mutex = new Mutex("tg_groups", "{$this->data["chat_id"]}");
     $mutex->lock();
 
-    /*debug:5*/
-    if (is_array($info)) {
-      $requiredFields = [
-        "username",
-        "name",
-      ];
-      $missing = [];
-      foreach ($requiredFields as $k => $v) {
-        if (!array_key_exists($v, $info)) {
-          $missing[] = $v;
-        }
-      }
-      if (count($missing) > 0) {
-        throw new \Error("Missing required fields: ".json_encode($missing));
-      }
-    }
-    /*enddebug*/
-
+    $ret = $e = null;
     $pdo = $this->pdo;
 
     try {
-
       $pdo->beginTransaction();
-
-      if (is_array($info)) {
-        $ret = $this->fullResolveGroup($tgGroupId, $info, $isInsert);
-      } else {
-        $ret = $this->directResolveGroup($tgGroupId);
-      }
-
+      $this->dateTime = date("Y-m-d H:i:s");
+      $ret = $this->resolveGroupInternal();
       $pdo->commit();
     } catch (Exception $e) {
+      /* debug:warning */
+      Dlog::err("We rollback the transaction at %s", __METHOD__);
+      /* end_debug */
       $pdo->rollback();
+      $mutex->unlock();
+      throw $e;
     }
 
     $mutex->unlock();
-
-    if ($e) {
-      throw new $e;
-    }
-
     return $ret;
   }
 
 
   /**
-   * @param  int    $tgGroupId
-   * @param  array  &$info
-   * @param  ?bool  &$isInsert
-   * @return int
+   * @return array
    */
-  private function fullResolveGroup(int $tgGroupId, array &$info, ?bool &$isInsert = null): int
+  private function resolveGroupInternal(): array
   {
-    $st  = $this->pdo->prepare("SELECT id, username, name, link, photo, msg_count FROM tg_groups WHERE tg_group_id = ?");
+    $pdo       = $this->pdo;
+    $tgGroupId = $this->data["chat_id"];
+    $st        = $pdo->prepare("SELECT id, username, name, link, photo, msg_count FROM tg_groups WHERE tg_group_id = ?");
     $st->execute([$tgGroupId]);
-
-    $dateTime     = date("Y-m-d H:i:s");
-    $trackHistory = false;
 
     if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
       /* Group has already been stored in database. */
-      $trackHistory = $this->updateGroup($u, $info, $dateTime);
-      $id = (int)$u["id"];
-
-      if (!is_null($isInsert)) $isInsert = false;
-
+      $this->trackGroupUpdate($u);
+      unset($u["username"], $u["name"]);
+      $this->u = $u;
     } else {
-      $id = $this->insertGroup($tgGroupId, $info, $dateTime);
-      $trackHistory = true;
+      /* Found new user. */
+      $data    = $this->data;
+      $groupId = $this->insertGroup();
 
-      if (!is_null($isInsert)) $isInsert = true;
-
+      $u = $this->u = [
+        "id"         => $groupId,
+        "link"       => null,
+        "photo"      => null,
+        "msg_count"  => 0,
+      ];
+      $this->hasInsertAct = true;
     }
 
-    if ($trackHistory && $this->allowTrackUpdate) {
-      self::createHistory($id, $info, $dateTime);
+    if ($this->needHistory) {
+      $this->createGroupHistory($u["id"]);
     }
 
-    return $id;
+    return $u;
   }
 
 
   /**
-   * @param int $tgGroupId
-   * @return int
+   * @param array $u
+   * @return void
    */
-  private function directResolveGroup(int $tgGroupId): ?int
+  private function trackGroupUpdate(array $u): void
   {
-    $st  = $this->pdo->prepare("SELECT id FROM tg_groups WHERE tg_group_id = ?");
-    $st->execute([$tgGroupId]);
+    /* Check for group info update. */
 
-    if ($u = $st->fetch(PDO::FETCH_NUM)) {
-      return (int)$u[0];
-    } else {
-      return null;
-    }
-  }
-
-
-  /**
-   * @param array  $u
-   * @param array  &$info
-   * @param string $dateTime
-   * @return bool
-   */
-  public function updateGroup(array $u, array &$info, string $dateTime): bool
-  {
     $doUpdate    = false;
     $updateQuery = "UPDATE tg_groups SET ";
     $updateData  = [];
+    $data        = $this->data;
 
-
-    /* Check for info update. */
-    if ($u["username"] !== $info["username"]) {
+    if ($u["username"] !== $data["chat_username"]) {
       $updateQuery .= "username = ?";
-      $updateData[] = $info["username"];
+      $updateData[] = $data["chat_username"];
       $doUpdate = true;
     }
 
-    if ($u["name"] !== $info["name"]) {
-      $updateQuery .= ($doUpdate ? "," : "")."name = ?";
-      $updateData[] = $info["name"];
+    if ($u["name"] !== $data["chat_title"]) {
+      $updateQuery .= ($doUpdate ? "," : "")."first_name = ?";
+      $updateData[] = $data["chat_title"];
       $doUpdate = true;
     }
-
-    if (array_key_exists("link", $info)) {
-      if ($u["link"] !== $info["link"]) {
-        $updateQuery .= ($doUpdate ? "," : "")."link = ?";
-        $updateData[] = $info["link"];
-        $doUpdate = true;
-      }
-    } else {
-      $info["link"] = $u["link"] ?? null;
-    }
-
-    if (array_key_exists("photo", $info)) {
-      if ($u["photo"] !== $info["photo"]) {
-        $updateQuery .= ($doUpdate ? "," : "")."photo = ?";
-        $updateData[] = $info["photo"];
-        $doUpdate = true;
-      }
-    } else {
-      $info["photo"] = $u["photo"] ?? null;
-    }
-
-    /* Fill info fields reference. */
-    if (!isset($info["msg_count"])) {
-      $info["msg_count"] = 0;
-    }
-
 
     if ($doUpdate) {
-      if ($this->allowTrackUpdate) {
-        $updateQuery .= ",updated_at = ? ";
-        $updateData[] = $dateTime;
-      }
-      $updateQuery .= "WHERE id = ?";
+      $updateQuery .= ",updated_at = ? WHERE id = ?";
+      $updateData[] = $this->dateTime;
       $updateData[] = $u["id"];
       $this->pdo->prepare($updateQuery)->execute($updateData);
-      return true;
+      $this->needHistory = true;
     }
-
-    return false;
   }
 
 
   /**
-   * @param int    $tgGroupId
-   * @param array  &$info
-   * @param string $dateTime
    * @return int
    */
-  public function insertGroup(int $tgGroupId, array &$info, string $dateTime): int
+  private function insertGroup(): int
   {
-    $pdo = $this->pdo;
-
-    if (!array_key_exists("link", $info)) {
-      $info["link"] = null;
-    }
-
-    if (!array_key_exists("photo", $info)) {
-      $info["photo"] = null;
-    }
-
-    if (!isset($info["msg_count"])) {
-      $info["msg_count"] = 0;
-    }
-
+    $data = $this->data;
+    $pdo  = $this->pdo;
     $pdo
-      ->prepare("INSERT INTO tg_groups (tg_group_id, username, name, link, photo, msg_count, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      ->prepare("INSERT INTO tg_groups (tg_group_id, username, name, msg_count, created_at) VALUES (?, ?, ?, ?, ?)")
       ->execute(
         [
-          $tgGroupId,
-          $info["username"],
-          $info["name"],
-          $info["link"],
-          $info["photo"],
-          $info["msg_count"],
-          $dateTime,
+          $data["chat_id"],
+          $data["chat_username"],
+          $data["chat_title"],
+          0,
+          $this->dateTime
         ]
       );
-
+    $this->needHistory = true;
     return (int)$pdo->lastInsertId();
   }
 
 
   /**
-   * @param int    $userId
-   * @param array  $info
-   * @param string $dateTime
+   * @param int $groupId
    * @return void
    */
-  public function createHistory(int $groupId, array $info, string $dateTime): void
+  private function createGroupHistory(int $groupId): void
   {
-    $this
-      ->pdo
+    $data = $this->data;
+    $pdo  = $this->pdo;
+    $pdo
       ->prepare("INSERT INTO tg_group_history (group_id, username, name, link, photo, created_at) VALUES (?, ?, ?, ?, ?, ?)")
       ->execute(
         [
           $groupId,
-          $info["username"],
-          $info["name"],
-          $info["link"] ?? null,
-          $info["photo"] ?? null,
-          $dateTime
+          $data["username"],
+          $data["name"],
+          $this->u["link"] ?? null,
+          $this->u["photo"] ?? null,
+          $this->dateTime
         ]
       );
+
+    $this->historyId = (int)$pdo->lastInsertId();
+  }
+
+
+  /**
+   * @return void
+   */
+  public function trackPhoto(): void
+  {
+    $data = $this->data;
+    $mutex = new Mutex("tg_groups", "{$this->data["chat_id"]}");
+    $mutex->lock();
+
+    /* debug:assert */
+    if (!$this->u) {
+      throw new \Error("\$this->u has not been set!");
+    }
+    /* end_debug */
+
+    /* debug:global */
+    $__jd = json_encode(
+      [
+        "user_id" => $data["user_id"],
+        "chat_id" => $data["chat_id"]
+      ]
+    );
+    /* end_debug */
+
+    /* debug:p3 */
+    Dlog::out("Getting group photo: %s", $__jd);
+    /* end_debug */
+
+    $ret = Exe::getUserProfilePhotos([
+      "user_id" => $data["user_id"],
+      "offset"  => 0,
+      "limit"   => 1,
+    ]);
+    $j = json_decode($ret->getBody()->__toString(), true);
+
+
+    if (!isset($j["result"]["photos"][0])) {
+      /* Cannot get the photo or the user may not have. */
+      /* debug:warning */
+      Dlog::err("Cannot retrieve photo from getUserProfilePhotos: %s", $__jd);
+      /* end_debug */
+      return;
+    }
+
+    /* Get the highest resolution. */
+    $photo = $j["result"]["photos"][0];
+    usort($photo, fn($p1, $p2) =>
+      $p2["width"] * $p2["height"] <=>
+      $p1["width"] * $p1["height"]
+    );
+    $photo = $photo[0];
+
+    if (!isset($photo["file_id"])) {
+      /* Cannot get the photo or the user may not have. */
+      /* debug:warning */
+      Dlog::err("Cannot retrieve photo (file_id is not found): %s", $__jd);
+      /* end_debug */
+      return;
+    }
+
+    $pdo    = $this->pdo;
+    $file   = new File($pdo);
+    $fileId = $file->resolveFile($photo["file_id"]);
+    unset($file);
+
+    if (is_null($fileId)) {
+      goto ret;
+    }
+
+    if ($this->u["photo"] !== $fileId) {
+      if (is_null($this->historyId)) {
+        /* Create new history. */
+        $pdo
+          ->prepare("UPDATE tg_users SET photo = ? WHERE id = ?")
+          ->execute([$fileId, $this->u["id"]]);
+        $this->createUserHistory($this->u["id"]);
+      } else {
+        /* Amend current history. */
+        $pdo
+          ->prepare("UPDATE tg_users AS a INNER JOIN tg_user_history AS b ON a.id = b.user_id SET a.photo = ?, b.photo = ? WHERE b.id = ?")
+          ->execute([$fileId, $fileId, $this->historyId]);
+      }
+    }
+
+    ret:
+    $mutex->unlock();
   }
 }

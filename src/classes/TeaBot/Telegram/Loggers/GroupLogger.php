@@ -31,6 +31,7 @@ class GroupLogger extends LoggerFoundation
    */
   private Group $group;
 
+
   /**
    * Constructor.
    *
@@ -52,12 +53,20 @@ class GroupLogger extends LoggerFoundation
   {
     $user    = $this->user;
     $userII  = $user->resolveUser();
-    // $groupII = $this->group->resolveGroup();
 
     if (!($userII["private_msg_count"] % 10)) {
       /* Track user photo. */
       $user->setPDO(DB::pdo());
       go(fn() => $user->trackPhoto());
+    }
+
+    $group   = $this->group;
+    $groupII = $group->resolveGroup();
+
+    if (!($groupII["msg_count"] % 10)) {
+      /* Track group photo. */
+      $group->setPDO(DB::pdo());
+      go(fn() => $group->trackPhoto());
     }
   }
 }
