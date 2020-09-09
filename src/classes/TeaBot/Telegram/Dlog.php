@@ -46,7 +46,7 @@ final class Dlog
   /**
    * @return \TeaBot\Telegram\Dlog
    */
-  public function getIns(): Dlog
+  public static function getIns(): Dlog
   {
     return self::$dlog ?? (self::$dlog = new self);
   }
@@ -65,7 +65,7 @@ final class Dlog
    * @param resource $res
    * @return void
    */
-  public static function regsiterOutHandler($res)
+  public static function registerOutHandler($res)
   {
     self::$out[] = $res;
     self::getIns();
@@ -89,7 +89,7 @@ final class Dlog
   {
     foreach (self::$err as $handle) {
       @flock($handle, LOCK_EX);
-      @fprintf($handle, "[%s][warning]: %s", date("c"), vsprintf($format, $args));
+      @fprintf($handle, "[%s][warning]: %s\n", date("c"), vsprintf($format, $args));
       @flock($handle, LOCK_UN);
     }
   }
@@ -103,7 +103,7 @@ final class Dlog
   {
     foreach (self::$out as $handle) {
       @flock($handle, LOCK_EX);
-      @fprintf($handle, "[%s][out]: %s", date("c"), vsprintf($format, $args));
+      @fprintf($handle, "[%s][out]: %s\n", date("c"), vsprintf($format, $args));
       @flock($handle, LOCK_UN);
     }
   }

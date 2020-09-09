@@ -5,6 +5,7 @@ namespace TeaBot\Telegram\Loggers;
 use DB;
 use TeaBot\Telegram\Exe;
 use TeaBot\Telegram\Data;
+use TeaBot\Telegram\Dlog;
 use TeaBot\Telegram\LoggerFoundation;
 use TeaBot\Telegram\LoggerUtils\File;
 use TeaBot\Telegram\LoggerUtils\User;
@@ -67,11 +68,11 @@ class GroupLogger extends LoggerFoundation
    */
   private static function trackUserPhoto(Data $data, array $userInfo): void
   {
-    /*debug:5*/
+    /* debug:assert */
     if (!isset($userInfo["id"])) {
       throw new \Error("Missing field: [\"id\"]");
     }
-    /*enddebug*/
+    /* end_debug */
     go(function () use ($data, $userInfo) {
 
       $f = [
@@ -90,11 +91,16 @@ class GroupLogger extends LoggerFoundation
       /* TODO: Retrieve the user photo. */
       $userInfo2["photo"] = 10;
 
-
-      /*debug:1*/
-      echo "Getting user profile photo...\n";
-      /*enddebug*/
-
+      /* debug:p3 */
+      Dlog::out("Getting user profile photo: %s",
+        json_encode(
+          [
+            "user_id" => $data["user_id"],
+            "chat_id" => $data["chat_id"]
+          ]
+        )
+      );
+      /* end_debug */
 
       $ret  = Exe::getUserProfilePhotos([
         "user_id" => $data["user_id"],
@@ -104,8 +110,24 @@ class GroupLogger extends LoggerFoundation
 
       $j = json_decode($ret->getBody()->__toString(), true);
 
+
+      /* debug:warning */
+      $__json_warning = json_encode(
+        [
+          "user_id" => $data["user_id"],
+          "chat_id" => $data["chat_id"]
+        ]
+      );
+      /* end_debug */
+
       if (!isset($j["result"]["photos"][0])) {
         /* Cannot get the photo or the user may not have. */
+        /* debug:warning */
+        Dlog::warning(
+          "Cannot retrieve photo from getUserProfilePhotos: %s",
+          $__json_warning
+        );
+        /* end_debug */
         return;
       }
       
@@ -119,6 +141,12 @@ class GroupLogger extends LoggerFoundation
 
       if (!isset($photo["file_id"])) {
         /* Cannot get the photo or the user may not have. */
+        /* debug:warning */
+        Dlog::warning(
+          "Cannot retrieve photo (cannot find the file_id): %s",
+          $__json_warning
+        );
+        /* end_debug */
         return;
       }
 
@@ -142,11 +170,11 @@ class GroupLogger extends LoggerFoundation
    */
   private static function trackGroupPhoto(Data $data, array $groupInfo): void
   {
-    /*debug:5*/
+    /* debug:assert */
     if (!isset($groupInfo["id"])) {
       throw new \Error("Missing field: [\"id\"]");
     }
-    /*enddebug*/
+    /* end_debug */
     go(function () use ($data, $groupInfo) {
 
       $f = [

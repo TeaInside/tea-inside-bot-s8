@@ -28,6 +28,8 @@ if (defined("TELEGRAM_DAEMON_LOG_FILE")) {
   $logHandle = fopen(TELEGRAM_DAEMON_LOG_FILE, "a+");
   \TeaBot\Telegram\Dlog::registerErrHandler($logHandle);
   \TeaBot\Telegram\Dlog::registerOutHandler($logHandle);
+  \TeaBot\Telegram\Dlog::registerErrHandler(STDOUT);
+  \TeaBot\Telegram\Dlog::registerOutHandler(STDOUT);
   unset($logHandle);  
 }
 

@@ -3,5 +3,5 @@ p2 = print action vv
 p3 = print action vvv
 p4 = print action vvvv
 p5 = print action vvvvv
-w  = warning
-a  = assertion
+warning = warning
+assert  = assertion

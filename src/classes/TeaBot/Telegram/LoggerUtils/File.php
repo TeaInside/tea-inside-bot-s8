@@ -4,12 +4,13 @@ namespace TeaBot\Telegram\LoggerUtils;
 
 use DB;
 use PDO;
+use Error;
 use Exception;
 use Swlib\SaberGM;
 use TeaBot\Telegram\Exe;
+use TeaBot\Telegram\Dlog;
 use TeaBot\Telegram\Mutex;
 use TeaBot\Telegram\LoggerUtilFoundation;
-use Swlib\Http\Exception\ConnectException;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -23,8 +24,9 @@ class File extends LoggerUtilFoundation
    * @param string $tgFileId
    * @return int
    */
-  public function resolveFile(string $tgFileId): int
+  public function resolveFile(string $tgFileId): ?int
   {
+    $fileId  = null;   
     $e       = null;
     $uniqId  = md5($tgFileId);
     $mutex   = new Mutex("tg_files", "{$uniqId}");
@@ -40,10 +42,11 @@ class File extends LoggerUtilFoundation
       goto ret;
     }
 
-
-    $hashes = self::downloadFile($tgFileId, $uniqId);
-
-
+    if ($hashes = self::downloadFile($tgFileId, $uniqId)) {
+      var_dump($hashes);
+    } else {
+      /* Cannot download the file. */
+    }
 
     ret:
     $mutex->unlock();
@@ -62,33 +65,43 @@ class File extends LoggerUtilFoundation
     $ret    = Exe::getFile(["file_id" => $tgFileId]);
     $j      = json_decode($ret->getBody()->__toString(), true);
 
+
+    /* debug:warning */
+    $__json_warning = json_encode(["tg_file_id" => $tgFileId]);
+    /* end_debug */
+
+
     if (!isset($j["result"])) {
-      /*debug:2*/
-      echo __FILE__.":".__LINE__.": Missing field \"result\", return null\n";
-      /*endddebug*/
+      /* debug:warning */
+      Dlog::warning("getFile failed, missing field \"result\": %s", $__json_warning);
+      /* end_debug */
       goto ret;
     }
 
     $j = $j["result"];
 
     if (!isset($j["file_id"], $j["file_unique_id"], $j["file_size"], $j["file_path"])) {
-      /*debug:2*/
-      echo __FILE__.":".__LINE__.": Missing field some fields, return null, curfields: "
-        .json_encode(array_keys($j))."\n";
-      /*endddebug*/
+      /* debug:warning */
+      Dlog::warning(
+        "getFile failed, missing fields: %s",
+        json_encode(["tg_file_id" => $tgFileId, "cur_fields" => array_keys($j)])
+      );
+      /* end_debug */
       goto ret;
     }
 
+    /* debug:warning */
+    $__json_warning = json_encode($j);
+    /* end_debug */
 
     $fileDir = TELEGRAM_STORAGE_PATH."/files";
     $tmpDir  = TELEGRAM_STORAGE_PATH."/tmp_download";
+    $ext     = explode(".", $j["file_path"]);
+    $c       = count($ext);
 
     is_dir(TELEGRAM_STORAGE_PATH) or mkdir(TELEGRAM_STORAGE_PATH);
     is_dir($fileDir) or mkdir($fileDir);
     is_dir($tmpDir) or mkdir($tmpDir);
-
-    $ext      = explode(".", $j["file_path"]);
-    $c        = count($ext);
 
     if ($c < 2) {
       $ext = null;
@@ -98,31 +111,41 @@ class File extends LoggerUtilFoundation
 
     $tmpFile  = "{$tmpDir}/{$uniqId}".(is_null($ext) ? "" : ".{$ext}");
     $downTry  = 0;
-
     download:
-    $downTry++;
+
     try {
+      /* debug:p4 */
+      Dlog::out("Downloading file...: %s", $j["file_id"]);
+      /* end_debug */
+      $downTry++;
       $response = SaberGM::download(
         "https://api.telegram.org/file/bot".BOT_TOKEN."/{$j["file_path"]}",
         $tmpFile,
         0,
-        ["timeout" => 500]
-      ); 
-    } catch (ConnectException $e) {
-      /*debug:2*/
-      echo "Download failed: {$e->getMessage()}!\n";
-      /*enddebug*/
+        ["timeout" => 600]
+      );
+    } catch (Exception $e) {
+      /* debug:warning */
+      Dlog::warning("SaberGM::download file failed: %s", $e->getMessage());
+      /* end_debug */
       goto retry_download;
     }
 
     if (!$response->getSuccess()) {
+      /* debug:warning */
+      Dlog::warning("SaberGM::download file failed: no expcetion");
+      /* end_debug */
       goto retry_download;
     }
 
     $fileSize = filesize($tmpFile);
-
     if ($fileSize < $j["file_size"]) {
-      /* (downloaded file is corrupted). */
+      /* debug:warning */
+      Dlog::warning(
+        "Downloaded size is less than file size info, may be corrupted: %s",
+        $__json_warning
+      );
+      /* end_debug */
       goto retry_download;
     }
 
@@ -133,21 +156,58 @@ class File extends LoggerUtilFoundation
     $indexDir = self::genIndexDir($fileDir, substr($fullHash, 0, 14));
     $fixFile  = "{$indexDir}/{$fullHash}".(is_null($ext) ? "" : ".{$ext}");
 
-    rename($tmpFile, $fixFile);
+    /* debug:p4 */
+    Dlog::out("Download success, (%s) stored at: %s", $j["file_id"], $tmpFile);
+    Dlog::out("Full hash file (%s): %s", $j["file_id"], $fullHash);
+    /* end_debug */
+
+    $retVal = [
+      "md5"   => $md5Hash,
+      "sha1"  => $sha1Hash,
+      "j"     => $j,
+    ];
+
+    if (rename($tmpFile, $fixFile)) {
+      Dlog::out("Finished, fix file: (%s) %s", $j["file_id"], $fixFile);
+    } else {
+      $fixFileRecover = "{$tmpDir}/{$fullHash}".(is_null($ext) ? "" : ".{$ext}");
+
+      /* debug:warning */
+      Dlog::warning("Cannot move file to %s", $fixFile);
+      /* end_debug */
+
+      if (rename($tmpFile, $fixFileRecover)) {
+        /* debug:warning */
+        Dlog::warning("Renamed %s to %s", $tmpFile, $fixFileRecover);
+        /* end_debug */
+      } else {
+
+        /* debug:warning */
+        Dlog::warning(
+          "Cannot recovering file at all, return null: (fullhash: %s) %s",
+          $fullHash,
+          $tmpFile
+        );
+        /* end_debug */
+
+        $retVal = null;
+      }
+    }
+
 
     ret:
     return $retVal;
 
     retry_download:
     if ($downTry > 5) {
-      /*debug:2*/
-      echo "Cannot recover fail download, return null\n";
+      /* debug:warning */
+      Dlog::warning("Cannot recover fail download (rcount: %d), return null", $downTry);
+      /* end_debug */
       return null;
-      /*enddebug*/
     }
-    /*debug:2*/
-    echo "Retrying...\n";
-    /*enddebug*/
+    /* debug:warning */
+    Dlog::warning("Retrying download (rcount: %s): %s", $downTry, $__json_warning);
+    /* end_debug */
     goto download;
   }
 

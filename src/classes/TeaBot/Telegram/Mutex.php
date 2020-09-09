@@ -36,6 +36,7 @@ final class Mutex
     is_dir(TELEGRAM_MUTEXES_LOCK_DIR) or mkdir(TELEGRAM_MUTEXES_LOCK_DIR);
 
     if (is_string($uniqueId)) {
+      $uniqueId = str_replace("-", "_", $uniqueId);
       is_dir($this->lockFile) or mkdir($this->lockFile);
       $this->lockFile .= "/{$uniqueId}.lock";
     } else {
