@@ -76,6 +76,5 @@ function send_error_log_to_telegram(int $chatId, string $errorMsg): void
     ]);
 
     $j = json_decode($r = $ret->getBody()->__toString(), true);
-    var_dump($r);
   }
 }
