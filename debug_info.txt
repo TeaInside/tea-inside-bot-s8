@@ -1,5 +1,7 @@
-1 = print action v
-2 = print action vv
-3 = print action vvv
-4 = warning
-5 = assertion
+p1 = print action v
+p2 = print action vv
+p3 = print action vvv
+p4 = print action vvvv
+p5 = print action vvvvv
+w  = warning
+a  = assertion

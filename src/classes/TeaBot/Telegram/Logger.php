@@ -4,6 +4,7 @@ namespace TeaBot\Telegram;
 
 use DB;
 use PDO;
+use TeaBot\Telegram\Dlog;
 use TeaBot\Telegram\Loggers\GroupLogger;
 use TeaBot\Telegram\Loggers\PrivateLogger;
 
@@ -60,6 +61,11 @@ final class Logger
 
     /* Skip if msg_type is not mapped. */
     if (!isset(self::MSG_TYPE_MAP[$data["msg_type"]])) {
+
+      /* debug:p5 */
+      Dlog::out("Skipping logger, unmapped msg_type: %s", $data["msg_type"]);
+      /* end_debug */
+
       return;
     }
 
