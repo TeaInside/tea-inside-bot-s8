@@ -88,7 +88,7 @@ class File extends LoggerUtilFoundation
 
     if (!isset($j["result"])) {
       /* debug:warning */
-      Dlog::warning("getFile failed, missing field \"result\": %s", $__json_warning);
+      Dlog::err("getFile failed, missing field \"result\": %s", $__json_warning);
       /* end_debug */
       goto ret;
     }
@@ -97,7 +97,7 @@ class File extends LoggerUtilFoundation
 
     if (!isset($j["file_id"], $j["file_unique_id"], $j["file_size"], $j["file_path"])) {
       /* debug:warning */
-      Dlog::warning(
+      Dlog::err(
         "getFile failed, missing fields: %s",
         json_encode(["tg_file_id" => $tgFileId, "cur_fields" => array_keys($j)])
       );
@@ -141,14 +141,14 @@ class File extends LoggerUtilFoundation
       );
     } catch (Exception $e) {
       /* debug:warning */
-      Dlog::warning("SaberGM::download file failed: %s", $e->getMessage());
+      Dlog::err("SaberGM::download file failed: %s", $e->getMessage());
       /* end_debug */
       goto retry_download;
     }
 
     if (!$response->getSuccess()) {
       /* debug:warning */
-      Dlog::warning("SaberGM::download file failed: no expcetion");
+      Dlog::err("SaberGM::download file failed: no expcetion");
       /* end_debug */
       goto retry_download;
     }
@@ -156,7 +156,7 @@ class File extends LoggerUtilFoundation
     $fileSize = filesize($tmpFile);
     if ($fileSize < $j["file_size"]) {
       /* debug:warning */
-      Dlog::warning(
+      Dlog::err(
         "Downloaded size is less than file size info, may be corrupted: %s",
         $__json_warning
       );
@@ -190,17 +190,17 @@ class File extends LoggerUtilFoundation
       $fixFileRecover = "{$tmpDir}/{$fullHash}".(is_null($ext) ? "" : ".{$ext}");
 
       /* debug:warning */
-      Dlog::warning("Cannot move file to %s", $fixFile);
+      Dlog::err("Cannot move file to %s", $fixFile);
       /* end_debug */
 
       if (rename($tmpFile, $fixFileRecover)) {
         /* debug:warning */
-        Dlog::warning("Renamed %s to %s", $tmpFile, $fixFileRecover);
+        Dlog::err("Renamed %s to %s", $tmpFile, $fixFileRecover);
         /* end_debug */
       } else {
 
         /* debug:warning */
-        Dlog::warning(
+        Dlog::err(
           "Cannot recovering file at all, return null: (fullhash: %s) %s",
           $fullHash,
           $tmpFile
@@ -218,12 +218,12 @@ class File extends LoggerUtilFoundation
     retry_download:
     if ($downTry > 5) {
       /* debug:warning */
-      Dlog::warning("Cannot recover fail download (rcount: %d), return null", $downTry);
+      Dlog::err("Cannot recover fail download (rcount: %d), return null", $downTry);
       /* end_debug */
       return null;
     }
     /* debug:warning */
-    Dlog::warning("Retrying download (rcount: %s): %s", $downTry, $__json_warning);
+    Dlog::err("Retrying download (rcount: %s): %s", $downTry, $__json_warning);
     /* end_debug */
     goto download;
   }

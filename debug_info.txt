@@ -5,3 +5,4 @@ p4 = print action vvvv
 p5 = print action vvvvv
 warning = warning
 assert  = assertion
+global  = should only be turned off if all debug codes are off

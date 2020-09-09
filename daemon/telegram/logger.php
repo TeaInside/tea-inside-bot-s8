@@ -72,12 +72,12 @@ function logger_handler($conn, int $k): void
   fwrite($conn, "ok");
   fclose($conn);
 
-  /* Send payload to the old daemon. */
-  if ($forwardBaseUrl && $forwardPath) {
-    go(function () use ($data, $forwardBaseUrl, $forwardPath) {
-      payload_forwarder($data, $forwardBaseUrl, $forwardPath);
-    });
-  }
+  // /* Send payload to the old daemon. */
+  // if ($forwardBaseUrl && $forwardPath) {
+  //   go(function () use ($data, $forwardBaseUrl, $forwardPath) {
+  //     payload_forwarder($data, $forwardBaseUrl, $forwardPath);
+  //   });
+  // }
 
   try {
     $logger = new \TeaBot\Telegram\Logger($data);

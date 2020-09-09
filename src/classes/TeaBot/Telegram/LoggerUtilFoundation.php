@@ -14,9 +14,9 @@ abstract class LoggerUtilFoundation
 {
 
   /** 
-   * @var \PDO
+   * @var ?\PDO
    */
-  protected PDO $logger;
+  protected ?PDO $pdo;
 
   /**
    * @param \PDO $pdo
@@ -24,6 +24,23 @@ abstract class LoggerUtilFoundation
    * Constructor.
    */
   public function __construct(PDO $pdo)
+  {
+    $this->pdo = $pdo;
+  }
+
+  /**
+   * @return void
+   */
+  public function dropPDO(): void
+  {
+    $this->pdo = null;
+  }
+
+  /**
+   * @param \PDO $pdo
+   * @return void
+   */
+  public function setPDO(PDO $pdo): void
   {
     $this->pdo = $pdo;
   }
