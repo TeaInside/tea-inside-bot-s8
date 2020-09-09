@@ -248,6 +248,8 @@ class User extends LoggerUtilFoundation
   public function trackPhoto(): void
   {
     $data = $this->data;
+    $mutex = new Mutex("tg_users", "{$this->data["user_id"]}");
+    $mutex->lock();
 
     /* debug:assert */
     if (!$this->u) {
@@ -306,7 +308,7 @@ class User extends LoggerUtilFoundation
     unset($file);
 
     if (is_null($fileId)) {
-      return;
+      goto ret;
     }
 
     if ($this->u["photo"] !== $fileId) {
@@ -323,5 +325,8 @@ class User extends LoggerUtilFoundation
           ->execute([$fileId, $fileId, $this->historyId]);
       }
     }
+
+    ret:
+    $mutex->unlock();
   }
 }
