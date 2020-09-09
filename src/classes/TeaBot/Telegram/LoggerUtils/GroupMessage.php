@@ -86,8 +86,47 @@ class GroupMessage extends LoggerUtilFoundation
 
 
     if ($insertMsgData) {
+
+      if ($data["is_forwarded_msg"]) {
+        $this->saveForwardMsgState($msgId, $data);
+      }
+
       $this->insertMessageData($msgId, $data, $dateTime);
     }
+  }
+
+
+  /**
+   * @param int                   $msgId
+   * @param \TeaBot\Telegram\Data $data
+   * @return void
+   */
+  private function saveForwardMsgState(int $msgId, Data $data): void
+  {
+    $user     = new User(DB::pdo());
+    $msg      = $data->in["message"];
+    $ff       = $msg["forward_from"];
+    $userInfo = [
+      "username"   => $ff["username"] ?? null,
+      "first_name" => $ff["first_name"],
+      "last_name"  => $ff["last_name"] ?? null,
+      "is_bot"     => $ff["is_bot"] ?? false,
+    ];
+
+    $isInsertUser = false;
+    $userId       = $user->resolveUser($ff["id"], $userInfo, $isInsertUser);
+
+    unset($user);
+    /* TODO: Track forwarder photo. */
+
+    $this
+      ->pdo
+      ->prepare("INSERT INTO tg_group_message_fwd (user_id, msg_id, tg_forwarded_date) VALUES (?, ?, ?)")
+      ->execute([
+        $userId,
+        $msgId,
+        isset($msg["forward_date"]) ? date("Y-m-d H:i:s", $msg["forward_date"]) : null
+      ]);
   }
 
 

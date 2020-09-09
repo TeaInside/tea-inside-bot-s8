@@ -3,14 +3,14 @@
 require __DIR__."/bootstrap/telegram/autoload.php";
 
 $json = '{
-    "update_id": 345890870,
+    "update_id": 345893412,
     "message": {
-        "message_id": 6113,
+        "message_id": 6187,
         "from": {
             "id": 243692601,
             "is_bot": false,
             "first_name": "Ammar",
-            "last_name": "Faizi~",
+            "last_name": "Faizi^",
             "username": "ammarfaizi2",
             "language_code": "en"
         },
@@ -20,8 +20,17 @@ $json = '{
             "type": "supergroup",
             "username": null
         },
-        "date": 1599362325,
-        "text": "/start",
+        "date": 1599573355,
+        "forward_from": {
+            "id": 243692603,
+            "is_bot": false,
+            "first_name": "Ammar xxxx",
+            "last_name": "Faizi^",
+            "username": "ammarfaizi2",
+            "language_code": "en"
+        },
+        "forward_date": 1599573339,
+        "text": "/debug",
         "entities": [
             {
                 "offset": 0,
