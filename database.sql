@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS `tg_files`;
 CREATE TABLE `tg_files` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `tg_file_id` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `tg_uniq_id` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `md5_sum` binary(16) NOT NULL,
   `sha1_sum` binary(20) NOT NULL,
   `file_type` varchar(64) CHARACTER SET utf8 NOT NULL DEFAULT 'unknown',
@@ -19,7 +20,7 @@ CREATE TABLE `tg_files` (
   `hit_count` bigint(20) unsigned NOT NULL DEFAULT '1',
   `description` text COLLATE utf8mb4_unicode_520_ci,
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `tg_file_id` (`tg_file_id`),
   KEY `md5_sum` (`md5_sum`),
@@ -38,13 +39,13 @@ DROP TABLE IF EXISTS `tg_groups`;
 CREATE TABLE `tg_groups` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `tg_group_id` bigint(20) NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `username` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `link` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `photo` bigint(20) unsigned DEFAULT NULL,
   `msg_count` bigint(20) unsigned NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tg_group_id` (`tg_group_id`),
   KEY `name` (`name`),
@@ -54,7 +55,7 @@ CREATE TABLE `tg_groups` (
   KEY `created_at` (`created_at`),
   KEY `updated_at` (`updated_at`),
   KEY `photo` (`photo`),
-  CONSTRAINT `tg_groups_ibfk_2` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `tg_groups_ibfk_1` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
@@ -66,7 +67,7 @@ CREATE TABLE `tg_group_admins` (
   `role` enum('creator','administrator','member','restricted','left','kicked') NOT NULL DEFAULT 'administrator',
   `info` json DEFAULT NULL,
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `role` (`role`),
   KEY `created_at` (`created_at`),
@@ -82,8 +83,8 @@ DROP TABLE IF EXISTS `tg_group_history`;
 CREATE TABLE `tg_group_history` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `group_id` bigint(20) unsigned NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `username` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `link` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `photo` bigint(20) unsigned DEFAULT NULL,
   `created_at` datetime NOT NULL,
@@ -109,7 +110,6 @@ CREATE TABLE `tg_group_messages` (
   `msg_type` varchar(255) DEFAULT NULL,
   `has_edited_msg` enum('0','1') NOT NULL DEFAULT '0',
   `is_forwarded_msg` enum('0','1') NOT NULL DEFAULT '0',
-  `tg_date` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -117,7 +117,6 @@ CREATE TABLE `tg_group_messages` (
   KEY `reply_to_tg_msg_id` (`reply_to_tg_msg_id`),
   KEY `msg_type` (`msg_type`),
   KEY `is_edited` (`has_edited_msg`),
-  KEY `tg_date` (`tg_date`),
   KEY `created_at` (`created_at`),
   KEY `group_id` (`group_id`),
   KEY `user_id` (`user_id`),
@@ -173,15 +172,14 @@ CREATE TABLE `tg_private_messages` (
   `msg_type` varchar(255) NOT NULL,
   `has_edited_msg` enum('0','1') NOT NULL DEFAULT '0',
   `is_forwarded_msg` enum('0','1') NOT NULL DEFAULT '0',
-  `tg_date` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `tg_msg_id` (`tg_msg_id`),
   KEY `reply_to_tg_msg_id` (`reply_to_tg_msg_id`),
   KEY `msg_type` (`msg_type`),
   KEY `has_edited_msg` (`has_edited_msg`),
-  KEY `tg_date` (`tg_date`),
   KEY `created_at` (`created_at`),
   CONSTRAINT `tg_private_messages_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `tg_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -236,7 +234,7 @@ CREATE TABLE `tg_users` (
   `private_msg_count` bigint(20) unsigned NOT NULL DEFAULT '0',
   `is_bot` enum('0','1') CHARACTER SET utf8 NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tg_user_id` (`tg_user_id`),
   KEY `username` (`username`),
@@ -247,7 +245,7 @@ CREATE TABLE `tg_users` (
   KEY `created_at` (`created_at`),
   KEY `updated_at` (`updated_at`),
   KEY `photo` (`photo`),
-  CONSTRAINT `tg_users_ibfk_2` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `tg_users_ibfk_1` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
@@ -267,9 +265,9 @@ CREATE TABLE `tg_user_history` (
   KEY `first_name` (`first_name`),
   KEY `last_name` (`last_name`),
   KEY `created_at` (`created_at`),
-  CONSTRAINT `tg_user_history_ibfk_1` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `tg_user_history_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `tg_users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `tg_user_history_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `tg_users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tg_user_history_ibfk_3` FOREIGN KEY (`photo`) REFERENCES `tg_files` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 
--- 2020-08-26 09:35:56
+-- 2020-09-10 10:42:10
