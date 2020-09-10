@@ -3,6 +3,7 @@
 namespace TeaBot\Telegram;
 
 use Exception;
+use TeaBot\Telegram\Captcha\CaptchaRuntime;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -30,20 +31,45 @@ final class Response
   }
 
   /**
-   * @throws \Exception
-   * @param string $className
-   * @param string $methodName
-   * @param array  $parameters
-   * @return bool
+   *
    */
-  private function rtExec(
-    string $className, string $methodName, array $parameters = []): bool
+  public function run()
   {
-    $obj = new $className($this->data);
+    if (isset($this->data["text"])) {
+
+      $ccRun = new CaptchaRuntime($this->data);
+
+      if ($ccRun->isHavingCaptcha()) {
+        $ccRun->checkAnswer();
+      } else {
+        $this->execRoutes();
+      }
+
+    } else
+    if ($this->data["msg_type"] === "new_chat_member") {
+
+      $ccRun = new CaptchaRuntime($this->data);
+      if ($ccRun->needCaptcha()) {
+        $ccRun->dropCaptcha();
+      }
+
+    }
+  }
+
+  /**
+   * @param string $class
+   * @param string $method
+   * @param array  $params
+   * @return bool
+   * @throws \Exception
+   */
+  public function rtExec(string $class, string $method, array $params = []): bool
+  {
+    $obj = new $class($this->data);
     if ($obj instanceof ResponseFoundation) {
-      return $obj->{$methodName}(...$parameters);
+      return $obj->{$method}(...$params);
     } else {
-      throw new Exception("Invalid ResponseFoundation instance: ".$className);
+      throw new Exception("Invalid ResponseFoundation instance: ".$class);
     }
   }
 }

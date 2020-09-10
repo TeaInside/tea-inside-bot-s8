@@ -16,34 +16,102 @@ final class Data implements ArrayAccess
   /**
    * @const int
    */
-  public const MSG_TYPE_GENERAL = 1;
+  public const GENERAL_INPUT = 0;
+
+
+  /**
+   * @const int
+   */
+  public const USER_DATA = 1;
+
 
   /**
    * @var array
    */
-  private $in;
+  private array $in = [];
+
 
   /**
    * @var array
    */
-  private $ct;
+  private array $ct = [];
+
+
+  /**
+   * @var int
+   */
+  private int $type;
+
 
   /**
    * @param array $in
+   * @param int   $type
    *
    * Constructor.
    */
-  public function __construct(array $in)
+  public function __construct(array $in, int $type = self::GENERAL_INPUT)
   {
-    $this->in = $in;
+    $this->in       = $in;
     $this->ct["in"] = &$this->in;
+    $this->type     = $type;
 
-    if (isset($in["update_id"]) &&
-       (isset($in["message"]) || isset($in["edited_message"]))
-    ) {
+    switch ($type) {
+      case self::GENERAL_INPUT:
+        $this->constructGeneralInput();
+        break;
+      case self::USER_DATA:
+        $this->constructUserData();
+        break;
+      default:
+        throw new \Error("Invalid type {$type}");
+        break;
+    }
+  }
 
+
+  /**
+   * @return void
+   */
+  private function constructUserData(): void
+  {
+    $in = $this->in;
+    /* debug:assert */
+    $requiredFields = [
+      "id",
+      "first_name",
+      "is_bot"
+    ];
+    $missingFields = [];
+    foreach ($requiredFields as $k => $v) {
+      if (!array_key_exists($v, $in)) {
+        $missingFields[] = $v;
+      }
+    }
+    if (count($missingFields)) {
+      throw new \Error("Missing fields: ".json_encode($missingFields));
+    }
+    /* end_debug */
+
+    $this->ct["user_id"]    = $in["id"];
+    $this->ct["username"]   = $in["username"] ?? null;
+    $this->ct["first_name"] = $in["first_name"];
+    $this->ct["last_name"]  = $in["last_name"] ?? null;
+    $this->ct["full_name"]  = $in["first_name"];
+    if (isset($in["last_name"])) {
+      $this->ct["full_name"] .= " ".$in["last_name"];
+    }
+    $this->ct["is_bot"]     = $in["is_bot"];
+  }
+
+
+  /**
+   * @return void
+   */
+  private function constructGeneralInput(): void
+  {
+    $in = $this->in;
+    if (isset($in["update_id"]) && (isset($in["message"]) || isset($in["edited_message"]))) {
       $msg = $in["message"] ?? $in["edited_message"] ?? null;
-
       if (isset($msg["text"])) {
         $this->ct["msg_type"] = "text";
         $this->ct["text"] = $msg["text"];
@@ -73,13 +141,16 @@ final class Data implements ArrayAccess
         $this->ct["msg_type"] = "video";
         $this->ct["text"] = $msg["caption"] ?? null;
         $this->ct["text_entities"] = $msg["caption_entities"] ?? null;
+      } else
+      if (isset($msg["new_chat_member"])) {
+        $this->ct["msg_type"] = "new_chat_member";
       } else {
         $this->ct["msg_type"] = "unknown";
       }
-
       $this->buildGeneralMsg($msg, $in);
     }
   }
+
 
   /**
    * @param  array $msg
@@ -102,33 +173,32 @@ final class Data implements ArrayAccess
     $this->ct["chat_type"] = $msg["chat"]["type"];
     $this->ct["username"] = $msg["from"]["username"] ?? null;
     $this->ct["reply_to"] = $msg["reply_to_message"] ?? null;
-    $this->ct["chat_title"] = $msg["chat"]["title"] ?? (
-      isset($msg["chat"]["first_name"]) ?
-      $msg["chat"]["first_name"].
-      (
-        isset($msg["chat"]["last_name"]) ? " ".$msg["chat"]["last_name"] : ""
-      ) : null
-    );
+
+    if (isset($msg["from"]["first_name"])) {
+      $this->ct["full_name"] = $msg["from"]["first_name"];
+
+      if (isset($msg["from"]["last_name"])) {
+        $this->ct["full_name"] .= " ".$msg["from"]["last_name"];
+      }
+    } else {
+      $this->ct["full_name"] = null;
+    }
+
+    $this->ct["chat_title"] = $msg["chat"]["title"] ?? $this->ct["full_name"];
     $this->ct["chat_username"] = $msg["chat"]["username"] ?? null;
-    $this->ct["is_forwarded_msg"] = isset($msg["forward_date"], $msg["forward_from"]);
+    $this->ct["is_forwarded_msg"] = isset($msg["forward_from"]);
     $this->ct["is_edited_msg"] = isset($in["edited_message"]);
   }
 
+
   /**
-   * @param mixed $idt
-   * @param int   $updateId
-   * @return \TeaBot\Telegram\Data
+   * @return mixed
    */
-  public static function buildMsg($idt, $updateId = -1): Data
+  public function __get($key)
   {
-    return new self(
-      [
-        "update_id" => $updateId,
-        "message" => $idt,
-        "handle_replied_msg" => true
-      ]
-    );
+    return $this->{$key} ?? null;
   }
+
 
   /**
    * @param mixed $key
@@ -142,6 +212,7 @@ final class Data implements ArrayAccess
     return $this->ct[$key];
   }
 
+
   /**
    * @param mixed $key
    * @param mixed &$data
@@ -152,6 +223,7 @@ final class Data implements ArrayAccess
     throw new Exception("Cannot do offsetSet!");
   }
 
+
   /**
    * @param mixed $key
    * @return bool
@@ -160,6 +232,7 @@ final class Data implements ArrayAccess
   {
     return isset($this->ct[$key]);
   }
+
 
   /**
    * @param mixed $key

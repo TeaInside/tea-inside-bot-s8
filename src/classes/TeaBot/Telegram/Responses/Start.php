@@ -29,7 +29,6 @@ final class Start extends ResponseFoundation
       );
 
     } else {
-
       $v = json_decode(
         Exe::sendMessage(
           [
@@ -42,7 +41,7 @@ final class Start extends ResponseFoundation
       );
 
       if (isset($v["result"]["message_id"])) {
-        sleep(5);
+        co_sleep(5);
         Exe::deleteMessage(
           [
             "chat_id" => $this->data["chat_id"],
@@ -50,7 +49,7 @@ final class Start extends ResponseFoundation
           ]
         );
       } else {
-        echo "Cannot find message to delete!\n";
+        // Cannot find message to delete!
       }
     }
 

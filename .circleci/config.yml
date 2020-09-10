@@ -39,5 +39,7 @@ jobs:
             - ./src/ext
 
       # Run tests
-      - run: php ./debug.php on
+      - run: php ./debug_flag.php off
+      - run: php ./syntax_checker.php
+      - run: php ./debug_flag.php on
       - run: php ./syntax_checker.php

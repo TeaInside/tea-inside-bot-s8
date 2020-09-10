@@ -16,12 +16,12 @@ abstract class ResponseFoundation
   protected $data;
 
   /**
-   * @param \TeaBot\Data &$data
+   * @param \TeaBot\Data $data
    *
    * Constructor.
    */
-  public function __construct(Data &$data)
+  public function __construct(Data $data)
   {
-    $this->data = &$data;
+    $this->data = $data;
   }
 }

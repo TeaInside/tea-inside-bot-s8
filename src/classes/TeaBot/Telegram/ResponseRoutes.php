@@ -10,6 +10,7 @@ namespace TeaBot\Telegram;
  */
 trait ResponseRoutes
 {
+
   /**
    * @return bool
    */
@@ -20,17 +21,22 @@ trait ResponseRoutes
       return false;
     }
 
-    /* Start command. */
-    if (preg_match("/^(\/|\!|\~|\.)start$/USsi", $this->data["text"])) {
-      if ($this->rtExec(Responses\Start::class, "start")) {
-        return true;
-      }
-    }
+    $text = $this->data["text"];
 
-    /* Debug command. */
-    if (preg_match("/^(\/|\!|\~|\.)debug$/USsi", $this->data["text"])) {
-      if ($this->rtExec(Responses\Debug::class, "debug")) {
-        return true;
+    /* Bot commands. */
+    if (preg_match("/^(\/|\!|\~|\.)((\w)(?:\S+))(.*)/Ss", $text, $m)) {
+
+      /* $m[1] start char.     */
+      /* $m[2] the command.    */
+      /* $m[3] Index char.     */
+      $i = strtoupper($m[3]);
+      /* $m[4] command arg     */
+
+      $class = "\\TeaBot\\Telegram\\IndexRoutes\\".$i;
+      if (class_exists($class)) {
+        if ($class::exec($this, strtolower($m[2]), trim($m[4]))) {
+          return true;
+        }
       }
     }
 

@@ -1,0 +1,8 @@
+p1 = print action v
+p2 = print action vv
+p3 = print action vvv
+p4 = print action vvvv
+p5 = print action vvvvv
+warning = warning
+assert  = assertion
+global  = should only be turned off if all debug codes are off

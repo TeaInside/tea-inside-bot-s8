@@ -6,14 +6,11 @@ loadConfig("telegram/telegram_bot");
 
 header("Content-Type: text/plain");
 
-if (
-  isset($_GET["key"]) &&
-  ($_GET["key"] === TELEGRAM_WEBHOOK_KEY)
-) {
+if (isset($_GET["key"]) && ($_GET["key"] === TELEGRAM_WEBHOOK_KEY)) {
 
   $sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
-  if (!socket_connect($sock, "127.0.0.1", 7777)) {
+  if (!socket_connect($sock, "127.0.0.1", 7000)) {
     $msg = "Cannot connect to socket!\n";
     goto err;
   }
@@ -35,9 +32,16 @@ if (
   }
 
   socket_close($sock);
+  if ($buf === "ok") {
+    http_response_code(200);
+  } else {
+    http_response_code(400);
+  }
   echo $buf;
+} else {
+  http_response_code(401);
+  echo "unauthorized";
 }
-
 
 exit;
 

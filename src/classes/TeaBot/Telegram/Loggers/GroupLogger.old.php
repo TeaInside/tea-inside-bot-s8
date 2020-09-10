@@ -3,12 +3,14 @@
 namespace TeaBot\Telegram\Loggers;
 
 use DB;
-use PDO;
-use PDOException;
+use TeaBot\Telegram\Exe;
 use TeaBot\Telegram\Data;
-use TeaBot\Telegram\Logger;
+use TeaBot\Telegram\Dlog;
 use TeaBot\Telegram\LoggerFoundation;
-use TeaBot\Telegram\Contracts\LoggerInterface;
+use TeaBot\Telegram\LoggerUtils\File;
+use TeaBot\Telegram\LoggerUtils\User;
+use TeaBot\Telegram\LoggerUtils\Group;
+use TeaBot\Telegram\LoggerUtils\GroupMessage;
 
 /**
  * @author Ammar Faizi <ammarfaizi2@gmail.com> https://www.facebook.com/ammarfaizi2
@@ -16,200 +18,184 @@ use TeaBot\Telegram\Contracts\LoggerInterface;
  * @package \TeaBot\Telegram\Loggers
  * @version 8.0.0
  */
-class GroupLogger extends LoggerFoundation implements LoggerInterface
+class GroupLogger extends LoggerFoundation
 {
   /**
    * @return void
    */
-  public function logText(): void
+  public function run(): void
   {
-    $msgId = self::touchMessage($this->data);
-  }
+    $data         = $this->data;
+    $user         = new User($this->pdo);
+    $group        = new Group($this->pdo);
+    $isInsertUser = $isInsertGroup = false;
+
+    $userInfo = [
+      "username"   => $data["username"],
+      "first_name" => $data["first_name"],
+      "last_name"  => $data["last_name"],
+      "is_bot"     => $data["is_bot"],
+    ];
+    $groupInfo = [
+      "username" => $data["chat_username"],
+      "name"     => $data["chat_title"],
+    ];
+
+    $userId  = $user->resolveUser($data["user_id"], $userInfo, $isInsertUser);
+    $groupId = $group->resolveGroup($data["chat_id"], $groupInfo, $isInsertGroup);
 
 
-  /**
-   * @return void
-   */
-  public function logPhoto(): void
-  {
-  }
-
-
-  /**
-   * @return void
-   */
-  public function logSticker(): void
-  {
-  }
-
-
-  /**
-   * @return void
-   */
-  public function logAnimation(): void
-  {
-  }
-
-
-  /**
-   * @return void
-   */
-  public function logVoice(): void
-  {
-  }
-
-
-  /**
-   * @return void
-   */
-  public function logVideo(): void
-  {
-  }
-
-
-  /**
-   * @param \TeaBot\Telegram\Data $data
-   * @return void
-   */
-  public static function touchMessage(Data $data): void
-  {
-    try {
-      $groupId = self::groupInsert(
-        [
-          "tg_group_id" => $data["chat_id"],
-          "name" => $data["chat_title"],
-          "username" => $data["chat_username"],
-          "msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
-        ]
-      );
-
-      $userId = self::userInsert(
-        [
-          "tg_user_id" => $data["user_id"],
-          "first_name" => $data["first_name"],
-          "last_name" => $data["last_name"],
-          "username" => $data["username"],
-          "is_bot" => $data["is_bot"] ? 1 : 0,
-          "group_msg_count" => (isset($data["in"]["not_edit_event"]) ? 0 : 1)
-        ]
-      );
-      $pdo = DB::pdo();
-      $pdo->beginTransaction();
-      self::insertMessage($groupId, $userId, $data);
-      $pdo->commit();
-    } catch (PDOException $e) {
-      $pdo->rollBack();
-    }
-  }
-
-  /**
-   * @param int                   $groupId
-   * @param int                   $userId
-   * @param \TeaBot\Telegram\Data $data
-   * @return void
-   */
-  private static function insertMessage(int $groupId, int $userId, Data $data): void
-  {
-    if (isset($data["reply_to"]["message_id"])) {
-      (new Logger(Data::buildMsg($data["reply_to"])))->run();
+    if ($isInsertUser || (!($userInfo["group_msg_count"] % 10))) {
+      $userInfo["id"] = $userId;
+      $user->trackPhoto();
     }
 
-    /**
-     * Check whether the tg_msg_id has already
-     * been stored in database or not.
-     */
-    $st = $pdo->prepare("SELECT `id`,`has_edited_msg` FROM `tg_group_messages` WHERE `group_id` = ? AND `tg_msg_id` = ?");
-    $st->execute([$groupId, $data["msg_id"]]);
 
-    if ($u = $st->fetch(PDO::FETCH_ASSOC)) {
+    if ($isInsertGroup || (!($groupInfo["msg_count"] % 10))) {
+      $groupInfo["id"] = $groupId;
+      self::trackGroupPhoto($data, $groupInfo);
+    }
 
-      /**
-       * In case forwarded message gets edited.
-       * It may be impossible in Telegram.
-       */
-      if ($data["is_forwarded_msg"]) {
-        $ff = $data["msg"]["forward_from"];
-        self::userInsert(
-          [
-            "tg_user_id" => $ff["id"],
-            "username" => $ff["username"] ?? null,
-            "first_name" => $ff["first_name"],
-            "last_name" => $ff["last_name"] ?? null,
-            "is_bot" => $ff["is_bot"] ? 1 : 0
-          ]
-        );
-      }
+    $groupMsg = new GroupMessage($this->pdo);
+    $groupMsg->resolveMessage($userId, $groupId, $data);
+  }
 
-      if (!isset($data["in"]["not_edit_event"])) {
-        /* TODO: Save edited message here... */
-      }
 
-    } else {
+  /**
+   * @param \TeaBot\Telegram\Data Data
+   * @param array                 $userInfo
+   * @return void
+   */
+  private static function trackUserPhoto(Data $data, array $userInfo): void
+  {
+    /* debug:assert */
+    if (!isset($userInfo["id"])) {
+      throw new \Error("Missing field: [\"id\"]");
+    }
+    /* end_debug */
+    go(function () use ($data, $userInfo) {
 
-      /* Insert new message. */
-      $pdo->prepare("INSERT INTO `tg_group_messages` (`group_id`, `user_id`, `tg_msg_id`, `reply_to_tg_msg_id`, `msg_type`, `has_edited_msg`, `is_forwarded_msg`, `tg_date`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())")
-        ->execute(
-          [
-            $groupId,
-            $userId,
-            $data["msg_id"],
-            $data["reply_to"]["message_id"] ?? null,
-            $data["msg_type"],
-            $data["is_edited_msg"] ? 1 : 0,
-            $data["is_forwarded_msg"] ? 1 : 0,
-            date("Y-m-d H:i:s", $data["date"])
-          ]
-        );
+      $f = [
+        "username"   => true,
+        "first_name" => true,
+        "last_name"  => true,
+        "is_bot"     => true
+      ];
 
-      $msgId = $pdo->lastInsertId();
-
-      /* Store forward message info. */
-      if ($data["is_forwarded_msg"]) {
-        $ff = $data["msg"]["forward_from"];
-        $forwarderUserId = self::userInsert(
-          [
-            "tg_user_id" => $ff["id"],
-            "username" => $ff["username"] ?? null,
-            "first_name" => $ff["first_name"],
-            "last_name" => $ff["last_name"] ?? null,
-            "is_bot" => $ff["is_bot"] ? 1 : 0
-          ]
-        );
-
-        $pdo->prepare("INSERT INTO `tg_group_message_fwd` (`user_id`, `msg_id`, `tg_forwarded_date`) VALUES (?, ?, ?)")
-        ->execute(
-          [
-            $forwarderUserId,
-            $msgId,
-            (
-              isset($data["msg"]["forward_date"]) ?
-              date("Y-m-d H:i:s", $data["msg"]["forward_date"]) :
-              null
-            )
-          ]
-        );
-      }
-
-      /* Store message data. */
-      $pdo->prepare("INSERT INTO `tg_group_message_data` (`msg_id`, `text`, `text_entities`, `file`, `is_edited`, `tg_date`, `created_at`) VALUES (?, ?, ?, NULL, ?, ?, NOW())")
-      ->execute(
-        [
-          $msgId,
-          $data["text"],
-          json_encode($data["text_entities"], JSON_UNESCAPED_SLASHES),
-          $data["is_edited_msg "] ? 1 : 0,
-          (
-            isset($data["date"]) ?
-            date("Y-m-d H:i:s", $data["date"]) :
-            null
-          )
-        ]
+      $userInfo2 = array_filter(
+        $userInfo,
+        fn($k) => isset($f[$k]),
+        ARRAY_FILTER_USE_KEY
       );
 
-      if (isset($data["in"]["not_edit_event"])) {
-        self::incrementUserMsgCount($userId, 2);
-        self::incrementGroupMsgCount($groupId);
+      /* TODO: Retrieve the user photo. */
+      $userInfo2["photo"] = 10;
+
+      /* debug:p3 */
+      Dlog::out("Getting user profile photo: %s",
+        json_encode(
+          [
+            "user_id" => $data["user_id"],
+            "chat_id" => $data["chat_id"]
+          ]
+        )
+      );
+      /* end_debug */
+
+      $ret  = Exe::getUserProfilePhotos([
+        "user_id" => $data["user_id"],
+        "offset"  => 0,
+        "limit"   => 1,
+      ]);
+
+      $j = json_decode($ret->getBody()->__toString(), true);
+
+
+      /* debug:warning */
+      $__json_warning = json_encode(
+        [
+          "user_id" => $data["user_id"],
+          "chat_id" => $data["chat_id"]
+        ]
+      );
+      /* end_debug */
+
+      if (!isset($j["result"]["photos"][0])) {
+        /* Cannot get the photo or the user may not have. */
+        /* debug:warning */
+        Dlog::err(
+          "Cannot retrieve photo from getUserProfilePhotos: %s",
+          $__json_warning
+        );
+        /* end_debug */
+        return;
       }
+      
+      $photo = $j["result"]["photos"][0];
+      usort($photo, function ($p1, $p2) {
+        return
+          ($p2["width"] * $p2["height"]) <=>
+          ($p1["width"] * $p1["height"]);
+      });
+      $photo = $photo[0];
+
+      if (!isset($photo["file_id"])) {
+        /* Cannot get the photo or the user may not have. */
+        /* debug:warning */
+        Dlog::err(
+          "Cannot retrieve photo (cannot find the file_id): %s",
+          $__json_warning
+        );
+        /* end_debug */
+        return;
+      }
+
+      $pdo  = DB::pdo();
+
+      $file = new File($pdo);
+      $userInfo2["photo"] = $file->resolveFile($photo["file_id"]);
+      unset($file);
+
+      // $user = new User($pdo);
+      // $user->dontTrackUpdate();
+      // $user->updateUser($userInfo, $userInfo2, "");
+    });
+  }
+
+
+  /**
+   * @param \TeaBot\Telegram\Data Data
+   * @param array                 $groupInfo
+   * @return void
+   */
+  private static function trackGroupPhoto(Data $data, array $groupInfo): void
+  {
+    /* debug:assert */
+    if (!isset($groupInfo["id"])) {
+      throw new \Error("Missing field: [\"id\"]");
     }
+    /* end_debug */
+    go(function () use ($data, $groupInfo) {
+
+      $f = [
+        "username" => true,
+        "name"     => true,
+      ];
+
+      $groupInfo2 = array_filter(
+        $groupInfo,
+        fn($k) => isset($f[$k]),
+        ARRAY_FILTER_USE_KEY
+      );
+
+      /* TODO: Retrieve the group photo. */
+      $groupInfo2["photo"] = 1;
+
+      $group = new Group(DB::pdo());
+      $group->dontTrackUpdate();
+      $group->updateGroup($groupInfo, $groupInfo2, "");
+
+      /* TODO: Retrieve group admin. */
+    });
   }
 }

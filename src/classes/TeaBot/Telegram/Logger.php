@@ -4,6 +4,7 @@ namespace TeaBot\Telegram;
 
 use DB;
 use PDO;
+use TeaBot\Telegram\Dlog;
 use TeaBot\Telegram\Loggers\GroupLogger;
 use TeaBot\Telegram\Loggers\PrivateLogger;
 
@@ -18,53 +19,66 @@ final class Logger
   /** 
    * @var \TeaBot\Telegram\Data
    */
-  private ?Data $data;
+  private Data $data;
 
   /**
-   * @var \TeaBot\Telegram\TeaBot
-   */
-  private ?TeaBot $teaBot;
-
-  /**
-   * @param ?\TeaBot\Telegram\TeaBot $teaBot
-   * @param ?\TeaBot\Telegram\Data   $data
+   * @param array $data
    *
    * Constructor.
    */
-  public function __construct(?TeaBot $teaBot = null, ?Data $data = null)
+  public function __construct(array $data)
   {
-    $this->teaBot = $teaBot;
-    if ($data instanceof Data) {
-      $this->data = $data;
-    } else {
-      $this->data = $teaBot->data ?? null;
-    }
+    $this->data = new Data($data);
   }
 
   /**
    * @param mixed $key
-   * @return mixed
    */
   public function __get($key)
   {
-    return $this->{$key} ?? null;
+    return $this->{$key};
   }
 
-  /** 
-   * @return bool
+  const MSG_TYPE_MAP = [
+    "text"      => true,
+    // "photo"     => true,
+    // "sticker"   => true,
+    // "animation" => true,
+    // "voice"     => true,
+    // "video"     => true,
+  ];
+
+  const GROUP_CHAT_MAP = [
+    "supergroup" => true,
+  ];
+
+  /**
+   * @return void
    */
-  public function run(): bool
+  public function run(): void
   {
-    if (isset($this->data["msg_type"], $this->data["chat_type"])) {
+    $data = $this->data;
 
-      if ($this->data["chat_type"] === "private") {
-        $logger = new PrivateLogger($this);
-      } else {
-        $logger = new GroupLogger($this);
-      }
-
-      return $logger->execute();
+    /* Skip if msg_type is not mapped. */
+    if (!isset(self::MSG_TYPE_MAP[$data["msg_type"]])) {
+      /* debug:p5 */
+      Dlog::out("Skipping logger, unmapped msg_type: %s", $data["msg_type"]);
+      /* end_debug */
+      return;
     }
-    return false;
+
+    if ($data["chat_type"] === "private") {
+      $logger = new PrivateLogger($data);
+    } else
+    if (isset(self::GROUP_CHAT_MAP[$data["chat_type"]])) {
+      $logger = new GroupLogger($data);
+    } else {
+      $logger = null;
+    }
+
+    if ($logger) {
+      $logger->run();
+    }
+
   }
 }
