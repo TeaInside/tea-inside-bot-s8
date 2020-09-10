@@ -239,13 +239,17 @@ class Group extends LoggerUtilFoundation
    */
   public function trackPhoto(): void
   {
-    $data = $this->data;
-
     /* debug:assert */
     if (!$this->u) {
       throw new \Error("\$this->u has not been set!");
     }
     /* end_debug */
+
+    $u     = $this->u;
+    $id    = $u["id"];
+    $data  = $this->data;
+    $mutex = new Mutex("tg_groups", "id_{$id}");
+    $mutex->lock();
 
     /* debug:global */
     $__jd = json_encode(
@@ -270,7 +274,7 @@ class Group extends LoggerUtilFoundation
       /* debug:warning */
       Dlog::err("Cannot retrieve photo from getChat: %s", $__jd);
       /* end_debug */
-      return;
+      goto ret;
     }
 
     $pdo    = $this->pdo;
@@ -279,26 +283,26 @@ class Group extends LoggerUtilFoundation
     unset($file);
 
     if (is_null($fileId)) {
-      return;
+      goto ret;
     }
 
-    if ($this->u["photo"] !== $fileId) {
-      $mutex = new Mutex("tg_groups", "{$this->data["chat_id"]}");
-      $mutex->lock();
+    if ($u["photo"] !== $fileId) {
       if (is_null($this->historyId)) {
         /* Create new history. */
         $pdo
           ->prepare("UPDATE tg_groups SET photo = ? WHERE id = ?")
-          ->execute([$fileId, $this->u["id"]]);
-        $this->createGroupHistory($this->u["id"]);
+          ->execute([$fileId, $id]);
+        $this->createGroupHistory($id);
       } else {
         /* Amend current history. */
         $pdo
           ->prepare("UPDATE tg_groups AS a INNER JOIN tg_group_history AS b ON a.id = b.group_id SET a.photo = ?, b.photo = ? WHERE b.id = ?")
           ->execute([$fileId, $fileId, $this->historyId]);
       }
-      $mutex->unlock();
     }
+
+    ret:
+    $mutex->unlock();
   }
 
   /**
@@ -306,8 +310,15 @@ class Group extends LoggerUtilFoundation
    */
   public function trackAdmins(): void
   {
-    $data = $this->data;
-    $mutex = new Mutex("tg_group_admins", "{$this->data["chat_id"]}");
+    /* debug:assert */
+    if (!$this->u) {
+      throw new \Error("\$this->u has not been set!");
+    }
+    /* end_debug */
+
+    $u     = $this->u;
+    $data  = $this->data;
+    $mutex = new Mutex("tg_group_admins", "{$u["id"]}");
     $mutex->lock();
 
     /* debug:global */
@@ -323,8 +334,8 @@ class Group extends LoggerUtilFoundation
     Dlog::out("Getting group admins: %s", $__jd);
     /* end_debug */
 
-    $ret = Exe::getChatAdministrators(["chat_id" => $data["chat_id"]]);
-    $j = json_decode($ret->getBody()->__toString(), true);
+    $j = Exe::getChatAdministrators(["chat_id" => $data["chat_id"]]);
+    $j = json_decode($j->getBody()->__toString(), true);
 
     if (isset($j["result"]) && is_array($j["result"])) {
 

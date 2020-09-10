@@ -247,13 +247,17 @@ class User extends LoggerUtilFoundation
    */
   public function trackPhoto(): void
   {
-    $data = $this->data;
-
     /* debug:assert */
     if (!$this->u) {
       throw new \Error("\$this->u has not been set!");
     }
     /* end_debug */
+
+    $u     = $this->u;
+    $id    = $u["id"];
+    $data  = $this->data;
+    $mutex = new Mutex("tg_users", "id_{$id}");
+    $mutex->lock();
 
     /* debug:global */
     $__jd = json_encode(
@@ -281,7 +285,7 @@ class User extends LoggerUtilFoundation
       /* debug:warning */
       Dlog::err("Cannot retrieve photo from getUserProfilePhotos: %s", $__jd);
       /* end_debug */
-      return;
+      goto ret;
     }
 
     /* Get the highest resolution. */
@@ -297,7 +301,7 @@ class User extends LoggerUtilFoundation
       /* debug:warning */
       Dlog::err("Cannot retrieve photo (file_id is not found): %s", $__jd);
       /* end_debug */
-      return;
+      goto ret;
     }
 
     $pdo    = $this->pdo;
@@ -306,25 +310,25 @@ class User extends LoggerUtilFoundation
     unset($file);
 
     if (is_null($fileId)) {
-      return;
+      goto ret;
     }
 
-    if ($this->u["photo"] !== $fileId) {
-      $mutex = new Mutex("tg_users", "{$this->data["user_id"]}");
-      $mutex->lock();
+    if ($u["photo"] !== $fileId) {
       if (is_null($this->historyId)) {
         /* Create new history. */
         $pdo
           ->prepare("UPDATE tg_users SET photo = ? WHERE id = ?")
-          ->execute([$fileId, $this->u["id"]]);
-        $this->createUserHistory($this->u["id"]);
+          ->execute([$fileId, $id]);
+        $this->createUserHistory($id);
       } else {
         /* Amend current history. */
         $pdo
           ->prepare("UPDATE tg_users AS a INNER JOIN tg_user_history AS b ON a.id = b.user_id SET a.photo = ?, b.photo = ? WHERE b.id = ?")
           ->execute([$fileId, $fileId, $this->historyId]);
       }
-      $mutex->unlock();
     }
+
+    ret:
+    $mutex->unlock();
   }
 }

@@ -57,8 +57,10 @@ class GroupLogger extends LoggerFoundation
 
     if (!($userII["private_msg_count"] % 10)) {
       /* Track user photo. */
-      $user->setPDO(DB::pdo());
-      go(fn() => $user->trackPhoto());
+      go(function () use ($user) {
+        $user->setPDO(DB::pdo());
+        $user->trackPhoto();
+      });
     }
 
     $group   = $this->group;
@@ -66,11 +68,20 @@ class GroupLogger extends LoggerFoundation
 
     if (!($groupII["msg_count"] % 10)) {
       /* Track group photo. */
-      $group->setPDO(DB::pdo());
+      $group->dropPDO();
+      $group2 = clone $group;
+
       go(function () use ($group) {
+        $group->setPDO(DB::pdo());
         $group->trackPhoto();
-        $group->trackAdmins();
       });
+
+      go(function () use ($group2) {
+        $group2->setPDO(DB::pdo());
+        $group2->trackAdmins();
+      });
+
+      unset($group2);
     }
   }
 }
