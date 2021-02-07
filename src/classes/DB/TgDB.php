@@ -12,8 +12,13 @@ class TgDb extends DBFoundation
 	public static function createPDO(): \PDO
 	{
 		/* dbg(assert) */
-		$assert = function ($msg) {
-			printf("Error: %s: %s\n", __METHOD__, $msg);
+		$assert = function (string $const) {
+
+			if (defined($const))
+				return;
+
+			printf("Error: %s: %s is not defined\n", __METHOD__,
+			       $const);
 			exit(1);
 		};
 		$assert("TG_BOT_DB_HOST");

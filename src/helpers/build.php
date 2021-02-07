@@ -9,7 +9,7 @@ $__sh_cwd = __DIR__;
 function shchdir(string $dir): void
 {
 	global $__sh_cwd;
-	$__sh_cwd = escapeshellarg($dir);	
+	$__sh_cwd = escapeshellarg($dir);
 }
 
 
