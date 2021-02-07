@@ -2,7 +2,11 @@
 
 defined("BASEPATH") or define("BASEPATH", __DIR__);
 define("STORAGE_PATH", BASEPATH."/storage");
+define("PUBLIC_DIR", BASEPATH."/public");
 
+
+define("RUN_USER", "nobody");
+define("RUN_GROUP", "nogroup");
 
 /* Telegram config */
 define("TG_BOT_TOKEN", "bot token");

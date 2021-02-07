@@ -2,7 +2,9 @@
 
 $dir = __DIR__;
 
-require "{$dir}/src/helpers/build.php";
+require __DIR__."/src/init/global.php";
+require BASEPATH."/src/helpers/global.php";
+require BASEPATH."/src/helpers/build.php";
 
 if (trim(shell_exec("whoami")) !== "root") {
 	echo "Must be run as root!\n";
@@ -23,6 +25,27 @@ if (!file_exists($swooleLock)) {
 		"make install && ".
 		"touch ".escapeshellarg($swooleLock)
 	);
+	if (!file_exists($swooleLock)) {
+		printf("\nFailed to build swoole!\n");
+		exit(1);
+	}
 } else {
-	echo "Swoole lock build file is detected, skipping swoole build...\n";
+	printf("Swoole lock build file is detected, skipping swoole build...\n");
 }
+
+
+/* Telegram webhook directory */
+$tgWebhookDir = PUBLIC_DIR."/".TG_WEBHOOK_KEY;
+if (!is_dir($tgWebhookDir)) {
+	if (!mkdir($tgWebhookDir)) {
+		printf("Cannot create tgWebhookDir: %s\n", $tgWebhookDir);
+		exit(1);
+	}
+	printf("Created tgWebhookDir: %s\n", $tgWebhookDir);
+} else {
+	printf("tgWebhookDir exists, skipping creation...\n");
+}
+
+
+
+exit(0);

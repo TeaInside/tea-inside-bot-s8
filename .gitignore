@@ -9,3 +9,6 @@
 /vendor/
 /.phpintel/
 /config.php
+
+/public/*
+!/public/index.php
