@@ -1,0 +1,214 @@
+[
+    {
+        "name": "psr/http-message",
+        "version": "1.0.1",
+        "version_normalized": "1.0.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/php-fig/http-message.git",
+            "reference": "f6561bf28d520154e4b0ec72be95418abe6d9363"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/php-fig/http-message/zipball/f6561bf28d520154e4b0ec72be95418abe6d9363",
+            "reference": "f6561bf28d520154e4b0ec72be95418abe6d9363",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.0"
+        },
+        "time": "2016-08-06T14:39:51+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.0.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Psr\\Http\\Message\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "PHP-FIG",
+                "homepage": "http://www.php-fig.org/"
+            }
+        ],
+        "description": "Common interface for HTTP messages",
+        "homepage": "https://github.com/php-fig/http-message",
+        "keywords": [
+            "http",
+            "http-message",
+            "psr",
+            "psr-7",
+            "request",
+            "response"
+        ]
+    },
+    {
+        "name": "swlib/http",
+        "version": "v1.0.7",
+        "version_normalized": "1.0.7.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/swlib/http.git",
+            "reference": "ddee029d52518df1989391d1135cf6e2d1eb7369"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/swlib/http/zipball/ddee029d52518df1989391d1135cf6e2d1eb7369",
+            "reference": "ddee029d52518df1989391d1135cf6e2d1eb7369",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=7.0",
+            "psr/http-message": "~1.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "~7"
+        },
+        "time": "2020-05-08T10:00:28+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "src/functions.php"
+            ],
+            "psr-4": {
+                "Swlib\\Http\\": "src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "twosee",
+                "email": "twose@qq.com"
+            }
+        ],
+        "description": "Swlib-HTTP base class repository, PSR implementation",
+        "keywords": [
+            "http",
+            "php",
+            "psr7",
+            "swoole"
+        ]
+    },
+    {
+        "name": "swlib/saber",
+        "version": "v1.0.15",
+        "version_normalized": "1.0.15.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/swlib/saber.git",
+            "reference": "25f2dba17ddf075e000e82b227fc2df1d276f49d"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/swlib/saber/zipball/25f2dba17ddf075e000e82b227fc2df1d276f49d",
+            "reference": "25f2dba17ddf075e000e82b227fc2df1d276f49d",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=7.1",
+            "swlib/http": "1.0.7",
+            "swlib/util": "1.0.2"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "~7"
+        },
+        "time": "2020-05-10T01:07:02+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "classmap": [
+                "src/Saber.php",
+                "src/SaberGM.php"
+            ],
+            "psr-4": {
+                "Swlib\\Saber\\": "src"
+            },
+            "files": [
+                "src/include/functions.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "Apache-2.0"
+        ],
+        "authors": [
+            {
+                "name": "twosee",
+                "email": "twose@qq.com"
+            }
+        ],
+        "description": "Swoole coroutine HTTP client",
+        "keywords": [
+            "ajax",
+            "axios",
+            "client",
+            "coroutine",
+            "curl",
+            "http",
+            "php",
+            "psr7",
+            "requests",
+            "swoole"
+        ]
+    },
+    {
+        "name": "swlib/util",
+        "version": "v1.0.2",
+        "version_normalized": "1.0.2.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/swlib/util.git",
+            "reference": "fad83bb2bf4a4cc59fdd606aab817677a7885818"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/swlib/util/zipball/fad83bb2bf4a4cc59fdd606aab817677a7885818",
+            "reference": "fad83bb2bf4a4cc59fdd606aab817677a7885818",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=7.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "~7"
+        },
+        "time": "2020-05-08T09:55:22+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Swlib\\Util\\": "src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "Apache-2.0"
+        ],
+        "authors": [
+            {
+                "name": "twosee",
+                "email": "twose@qq.com"
+            }
+        ],
+        "description": "Swlib Toolkit",
+        "keywords": [
+            "php",
+            "swlib",
+            "swoole",
+            "util"
+        ]
+    }
+]
