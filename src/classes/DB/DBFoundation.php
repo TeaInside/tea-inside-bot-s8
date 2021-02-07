@@ -10,7 +10,7 @@ abstract class DBFoundation
 	 * @param array $param
 	 * @return \PDO
 	 */
-	protected function buildPdo(array $param): PDO
+	protected function constructPdo(array $param): PDO
 	{
 		return new PDO(...$param);
 	}
