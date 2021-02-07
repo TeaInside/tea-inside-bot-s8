@@ -15,7 +15,7 @@ define("TG_BOT_DB_USER", "user");
 define("TG_BOT_DB_PASS", "password");
 define("TG_BOT_DB_PORT", 3306);
 define("TG_BOT_DB_NAME", "teabot8");
-define("TG_BOT_SUDOERS", [243692601]);
+define("TG_BOT_SUDOERS", []);
 define("TG_STORAGE_PATH", BASEPATH."/storage/telegram");
 define("TG_WEBHOOK_KEY", "123123123123123123");
 define("TG_ERROR_REPORT_CHAT_ID", []);
