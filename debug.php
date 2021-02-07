@@ -32,7 +32,6 @@ function turn_on_flag(string $file, string $flag): int
 	$ret = 0;
 	$flag = preg_quote($flag);
 	$pat = "/\/\*\s*__dbg_code\(\s*({$flag})\s*\):b64:gz:(\S+?)\s*\*\//isS";
-
 	$r1 = $r2 = [];
 	$content = file_get_contents($file);
 	if (preg_match_all($pat, $content, $m)) {
@@ -63,8 +62,6 @@ function turn_off_flag(string $file, string $flag): int
 	$start = "\/\*\s*dbg\(\s*({$flag})\s*\)\s*\*\/";
 	$end = "\/\*\s*end_dbg\s*\*\/";
 	$pat = "/{$start}(.*?){$end}/isS";
-
-
 	$r1 = $r2 = [];
 	$content = file_get_contents($file);
 	if (preg_match_all($pat, $content, $m)) {
